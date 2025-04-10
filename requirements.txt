@@ -1,0 +1,9 @@
+flask[async]==2.3.2
+azure-communication-callautomation==1.4.0b1
+azure-storage-blob==12.16.0
+twilio==9.5.0
+azure-cognitiveservices-speech==1.43.0
+requests==2.31.0
+python-dotenv==1.0.0
+aiohttp
+pymongo==4.11.3 
