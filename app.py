@@ -143,11 +143,31 @@ async def rdv_exam_type():
         speak("Je vous cherche un créneau")
         task_get_creneau = asyncio.create_task(get_creneaux_async(sous_type, exam_type))
         creneaux = await task_get_creneau
-        build_creneaux_phrase(creneaux)
+        text = build_creneaux_phrase(creneaux)
+
+        play_source = TextSource(text=text, voice_name="fr-FR-VivienneMultilingualNeural")
+
+        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+            input_type=RecognizeInputType.SPEECH,
+            target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+            end_silence_timeout=0.5,
+            play_prompt=play_source,
+            interrupt_prompt=False,
+            speech_language="fr-FR",
+            initial_silence_timeout=5,
+            operation_context="get_lastname",
+            operation_callback_url="https://9ef5-2a01-cb00-844-1d00-d826-b210-ea0f-c3cf.ngrok-free.app/get_creneaux_choice"
+        )
 
         print(sous_type)
 
     return jsonify({"status": "success"})
+
+@app.route("/get_creneaux_choice", methods=["POST"])
+async def get_creneaux_choice():
+    if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted":
+        user_response = request.json[0].get("data").get("speechResult").get("speech")
+        
 
 @app.route("/incoming_call", methods=["POST"])
 def incoming_call():
@@ -230,7 +250,7 @@ def callback():
         server_call_id = data.get("data").get("serverCallId")
         caller = request.args.get('caller')
         # start_conversation(call_connection_id=call_connection_id, callerId=caller)
-        handle_prise_rdv(caller)
+        find_patient(caller)
     return jsonify({"status": "success"})    
 
 ########## ASYNC ##########
@@ -326,7 +346,7 @@ async def get_creneaux_async(sous_type, exam_type):
                 response.raise_for_status()
                 data = await response.json()
                 print("creneaux", data)
-                return data.get("response", "Pas de réponse trouvée.")
+                return data
     except aiohttp.ClientError as e:
         print(f"Erreur lors de l'appel au modèle : {e}")
         return "Erreur lors de la communication avec le modèle."
@@ -388,7 +408,6 @@ async def get_rdv_intent_async(user_response):
 ########## CONVERSATION ##########
 
 def build_creneaux_phrase(creneaux):
-    
     data = creneaux
 
     # French ordinal indicators
@@ -442,10 +461,7 @@ def continue_conversation(model_response):
         initial_silence_timeout=5
     )
 
-# CallerId Not needed /!\ DELETE IT 
-def handle_prise_rdv(callerId):
-    global caller
-    caller = callerId
+def handle_prise_rdv():
     play_source = TextSource(text="Pouvez-vous me donner votre jour, mois et année de naissance s'il vous plaît ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
     call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
@@ -566,47 +582,49 @@ async def get_soustype_exam(type_exam):
         return "Erreur lors de la communication avec le modèle."
 
 ########## DATABASE ##########
-def find_patient(retries = 0):
+# CALLER & CALLER ID NOT NEEDED
+def find_patient(callerId, retries = 0):
     global birthdate
     global lastname
     global firstname
-
-    if (lastname is None or firstname is None or birthdate == None) and retries < 3:
-        time.sleep(1)
-        find_patient(retries + 1)
+    global caller
+    caller = callerId
+    # if (lastname is None or firstname is None or birthdate == None) and retries < 3:
+    #     time.sleep(1)
+    #     find_patient(retries + 1)
     
-    results = collection.find({
-        "dateNaissance": {
-            "$regex": f"^{birthdate}"
-        },
-        "nom": {
-            "$regex": f"^{lastname}$", 
-            "$options": "i"  # Case-insensitive
-        },
-        "prenom": {
-            "$regex": f"^{firstname}$", 
-            "$options": "i"  # Case-insensitive
-        }
-    })
+    # results = collection.find({
+    #     "dateNaissance": {
+    #         "$regex": f"^{birthdate}"
+    #     },
+    #     "nom": {
+    #         "$regex": f"^{lastname}$", 
+    #         "$options": "i"  # Case-insensitive
+    #     },
+    #     "prenom": {
+    #         "$regex": f"^{firstname}$", 
+    #         "$options": "i"  # Case-insensitive
+    #     }
+    # })
 
-    json_results = dumps(list(results), indent=4)
+    # json_results = dumps(list(results), indent=4)
     
-    if not json_results:
-        speak("Je n'ai pas pu vous identifier. Désolé.")
-    else:
-        play_source = TextSource(text="J'ai pu vous identifier. Pour quel type d'examen souhaitez-vous prendre rendez-vous ?", voice_name="fr-FR-VivienneMultilingualNeural")
+    # if not json_results:
+    #     speak("Je n'ai pas pu vous identifier. Désolé.")
+    # else:
+    play_source = TextSource(text="J'ai pu vous identifier. Pour quel type d'examen souhaitez-vous prendre rendez-vous ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
-        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-            input_type=RecognizeInputType.SPEECH,
-            target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
-            end_silence_timeout=1,
-            play_prompt=play_source,
-            interrupt_prompt=False,
-            speech_language="fr-FR",
-            initial_silence_timeout=10,
-            operation_context="prise_rdv",
-            operation_callback_url="https://9ef5-2a01-cb00-844-1d00-d826-b210-ea0f-c3cf.ngrok-free.app/rdv_exam_type"
-        )
+    call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+        input_type=RecognizeInputType.SPEECH,
+        target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
+        end_silence_timeout=1,
+        play_prompt=play_source,
+        interrupt_prompt=False,
+        speech_language="fr-FR",
+        initial_silence_timeout=10,
+        operation_context="prise_rdv",
+        operation_callback_url="https://9ef5-2a01-cb00-844-1d00-d826-b210-ea0f-c3cf.ngrok-free.app/rdv_exam_type"
+    )
     # speak("trouvé")
 # def get_creneaux_async():
 
