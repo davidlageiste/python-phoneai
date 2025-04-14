@@ -710,19 +710,13 @@ def handle_annulation(user_response):
 def handle_consultation(user_response):
     return "ok"
 
-def get_consentement(callerId):
-    global caller
+# def get_consentement(callerId):
+#     global caller
 
     # play_source = TextSource(
     #     text="Bonjour, je suis une IA de secrétariat médical. Acceptez-vous que je réponde a vos besoins ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
     # )
-    play_source = TextSource(
-        text="Pour des raisons de qualité et de suivi, cet appel peut être enregistré.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-    )
-
-    call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
-        play_source=play_source
-    )
+    
 
     # call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
     #     input_type=RecognizeInputType.SPEECH,
@@ -741,7 +735,15 @@ def start_conversation(call_connection_id, callerId):
     global caller
     caller = callerId
     
-    get_consentement(caller)
+    # get_consentement(caller)
+
+    play_source = TextSource(
+        text="Pour des raisons de qualité et de suivi, cet appel peut être enregistré.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+    )
+
+    call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
+        play_source=play_source
+    )
 
     play_source = TextSource(
         text="Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Je peux prendre, modifier ou annuler vos rendez-vous, ainsi que vous fournir des informations. Comment puis-je vous aider aujourd’hui ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
