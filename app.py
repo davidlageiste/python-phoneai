@@ -10,6 +10,7 @@ import json
 import time
 from bson.json_util import dumps
 from datetime import datetime
+import ast
 
 COGNITIVE_SERVICE_ENDPOINT = "https://lyraecognitivesservicesus.cognitiveservices.azure.com"
 SPEECH_KEY='CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U2XJ3w3AAAAACOGuWEK'
@@ -31,9 +32,12 @@ global rdv_intent
 global birthdate
 global lastname
 global firstname
-
+global type_exam_error
+global exam_id
+global sous_type_id
 rdv_intent = None
 intent = None
+type_exam_error = 0
 
 async def get_model_response_async(user_response):
     url = "https://medical-rad-rag-assistant.azurewebsites.net/api/rag_query?code=MjVVHBDAeLnYyXz0FzwYsaGxSjFXT99s4vaQg_nUlKe9AzFuuU3Z4Q=="
@@ -92,7 +96,7 @@ async def get_lastname():
             speech_language="fr-FR",
             initial_silence_timeout=10,
             operation_context="get_firstname",
-            operation_callback_url="https://9ef5-2a01-cb00-844-1d00-d826-b210-ea0f-c3cf.ngrok-free.app/get_firstname"
+            operation_callback_url="https://c5d0-2a01-cb00-844-1d00-95ba-5a9-b375-f641.ngrok-free.app/get_firstname"
         )
 
         lastname = await task_get_lastname
@@ -118,7 +122,7 @@ async def get_birthdate():
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="get_lastname",
-            operation_callback_url="https://9ef5-2a01-cb00-844-1d00-d826-b210-ea0f-c3cf.ngrok-free.app/get_lastname"
+            operation_callback_url="https://c5d0-2a01-cb00-844-1d00-95ba-5a9-b375-f641.ngrok-free.app/get_lastname"
         )
 
         birthdate = await task_get_birthdate
@@ -132,34 +136,122 @@ def prise_rendez_vous():
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         speak("Parfait, laissez-moi trouver les créneaux disponibles.")
 
+@app.route("/confirm_rdv", methods=["POST"])
+async def confirm_rdv():
+    global type_exam_error
+    global exam_id
+    global sous_type_id
+
+    if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "confirm_rdv":
+        user_response = request.json[0].get("data").get("speechResult").get("speech")
+        url = "https://analyse-reponse-consentement.azurewebsites.net/api/response_analyzer?code=XhZeOIcgHJC5htmtRy5Ckh9FFl7m2QyFpIMqI8NS0-jTAzFuqP2mJw=="
+        headers = {
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "action": "positive_negative_reponse",
+            "texte": user_response
+        }
+        try:
+            response = requests.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+
+            model_response = response.json().get("response")
+
+            if model_response == "non":
+                exam_id = None
+                sous_type_id = None
+                if type_exam_error <= 2:
+                    play_source = TextSource(
+                        text="Pardonnez moi, pouvez-vous me répéter l'intitulé de l'examen que vous souhaitez passer ? ", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+                    )
+
+                    call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
+                        play_source=play_source,
+                        operation_context="hang_up"
+                    )
+                else:
+                    play_source = TextSource(
+                        text="Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+                    )
+
+                    call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
+                        play_source=play_source,
+                        operation_context="hang_up"
+                    )
+            elif model_response == "oui":
+                task_creneaux = asyncio.create_task(get_creneaux_async(sous_type=sous_type_id, exam_type=exam_id))
+                speak("Très bien, laissez moi un instant le temps que je récupère les créneaux disponibles pour ce type d'examen")
+                creneaux = await task_creneaux
+                
+                text = build_creneaux_phrase(creneaux=creneaux)
+                play_source = TextSource(text=text, voice_name="fr-FR-VivienneMultilingualNeural")
+
+                call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+                    input_type=RecognizeInputType.SPEECH,
+                    target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+                    end_silence_timeout=0.5,
+                    play_prompt=play_source,
+                    interrupt_prompt=False,
+                    speech_language="fr-FR",
+                    initial_silence_timeout=5,
+                    operation_context="get_creneaux_choice",
+                    operation_callback_url="https://c5d0-2a01-cb00-844-1d00-95ba-5a9-b375-f641.ngrok-free.app/get_creneaux_choice"
+                )
+                speak(text)
+            else:
+                type_exam_error += 1
+                
+        except requests.exceptions.RequestException as e:
+            print(f"Erreur lors de l'appel au modèle : {e}")
+            return "Erreur lors de la communication avec le modèle."
+
+    return jsonify({"status": "success"})
+
 @app.route("/rdv_exam_type", methods=["POST"])
 async def rdv_exam_type():
-    if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted":
+    global exam_id
+    global sous_type_id
+
+    if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "rdv_exam_type":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         task_type = asyncio.create_task(get_exam_type_async(user_response=user_response))
         exam_type = await task_type
-        task_sous_type = asyncio.create_task(get_soustype_exam(exam_type))
-        sous_type = await task_sous_type
-        speak("Je vous cherche un créneau")
-        task_get_creneau = asyncio.create_task(get_creneaux_async(sous_type, exam_type))
-        creneaux = await task_get_creneau
-        text = build_creneaux_phrase(creneaux)
 
-        play_source = TextSource(text=text, voice_name="fr-FR-VivienneMultilingualNeural")
+        if exam_type["type_examen"] == None:
+            play_source = TextSource(text="Désolé, je n'ai pas compris. Pouvez-vous répeter l'intitulé de l'examen pour lequel vous souhaitez prendre rendez-vous ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
-        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-            input_type=RecognizeInputType.SPEECH,
-            target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-            end_silence_timeout=0.5,
-            play_prompt=play_source,
-            interrupt_prompt=False,
-            speech_language="fr-FR",
-            initial_silence_timeout=5,
-            operation_context="get_lastname",
-            operation_callback_url="https://9ef5-2a01-cb00-844-1d00-d826-b210-ea0f-c3cf.ngrok-free.app/get_creneaux_choice"
-        )
+            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+                input_type=RecognizeInputType.SPEECH,
+                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+                end_silence_timeout=0.5,
+                play_prompt=play_source,
+                interrupt_prompt=False,
+                speech_language="fr-FR",
+                initial_silence_timeout=5,
+                operation_context="rdv_exam_type",
+                operation_callback_url="https://c5d0-2a01-cb00-844-1d00-95ba-5a9-b375-f641.ngrok-free.app/rdv_exam_type"
+            )
+        else :
+            print(exam_type)
+            exam_id = exam_type["type_examen_id"]
+            sous_type_id = exam_type["code_examen_id"]
+            
+            play_source = TextSource(text=f"Vous voulez prendre un rendez-vous pour un ou une {exam_type["code_examen"]}, c'est bien ça ?", voice_name="fr-FR-VivienneMultilingualNeural")
+            # play_source = TextSource(text=text, voice_name="fr-FR-VivienneMultilingualNeural")
 
-        print(sous_type)
+            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+                input_type=RecognizeInputType.SPEECH,
+                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+                end_silence_timeout=0.5,
+                play_prompt=play_source,
+                interrupt_prompt=False,
+                speech_language="fr-FR",
+                initial_silence_timeout=5,
+                operation_context="confirm_rdv",
+                operation_callback_url="https://c5d0-2a01-cb00-844-1d00-95ba-5a9-b375-f641.ngrok-free.app/confirm_rdv"
+            )
 
     return jsonify({"status": "success"})
 
@@ -167,10 +259,41 @@ async def rdv_exam_type():
 async def get_creneaux_choice():
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
+
+        task_creneau_choice = asyncio.create_task(extract_creneau_async(user_response=user_response))
         
+        play_source = TextSource(text="Parfait, je vais vous réserver ce créneau. Laissez-moi un instant", voice_name="fr-FR-VivienneMultilingualNeural")
+
+        call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
+            play_source=play_source
+        )
+
+        creneau_choice = await task_creneau_choice
+
+        print(creneau_choice)
+
+        play_source = TextSource(text="Done", voice_name="fr-FR-VivienneMultilingualNeural")
+
+        call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
+            play_source=play_source
+        )
+        # call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+        #     input_type=RecognizeInputType.SPEECH,
+        #     target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
+        #     end_silence_timeout=1,
+        #     play_prompt=play_source,
+        #     interrupt_prompt=False,
+        #     speech_language="fr-FR",
+        #     initial_silence_timeout=5,
+        #     operation_context="rdv_exam_type",
+        #     operation_callback_url="https://c5d0-2a01-cb00-844-1d00-95ba-5a9-b375-f641.ngrok-free.app/rdv_exam_type"
+        # )
+
+    return jsonify({"status": "success"})
 
 @app.route("/incoming_call", methods=["POST"])
 def incoming_call():
+    # Azure code de vérification
     if request.json and request.json[0].get("eventType") == "Microsoft.EventGrid.SubscriptionValidationEvent":
         validation_code = request.json[0]["data"]["validationCode"]
         return jsonify({"validationResponse": validation_code}), 200
@@ -179,7 +302,8 @@ def incoming_call():
     print(data.get("data").get("from"))
     caller = data.get("data").get("from").get("phoneNumber").get("value")
     encodedContext = data.get("data").get("incomingCallContext")
-    call_automation_client.answer_call(incoming_call_context=encodedContext, callback_url=f"https://9ef5-2a01-cb00-844-1d00-d826-b210-ea0f-c3cf.ngrok-free.app/callback?caller={caller}", cognitive_services_endpoint=COGNITIVE_SERVICE_ENDPOINT)
+
+    call_automation_client.answer_call(incoming_call_context=encodedContext, callback_url=f"https://c5d0-2a01-cb00-844-1d00-95ba-5a9-b375-f641.ngrok-free.app/callback?caller={caller}", cognitive_services_endpoint=COGNITIVE_SERVICE_ENDPOINT)
     return jsonify({"status": "success"})
 
 @app.route("/handleResponse", methods=["POST"])
@@ -229,6 +353,67 @@ async def handleConsentement():
 
     return jsonify({"status": "success"})
 
+@app.route("/has_ordonnance", methods=["POST"])
+async def has_ordonnance():
+    if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "has_ordonnance":
+        user_response = request.json[0].get("data").get("speechResult").get("speech")
+        url = "https://analyse-reponse-consentement.azurewebsites.net/api/response_analyzer?code=XhZeOIcgHJC5htmtRy5Ckh9FFl7m2QyFpIMqI8NS0-jTAzFuqP2mJw=="
+        headers = {
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "action": "positive_negative_reponse",
+            "texte": user_response
+        }
+        try:
+            response = requests.post(url, headers=headers, json=payload)
+            response.raise_for_status()
+            print("has_ordonnance", response.json())
+            model_response = response.json().get("response")
+
+            if model_response == "non":
+                play_source = TextSource(
+                    text="Désolé nous pouvons pas vous planifier un rendez vous sans ordonnance prescrite de votre médecin. Pour passer un examen d’imagerie, il faut avoir la prescription d’un médecin. Sans ordonnance, ce n’est pas possible. Pour avoir une ordonnance, je vous conseille de consulter un médecin. Je vous souhaite une excellente journée et à bientôt.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+                )
+
+                call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
+                    play_source=play_source,
+                    operation_context="hang_up"
+                )
+            elif model_response == "oui":
+                play_source = TextSource(text="Quel examen voulez vous passer ?", voice_name="fr-FR-VivienneMultilingualNeural")
+
+                call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+                    input_type=RecognizeInputType.SPEECH,
+                    target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
+                    end_silence_timeout=1,
+                    play_prompt=play_source,
+                    interrupt_prompt=False,
+                    speech_language="fr-FR",
+                    initial_silence_timeout=5,
+                    operation_context="rdv_exam_type",
+                    operation_callback_url="https://c5d0-2a01-cb00-844-1d00-95ba-5a9-b375-f641.ngrok-free.app/rdv_exam_type"
+                )
+            else:
+                play_source = TextSource(text="Désolé, je n'ai pas compris, Avez-vous une ordonnance ?", voice_name="fr-FR-VivienneMultilingualNeural")
+                call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+                    input_type=RecognizeInputType.SPEECH,
+                    target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
+                    end_silence_timeout=1,
+                    play_prompt=play_source,
+                    interrupt_prompt=False,
+                    speech_language="fr-FR",
+                    initial_silence_timeout=5,
+                    operation_context="has_ordonnance",
+                    operation_callback_url="https://c5d0-2a01-cb00-844-1d00-95ba-5a9-b375-f641.ngrok-free.app/has_ordonnance"
+                )
+        except requests.exceptions.RequestException as e:
+            print(f"Erreur lors de l'appel au modèle : {e}")
+            return "Erreur lors de la communication avec le modèle."
+
+    return jsonify({"status": "success"})
+
 @app.route("/callback", methods=["POST"])
 def callback():
     global call_connection_id
@@ -249,8 +434,11 @@ def callback():
         call_connection_id = data.get("data").get("callConnectionId")
         server_call_id = data.get("data").get("serverCallId")
         caller = request.args.get('caller')
-        # start_conversation(call_connection_id=call_connection_id, callerId=caller)
-        find_patient(caller)
+        start_conversation(call_connection_id=call_connection_id, callerId=caller)
+        # find_patient(caller)
+        # handle_prise_rdv(caller)
+    if request.json and request.json[0].get("type") == "Microsoft.Communication.PlayCompleted" and request.json[0].get("data").get("operationContext") == "hang_up":
+        call_automation_client.get_call_connection(call_connection_id).hang_up(is_for_everyone=True)
     return jsonify({"status": "success"})    
 
 ########## ASYNC ##########
@@ -320,6 +508,27 @@ async def get_birthdate_async(user_response):
         print(f"Erreur lors de l'appel au modèle : {e}")
         return "Erreur lors de la communication avec le modèle."
 
+async def extract_creneau_async(user_response):
+    url = "https://get-exam-type-code.azurewebsites.net/api/get_type_code_examen?code=ggp6REjpXNQVDagAZxMwRqsW_HoGpRwnFKXkHOI7ELB4AzFuBwtH6Q=="
+    headers = {
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "texte": user_response,
+        "action": "extraire_creneau"
+    }
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, json=payload) as response:
+                response.raise_for_status() 
+                data = await response.json()
+                print("créneau choisi", data)
+                return data
+    except aiohttp.ClientError as e:
+        print(f"Erreur lors de l'appel au modèle : {e}")
+        return "Erreur lors de la communication avec le modèle."
+
 async def get_creneaux_async(sous_type, exam_type):
     url = "https://ai2xplore.azurewebsites.net/api/getCreneaux"
     headers = {
@@ -352,7 +561,7 @@ async def get_creneaux_async(sous_type, exam_type):
         return "Erreur lors de la communication avec le modèle."
 
 async def get_exam_type_async(user_response):
-    url = "https://lyraetalk-detect-type-examen.azurewebsites.net/api/detect_exam?code=JtOABLIEGB-E4VCiDZ6iakxLw9-iqxG_Goq-5d5BgD4AAzFuFNkDKw=="
+    url = "https://get-exam-type-code.azurewebsites.net/api/get_type_code_examen?code=ggp6REjpXNQVDagAZxMwRqsW_HoGpRwnFKXkHOI7ELB4AzFuBwtH6Q=="
     headers = {
         "Content-Type": "application/json"
     }
@@ -363,8 +572,8 @@ async def get_exam_type_async(user_response):
             async with session.post(url, headers=headers, json=payload) as response:
                 response.raise_for_status() 
                 data = await response.json()
-                print(data)
-                return data.get("response", "Pas de réponse trouvée.")
+                print("EXAM TYPE", data)
+                return data
     except aiohttp.ClientError as e:
         print(f"Erreur lors de l'appel au modèle : {e}")
         return "Erreur lors de la communication avec le modèle."
@@ -461,9 +670,9 @@ def continue_conversation(model_response):
         initial_silence_timeout=5
     )
 
-def handle_prise_rdv():
-    play_source = TextSource(text="Pouvez-vous me donner votre jour, mois et année de naissance s'il vous plaît ?", voice_name="fr-FR-VivienneMultilingualNeural")
+def handle_prise_rdv(user_response):
 
+    play_source = TextSource(text="Avez-vous une ordonnance ?", voice_name="fr-FR-VivienneMultilingualNeural")
     call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
         input_type=RecognizeInputType.SPEECH,
         target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
@@ -472,9 +681,23 @@ def handle_prise_rdv():
         interrupt_prompt=False,
         speech_language="fr-FR",
         initial_silence_timeout=5,
-        operation_context="get_birthdate",
-        operation_callback_url="https://9ef5-2a01-cb00-844-1d00-d826-b210-ea0f-c3cf.ngrok-free.app/get_birthdate"
+        operation_context="has_ordonnance",
+        operation_callback_url="https://c5d0-2a01-cb00-844-1d00-95ba-5a9-b375-f641.ngrok-free.app/has_ordonnance"
     )
+    
+    # play_source = TextSource(text="Pouvez-vous me donner votre jour, mois et année de naissance s'il vous plaît ?", voice_name="fr-FR-VivienneMultilingualNeural")
+
+    # call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+    #     input_type=RecognizeInputType.SPEECH,
+    #     target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
+    #     end_silence_timeout=1,
+    #     play_prompt=play_source,
+    #     interrupt_prompt=False,
+    #     speech_language="fr-FR",
+    #     initial_silence_timeout=5,
+    #     operation_context="get_birthdate",
+    #     operation_callback_url="https://c5d0-2a01-cb00-844-1d00-95ba-5a9-b375-f641.ngrok-free.app/get_birthdate"
+    # )
 
     return "ok"
 
@@ -494,21 +717,25 @@ def get_consentement(callerId):
     #     text="Bonjour, je suis une IA de secrétariat médical. Acceptez-vous que je réponde a vos besoins ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
     # )
     play_source = TextSource(
-        text="Acceptez-vous que je réponde a vos besoins ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+        text="Pour des raisons de qualité et de suivi, cet appel peut être enregistré.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
     )
 
-    call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-        input_type=RecognizeInputType.SPEECH,
-        target_participant=PhoneNumberIdentifier("+" + callerId.strip()), 
-        end_silence_timeout=0.5,
-        play_prompt=play_source,
-        interrupt_call_media_operation=False,
-        interrupt_prompt=False,
-        operation_context="get_consentement",
-        speech_language="fr-FR",
-        initial_silence_timeout=5,
-        operation_callback_url="https://9ef5-2a01-cb00-844-1d00-d826-b210-ea0f-c3cf.ngrok-free.app/handleConsentement"
+    call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
+        play_source=play_source
     )
+
+    # call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+    #     input_type=RecognizeInputType.SPEECH,
+    #     target_participant=PhoneNumberIdentifier("+" + callerId.strip()), 
+    #     end_silence_timeout=0.5,
+    #     play_prompt=play_source,
+    #     interrupt_call_media_operation=False,
+    #     interrupt_prompt=False,
+    #     operation_context="get_consentement",
+    #     speech_language="fr-FR",
+    #     initial_silence_timeout=5,
+    #     operation_callback_url="https://c5d0-2a01-cb00-844-1d00-95ba-5a9-b375-f641.ngrok-free.app/handleConsentement"
+    # )
 
 def start_conversation(call_connection_id, callerId):
     global caller
@@ -517,7 +744,7 @@ def start_conversation(call_connection_id, callerId):
     get_consentement(caller)
 
     play_source = TextSource(
-        text="Bonjour, Comment puis-je vous aider ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+        text="Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Je peux prendre, modifier ou annuler vos rendez-vous, ainsi que vous fournir des informations. Comment puis-je vous aider aujourd’hui ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
     )
 
     call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
@@ -530,7 +757,7 @@ def start_conversation(call_connection_id, callerId):
         operation_context="start_conversation",
         speech_language="fr-FR",
         initial_silence_timeout=20,
-        operation_callback_url="https://9ef5-2a01-cb00-844-1d00-d826-b210-ea0f-c3cf.ngrok-free.app/handleResponse"
+        operation_callback_url="https://c5d0-2a01-cb00-844-1d00-95ba-5a9-b375-f641.ngrok-free.app/handleResponse"
     )
 
 def speak(text):
@@ -613,6 +840,7 @@ def find_patient(callerId, retries = 0):
     #     speak("Je n'ai pas pu vous identifier. Désolé.")
     # else:
     play_source = TextSource(text="J'ai pu vous identifier. Pour quel type d'examen souhaitez-vous prendre rendez-vous ?", voice_name="fr-FR-VivienneMultilingualNeural")
+    # play_source = TextSource(text="Oui", voice_name="fr-FR-VivienneMultilingualNeural")
 
     call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
         input_type=RecognizeInputType.SPEECH,
@@ -623,7 +851,7 @@ def find_patient(callerId, retries = 0):
         speech_language="fr-FR",
         initial_silence_timeout=10,
         operation_context="prise_rdv",
-        operation_callback_url="https://9ef5-2a01-cb00-844-1d00-d826-b210-ea0f-c3cf.ngrok-free.app/rdv_exam_type"
+        operation_callback_url="https://c5d0-2a01-cb00-844-1d00-95ba-5a9-b375-f641.ngrok-free.app/rdv_exam_type"
     )
     # speak("trouvé")
 # def get_creneaux_async():
