@@ -1252,6 +1252,7 @@ async def get_rdv_intent_async(user_response):
         return "Erreur lors de la communication avec le modèle."
 
 def get_positive_negative(user_response):
+    speak("Requête positive negative")
     url = "https://lyrae-talk-functions.azurewebsites.net/api/analyseur_reponse?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
     headers = {
         "Content-Type": "application/json"
@@ -1263,6 +1264,7 @@ def get_positive_negative(user_response):
     }
     try:
         response = requests.post(url, headers=headers, json=payload)
+        speak("Réponse reçue")
         response.raise_for_status()
         print("positive_negative", response.json())
         logging.info("positive_negative", response.json())
@@ -1270,6 +1272,7 @@ def get_positive_negative(user_response):
         return model_response
     except requests.exceptions.RequestException as e:
             print(f"Erreur lors de l'appel au modèle : {e}")
+            speak("Erreur lors de l'appel au modèle")
             logging.info(f"error, {e}")
             return "Erreur lors de la communication avec le modèle."
 
