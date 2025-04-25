@@ -8,6 +8,7 @@ import aiohttp
 from pymongo import MongoClient
 from bson.json_util import dumps
 from datetime import date, datetime
+import logging
 
 COGNITIVE_SERVICE_ENDPOINT = "https://lyraecognitivesservicesus.cognitiveservices.azure.com"
 SPEECH_KEY='CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U2XJ3w3AAAAACOGuWEK'
@@ -659,7 +660,7 @@ async def confirm_call_intent():
             hang_up("Pardonnez moi, il semblerait que je n'arrive pas à vous comprendre. Je vous transfère vers une secrétaire.")
 
         play_source = TextSource(
-            text=f"Pardonnez moi, je n'ai pas compris. Est-ce bien pour un ou une {rdv_intent} ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+            text=f"Pardonnez moi, je n'ai pas entendu. Est-ce bien pour un ou une {rdv_intent} ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
         )
 
         call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
@@ -1264,10 +1265,12 @@ def get_positive_negative(user_response):
         response = requests.post(url, headers=headers, json=payload)
         response.raise_for_status()
         print("positive_negative", response.json())
+        logging.info("positive_negative", response.json())
         model_response = response.json().get("response")
         return model_response
     except requests.exceptions.RequestException as e:
             print(f"Erreur lors de l'appel au modèle : {e}")
+            logging.info(f"error, {e}");
             return "Erreur lors de la communication avec le modèle."
 
 ########## CONVERSATION ##########
