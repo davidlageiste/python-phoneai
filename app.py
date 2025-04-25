@@ -1201,7 +1201,7 @@ async def get_creneaux_async(sous_type, exam_type):
                 print("creneaux", data)
                 return data
     except aiohttp.ClientError as e:
-        speak(f"Je ne peux pas trouver les créneaux parce que "{e})
+        speak(f"Je ne peux pas trouver les créneaux parce que {e}")
         print(f"Erreur lors de l'appel au modèle : {e}")
         return "Erreur lors de la communication avec le modèle."
 
