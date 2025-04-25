@@ -259,7 +259,7 @@ async def confirm_firstname():
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         model_response = get_positive_negative(user_response)
 
-        if model_response == "non":
+        if model_response == "negative":
             firstname_error += 1
             if firstname_error > 2:
                 hang_up("Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.")
@@ -278,7 +278,7 @@ async def confirm_firstname():
                 operation_callback_url="https://lyraeapi.azurewebsites.net/get_firstname"
             )
 
-        elif model_response == "oui":
+        elif model_response == "positive":
             speak("Merci, je vous cherche dans notre base patient, laissez moi une petite minute")
             await find_patient()
         else: 
@@ -393,7 +393,7 @@ async def confirm_lastname():
         speak("D'accord")
         model_response = get_positive_negative(user_response)
 
-        if model_response == "non":
+        if model_response == "negative":
             birthdate_error += 1
             if birthdate_error > 2:
                 play_source = TextSource(
@@ -419,7 +419,7 @@ async def confirm_lastname():
                 operation_callback_url="https://lyraeapi.azurewebsites.net/get_lastname"
             )
 
-        elif model_response == "oui":
+        elif model_response == "positive":
             play_source = TextSource(text="Et quel est votre prénom ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
@@ -518,7 +518,7 @@ async def confirm_birthdate():
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         model_response = get_positive_negative(user_response)
 
-        if model_response == "non":
+        if model_response == "negative":
             birthdate_error += 1
             if birthdate_error > 2:
                 play_source = TextSource(
@@ -544,7 +544,7 @@ async def confirm_birthdate():
                 operation_callback_url="https://lyraeapi.azurewebsites.net/get_birthdate"
             )
 
-        elif model_response == "oui":
+        elif model_response == "positive":
             play_source = TextSource(text="Pouvez-vous m'épeler votre nom de famille ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
@@ -607,7 +607,7 @@ async def confirm_call_intent():
         speak("D'accord, un instant")
         model_response = get_positive_negative(user_response)
 
-        if model_response == "non":
+        if model_response == "negative":
             play_source = TextSource(text="Il semblerait que je n'ai pas compris votre demande, souhaitez-vous prendre un rendez-vous, modifier un rendez-vous, consulter un rendez-vous planifié, annuler un rendez-vous ou obtenir une information ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
@@ -621,7 +621,7 @@ async def confirm_call_intent():
                 operation_context="start_conversation",
                 operation_callback_url="https://lyraeapi.azurewebsites.net/handleResponse"
             )
-        elif model_response == "oui":
+        elif model_response == "positive":
             if rdv_intent == "prise de rendez-vous" or rdv_intent == "prise de rendez-vous.":
                 handle_prise_rdv()
             elif rdv_intent == "modification de rendez-vous" or rdv_intent == "modification de rendez-vous.":
@@ -690,7 +690,7 @@ async def confirm_rdv():
         speak("D'accord")
         model_response = get_positive_negative(user_response=user_response)
 
-        if model_response == "non":
+        if model_response == "negative":
             exam_id = None
             sous_type_id = None
             if type_exam_error <= 2:
@@ -718,7 +718,7 @@ async def confirm_rdv():
                     play_source=play_source,
                     operation_context="hang_up"
                 )
-        elif model_response == "oui":
+        elif model_response == "positive":
             task_creneaux = asyncio.create_task(get_creneaux_async(sous_type=sous_type_id, exam_type=exam_id))
             speak("Je regarde les disponibilités, un instant...")
             creneaux = await task_creneaux
@@ -1039,9 +1039,9 @@ async def has_ordonnance():
         speak("D'accord")
         model_response = get_positive_negative(user_response)
 
-        if model_response == "non":
+        if model_response == "negative":
             hang_up("Désolé nous pouvons pas vous planifier un rendez vous sans ordonnance prescrite de votre médecin. Pour passer un examen d’imagerie, il faut avoir la prescription d’un médecin. Sans ordonnance, ce n’est pas possible. Pour avoir une ordonnance, je vous conseille de consulter un médecin. Je vous souhaite une excellente journée et à bientôt.")
-        elif model_response == "oui":
+        elif model_response == "positive":
             play_source = TextSource(text="Quel examen voulez vous passer ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
