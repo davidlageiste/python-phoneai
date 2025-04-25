@@ -1407,7 +1407,7 @@ def start_conversation(call_connection_id, callerId):
         end_silence_timeout=0.5,
         play_prompt=play_source,
         interrupt_call_media_operation=True,
-        interrupt_prompt=True,
+        interrupt_prompt=False,
         operation_context="start_conversation",
         speech_language="fr-FR",
         initial_silence_timeout=20,
