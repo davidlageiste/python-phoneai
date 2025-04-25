@@ -634,6 +634,10 @@ async def confirm_call_intent():
                 handle_consultation()
 
         else:
+            intent_error += 1
+            if intent_error > 2:
+                hang_up("Pardonnez moi, il semblerait que je n'arrive pas à vous comprendre. Je vous transfère vers une secrétaire.")
+
             play_source = TextSource(
                 text=f"Pardonnez moi, je n'ai pas compris. Est-ce bien pour un ou une {rdv_intent} ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
             )
@@ -650,6 +654,10 @@ async def confirm_call_intent():
                 operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_call_intent"
             )
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
+        intent_error += 1
+        if intent_error > 2:
+            hang_up("Pardonnez moi, il semblerait que je n'arrive pas à vous comprendre. Je vous transfère vers une secrétaire.")
+
         play_source = TextSource(
             text=f"Pardonnez moi, je n'ai pas compris. Est-ce bien pour un ou une {rdv_intent} ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
         )
