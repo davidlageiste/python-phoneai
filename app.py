@@ -1250,7 +1250,7 @@ def get_positive_negative(user_response):
 
     payload = {
         "action": "positive_negative_reponse",
-        "texte": user_response
+        "text": user_response
     }
     try:
         response = requests.post(url, headers=headers, json=payload)
