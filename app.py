@@ -119,7 +119,7 @@ def get_model_response(text):
 
 def hang_up(text):
     play_source = TextSource(
-        text="Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+        text=text, source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
     )
 
     call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
@@ -1651,7 +1651,7 @@ async def find_patient():
                     all_sous_type = get_sous_type_exam(planned_rdv[0].get("typeExamen"))
                     result = next((item for item in all_sous_type if item["code"] == planned_rdv[0].get("codeExamen")), None)
 
-                    speak(f"Vous avez rendez-vous le {formatted_date} à {int(hours)} heure {int(minutes)} pour un ou une {result.get("libelle")}.")
+                    speak(f"Vous avez rendez-vous le {formatted_date} à {int(hours)} heure {int(minutes)} pour un ou une {result.get('libelle')}.")
 
                     if rdv_intent == "modification de rendez-vous" or rdv_intent.lower() == "modification de rendez-vous.":
                         task_creneaux = asyncio.create_task(get_creneaux_async(sous_type=planned_rdv[0].get("codeExamen"), exam_type=planned_rdv[0].get("typeExamen")))
