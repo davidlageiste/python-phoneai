@@ -1270,7 +1270,7 @@ def get_positive_negative(user_response):
         return model_response
     except requests.exceptions.RequestException as e:
             print(f"Erreur lors de l'appel au modèle : {e}")
-            logging.info(f"error, {e}");
+            logging.info(f"error, {e}")
             return "Erreur lors de la communication avec le modèle."
 
 ########## CONVERSATION ##########
