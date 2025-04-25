@@ -792,7 +792,7 @@ async def rdv_exam_type():
             exam_id = exam_type["type_examen_id"]
             sous_type_id = exam_type["code_examen_id"]
             
-            play_source = TextSource(text=f"Vous voulez prendre un rendez-vous pour un ou une {exam_type["code_examen"]}, c'est bien ça ?", voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = TextSource(text=f"Vous voulez prendre un rendez-vous pour un ou une {exam_type['code_examen']}, c'est bien ça ?", voice_name="fr-FR-VivienneMultilingualNeural")
             # play_source = TextSource(text=text, voice_name="fr-FR-VivienneMultilingualNeural")
 
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
