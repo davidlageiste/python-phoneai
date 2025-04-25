@@ -1198,7 +1198,7 @@ async def get_creneaux_async(sous_type, exam_type):
         return "Erreur lors de la communication avec le modèle."
 
 async def get_exam_type_async(user_response):
-    url = "https://get-exam-type-code.azurewebsites.net/api/get_type_code_examen?code=ggp6REjpXNQVDagAZxMwRqsW_HoGpRwnFKXkHOI7ELB4AzFuBwtH6Q=="
+    url = "https://lyrae-talk-functions.azurewebsites.net/api/get_type_code_examen?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
     headers = {
         "Content-Type": "application/json"
     }
