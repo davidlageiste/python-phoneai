@@ -1273,6 +1273,7 @@ def get_positive_negative(user_response):
             logging.info(f"error, {e}")
             return "Erreur lors de la communication avec le modèle."
 
+
 ########## CONVERSATION ##########
 
 # async def build_rdv_phrase(planned_rdv):
