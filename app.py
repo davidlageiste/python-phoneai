@@ -952,14 +952,23 @@ async def handleResponse():
 
         else:
             play_source = TextSource(
-                text="Désolé, je n'ai pas compris.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+                text="Désolé, je n'ai pas compris, voulez-vous prendre, modifier ou annuler un rendez-vous ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+            )
+    
+            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+                input_type=RecognizeInputType.SPEECH,
+                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+                end_silence_timeout=0.5,
+                play_prompt=play_source,
+                interrupt_call_media_operation=False,
+                interrupt_prompt=False,
+                operation_context="start_conversation",
+                speech_language="fr-FR",
+                initial_silence_timeout=20,
+                operation_callback_url="https://lyraeapi.azurewebsites.net/handleResponse"
             )
 
-            call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
-                play_source=play_source,
-                operation_context="hang_up"
-            )
-            return jsonify({"success": "success"})
+            return jsonify({"succes": "success"})
 
         call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
             input_type=RecognizeInputType.SPEECH,
