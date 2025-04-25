@@ -182,7 +182,9 @@ async def get_firstname():
         user_response = request.json[0].get("data").get("speechResult").get("speech")
 
         clean_firstname = user_response.replace(".", "")
-        firstname = clean_firstname.strip()
+        task_get_firstname = asyncio.create_task(get_lastname_async(user_response=clean_firstname))
+        firstname = await task_get_firstname
+        firstname = task_get_firstname.strip()
 
         if user_response == "":
             play_source = TextSource(text="Je n'ai pas compris, pouvez-vous répéter votre prénom ?", voice_name="fr-FR-VivienneMultilingualNeural")
@@ -199,7 +201,7 @@ async def get_firstname():
                 operation_callback_url="https://lyraeapi.azurewebsites.net/get_firstname"
             )
 
-        else: 
+        else:
             speak("Très bien")
 
             if clean_firstname is None or clean_firstname == "Erreur lors de la communication avec le modèle.":
@@ -216,6 +218,7 @@ async def get_firstname():
                         operation_context="get_firstname",
                         operation_callback_url="https://lyraeapi.azurewebsites.net/get_firstname"
                     )
+
             else: 
                 play_source = TextSource(text=f"{clean_firstname}, c'est bien ça ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
@@ -322,10 +325,9 @@ async def get_lastname():
         # Remove every "." that comes from the AI response
 
         speak("Merci")
-        task_get_lastname = asyncio.create_task(get_lastname_async(user_response=clean_name))
         clean_name = task_get_lastname.replace(".", "")
-
-        # lastname = await task_get_lastname
+        task_get_lastname = asyncio.create_task(get_lastname_async(user_response=clean_name))
+        lastname = await task_get_lastname
 
         if clean_name is None:
             if lastname_error > 2:
@@ -1098,6 +1100,7 @@ async def get_firstname_async(user_response):
 
 async def get_lastname_async(user_response):
     url = "https://lyrae-talk-functions.azurewebsites.net/api/get_nom_famille?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
+
     headers = {
         "Content-Type": "application/json"
     }
