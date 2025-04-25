@@ -1264,7 +1264,8 @@ def get_positive_negative(user_response):
     }
     try:
         response = requests.post(url, headers=headers, json=payload)
-        speak("Réponse reçue")
+        speak(f"Réponse reçue {response.json().get("response")}")
+
         response.raise_for_status()
         print("positive_negative", response.json())
         logging.info("positive_negative", response.json())
