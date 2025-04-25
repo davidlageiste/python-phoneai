@@ -1167,7 +1167,7 @@ async def get_creneaux_async(sous_type, exam_type):
 
     speak(f"exam type est {exam_type}")
     speak(f"soustype est {sous_type}")
-    
+
     if exam_type == "ECHOGRAPHIE":
         exam_type = 'EC'
     elif exam_type == "RADIO":
@@ -1192,11 +1192,13 @@ async def get_creneaux_async(sous_type, exam_type):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(url, headers=headers, json=payload) as response:
+                speak("j'ai trouvé les créneaux")
                 response.raise_for_status()
                 data = await response.json()
                 print("creneaux", data)
                 return data
     except aiohttp.ClientError as e:
+        speak(f"Je ne peux pas trouver les créneaux parce que "{e})
         print(f"Erreur lors de l'appel au modèle : {e}")
         return "Erreur lors de la communication avec le modèle."
 
