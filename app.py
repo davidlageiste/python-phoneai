@@ -1165,6 +1165,9 @@ async def get_creneaux_async(sous_type, exam_type):
         "Content-Type": "application/json"
     }
 
+    speak(f"exam type est {exam_type}")
+    speak(f"soustype est {sous_type}")
+    
     if exam_type == "ECHOGRAPHIE":
         exam_type = 'EC'
     elif exam_type == "RADIO":
@@ -1243,8 +1246,8 @@ async def get_rdv_intent_async(user_response):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(url, headers=headers, json=payload) as response:
-                response.raise_for_status()  # Ensure the request was successful
-                data = await response.json()  # ✅ Await response.json() before accessing
+                response.raise_for_status()
+                data = await response.json()
                 print(data)
                 return data.get("response", "Pas de réponse trouvée.")
     except aiohttp.ClientError as e:
@@ -1275,11 +1278,6 @@ def get_positive_negative(user_response):
 
 
 ########## CONVERSATION ##########
-
-# async def build_rdv_phrase(planned_rdv):
-#     if len(planned_rdv) == 1:
-
-#     else:
 
 def build_creneaux_phrase(creneaux):
     data = creneaux
@@ -1521,6 +1519,7 @@ def createRDV(email, externalNumber = None):
 def getRDV(patientId):
     # url = "http://localhost:8080/api/getRDV"
 
+    speak("Finding")
     results = list(rdvCollection.find({
         "idPatient": patientId
     }))
