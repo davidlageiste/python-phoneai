@@ -41,8 +41,17 @@ global chosen_creneau
 global type_exam_error
 type_exam_error = 0
 
-global identification_error
-identification_error = 0
+global firstname_error
+firstname_error = 0
+
+global lastname_error
+lastname_error = 0
+
+global ordonnance_error
+ordonnance_error = 0
+
+global birthdate_error
+birthdate_error = 0
 
 rdv_intent = None
 intent = None
@@ -59,6 +68,22 @@ french_months = {
     5: "mai", 6: "juin", 7: "juillet", 8: "août",
     9: "septembre", 10: "octobre", 11: "novembre", 12: "décembre"
 }
+
+def full_date_vers_litteral(date_str):
+    # Conversion en objet datetime
+    date_obj = datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S")    
+    jour = date_obj.day
+    mois = french_months[date_obj.month]
+    heure = date_obj.hour
+    minute = date_obj.minute
+
+    heure_label = "heure" if heure == 1 else "heures"
+    minute_label = "minute" if minute == 1 else "minutes"
+
+    if minute == 0:
+        return f"Le {jour} {mois} à {heure} {heure_label}"
+    else:
+        return f"Le {jour} {mois} à {heure} {heure_label} et {minute} {minute_label}"
 
 def date_vers_litteral(date_str):
     # Conversion en objet datetime
@@ -92,6 +117,16 @@ def get_model_response(text):
         print(f"Erreur lors de l'appel au modèle : {e}")
         return "Erreur lors de la communication avec le modèle."
 
+def hang_up(text):
+    play_source = TextSource(
+        text="Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+    )
+
+    call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
+        play_source=play_source,
+        operation_context="hang_up"
+    )
+
 ########## ENTRY POINT ##########
 
 @app.route("/incoming_call", methods=["POST"])
@@ -106,7 +141,7 @@ def incoming_call():
     caller = data.get("data").get("from").get("phoneNumber").get("value")
     encodedContext = data.get("data").get("incomingCallContext")
 
-    call_automation_client.answer_call(incoming_call_context=encodedContext, callback_url=f"https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/callback?caller={caller}", cognitive_services_endpoint=COGNITIVE_SERVICE_ENDPOINT)
+    call_automation_client.answer_call(incoming_call_context=encodedContext, callback_url=f"https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/callback?caller={caller}", cognitive_services_endpoint=COGNITIVE_SERVICE_ENDPOINT)
     return jsonify({"status": "success"})
 
 @app.route("/callback", methods=["POST"])
@@ -144,7 +179,9 @@ async def get_firstname():
 
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "get_firstname":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
-        print("user response: ", user_response)
+
+        clean_firstname = user_response.replace(".", "")
+        firstname = clean_firstname.strip()
 
         if user_response == "":
             play_source = TextSource(text="Je n'ai pas compris, pouvez-vous répéter votre prénom ?", voice_name="fr-FR-VivienneMultilingualNeural")
@@ -158,17 +195,14 @@ async def get_firstname():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_firstname",
-                operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/get_firstname"
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_firstname"
             )
 
         else: 
-            task_get_firstname = asyncio.create_task(get_firstname_async(user_response=user_response))
             speak("Très bien")
-            firstname = await task_get_firstname
 
-            if firstname is None or firstname == "Erreur lors de la communication avec le modèle.":
-                if lastname is None:
-                    play_source = TextSource(text="Je n'ai pas compris, pouvez-vous répeter votre prénom ?", voice_name="fr-FR-VivienneMultilingualNeural")
+            if clean_firstname is None or clean_firstname == "Erreur lors de la communication avec le modèle.":
+                    play_source = TextSource(text="Je n'ai pas compris, pouvez-vous répéter votre prénom ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
                     call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
                         input_type=RecognizeInputType.SPEECH,
@@ -179,30 +213,43 @@ async def get_firstname():
                         speech_language="fr-FR",
                         initial_silence_timeout=5,
                         operation_context="get_firstname",
-                        operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/get_firstname"
+                        operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_firstname"
                     )
             else: 
-                play_source = TextSource(text=f"{firstname}, c'est bien ça ?", voice_name="fr-FR-VivienneMultilingualNeural")
+                play_source = TextSource(text=f"{clean_firstname}, c'est bien ça ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
                 call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
                     input_type=RecognizeInputType.SPEECH,
                     target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                    end_silence_timeout=1,
+                    end_silence_timeout=0.5,
                     play_prompt=play_source,
                     interrupt_prompt=False,
                     speech_language="fr-FR",
                     initial_silence_timeout=10,
                     operation_context="confirm_firstname",
-                    operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/confirm_firstname"
+                    operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/confirm_firstname"
                 )
 
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed" and request.json[0].get("data").get("operationContext") == "get_firstname":
-        speak("Désolé je n'ai pas compris votre prénom")
+        play_source = TextSource(text="Je n'ai pas compris, pouvez-vous répéter votre prénom ?", voice_name="fr-FR-VivienneMultilingualNeural")
+
+        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+            input_type=RecognizeInputType.SPEECH,
+            target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+            end_silence_timeout=0.5,
+            play_prompt=play_source,
+            interrupt_prompt=False,
+            speech_language="fr-FR",
+            initial_silence_timeout=5,
+            operation_context="get_firstname",
+            operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_firstname"
+        )
+
     return jsonify({"success": "success"})
 
 @app.route("/confirm_firstname", methods=["POST"])
 async def confirm_firstname():
-    global identification_error
+    global firstname_error
     global firstname
     global lastname
     global birthdate
@@ -212,16 +259,9 @@ async def confirm_firstname():
         model_response = get_positive_negative(user_response)
 
         if model_response == "non":
-            identification_error += 1
-            if identification_error > 2:
-                play_source = TextSource(
-                    text="Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-                )
-
-                call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
-                    play_source=play_source,
-                    operation_context="hang_up"
-                )
+            firstname_error += 1
+            if firstname_error > 2:
+                hang_up("Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.")
 
             play_source = TextSource(text="Désolé, pouvez-vous me répeter votre prénom ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
@@ -234,7 +274,7 @@ async def confirm_firstname():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_firstname",
-                operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/get_firstname"
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_firstname"
             )
 
         elif model_response == "oui":
@@ -246,30 +286,58 @@ async def confirm_firstname():
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
                 input_type=RecognizeInputType.SPEECH,
                 target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                end_silence_timeout=1,
+                end_silence_timeout=0.5,
                 play_prompt=play_source,
                 interrupt_prompt=False,
                 speech_language="fr-FR",
                 initial_silence_timeout=10,
                 operation_context="confirm_firstname",
-                operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/confirm_firstname"
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/confirm_firstname"
             )
+    if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
+        play_source = TextSource(text=f"Je n'ai pas compris, {firstname}, c'est bien ça ?", voice_name="fr-FR-VivienneMultilingualNeural")
+
+        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+            input_type=RecognizeInputType.SPEECH,
+            target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+            end_silence_timeout=0.5,
+            play_prompt=play_source,
+            interrupt_prompt=False,
+            speech_language="fr-FR",
+            initial_silence_timeout=10,
+            operation_context="confirm_firstname",
+            operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/confirm_firstname"
+        )
+
     return jsonify({"success": "success"})
 
 @app.route("/get_lastname", methods=["POST"])
 async def get_lastname():
     global lastname
+    global lastname_error
+
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "get_lastname":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         # Remove every "." that comes from the AI response
-        clean_name = user_response.replace(".", "")
 
         speak("Merci")
         task_get_lastname = asyncio.create_task(get_lastname_async(user_response=clean_name))
+        clean_name = task_get_lastname.replace(".", "")
 
-        lastname = await task_get_lastname
+        # lastname = await task_get_lastname
 
-        if lastname is None:
+        if clean_name is None:
+            if lastname_error > 2:
+                play_source = TextSource(
+                    text="Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+                )
+
+                call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
+                    play_source=play_source,
+                    operation_context="hang_up"
+                )
+
+            lastname_error += 1
             play_source = TextSource(text="Je n'ai pas compris, pouvez-vous épeler votre nom de famille à nouveau ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
@@ -281,22 +349,23 @@ async def get_lastname():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_lastname",
-                operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/get_lastname"
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_lastname"
             )
 
         else:
+            lastname = clean_name
             play_source = TextSource(text=f"{lastname}, c'est bien ça ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
                 input_type=RecognizeInputType.SPEECH,
                 target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                end_silence_timeout=1,
+                end_silence_timeout=0.5,
                 play_prompt=play_source,
                 interrupt_prompt=False,
                 speech_language="fr-FR",
                 initial_silence_timeout=10,
                 operation_context="confirm_lastname",
-                operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/confirm_lastname"
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/confirm_lastname"
             )
 
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed" and request.json[0].get("data").get("operationContext") == "get_lastname":
@@ -311,22 +380,21 @@ async def get_lastname():
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="get_lastname",
-            operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/get_lastname"
+            operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_lastname"
         )    
         
     return jsonify({"success": "success"})
 
 @app.route("/confirm_lastname", methods=["POST"])
 async def confirm_lastname():
-    global identification_error
-    if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "confirm_lastname":
+    if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         speak("D'accord")
         model_response = get_positive_negative(user_response)
 
         if model_response == "non":
-            identification_error += 1
-            if identification_error > 2:
+            birthdate_error += 1
+            if birthdate_error > 2:
                 play_source = TextSource(
                     text="Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
                 )
@@ -347,7 +415,7 @@ async def confirm_lastname():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_lastname",
-                operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/get_lastname"
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_lastname"
             )
 
         elif model_response == "oui":
@@ -362,7 +430,7 @@ async def confirm_lastname():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_firstname",
-                operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/get_firstname"
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_firstname"
             )
         else:
             play_source = TextSource(text=f"Je n'ai pas compris, {lastname}, c'est bien ça ?", voice_name="fr-FR-VivienneMultilingualNeural")
@@ -376,7 +444,7 @@ async def confirm_lastname():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="confirm_lastname",
-                operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/confirm_lastname"
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/confirm_lastname"
             )
     return jsonify({"success": "success"})
 
@@ -403,14 +471,14 @@ async def get_birthdate():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="confirm_birthdate",
-                operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/get_birthdate"
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_birthdate"
             )
         else:
             date_litterale = date_vers_litteral(birthdate)
             print(date_litterale)
 
             # Formatage en version littérale
-            play_source = TextSource(text=f"Vous confirmez que vous êtes né le {date_litterale} ?", voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = TextSource(text=f"Vous confirmez que vous êtes né {date_litterale} ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
         call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
             input_type=RecognizeInputType.SPEECH,
@@ -421,16 +489,28 @@ async def get_birthdate():
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="confirm_birthdate",
-            operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/confirm_birthdate"
+            operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/confirm_birthdate"
         )
 
-    elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed" and request.json[0].get("data").get("operationContext") == "get_birthdate":
-        speak("Désolé je n'ai pas compris votre date de naissance")
+    elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
+        play_source = TextSource(text="Je n'ai pas compris, quelle est votre date de naissance ?", voice_name="fr-FR-VivienneMultilingualNeural")
+
+        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+            input_type=RecognizeInputType.SPEECH,
+            target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+            end_silence_timeout=0.5,
+            play_prompt=play_source,
+            interrupt_prompt=False,
+            speech_language="fr-FR",
+            initial_silence_timeout=5,
+            operation_context="confirm_birthdate",
+            operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_birthdate"
+        )
     return jsonify({"success": "success"})
 
 @app.route("/confirm_birthdate", methods=["POST"])
 async def confirm_birthdate():
-    global identification_error
+    global birthdate_error
     
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "confirm_birthdate":
         speak("Très bien.")
@@ -438,8 +518,16 @@ async def confirm_birthdate():
         model_response = get_positive_negative(user_response)
 
         if model_response == "non":
-            if identification_error > 2:
-                identification_error += 1
+            birthdate_error += 1
+            if birthdate_error > 2:
+                play_source = TextSource(
+                    text="Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+                )
+
+                call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
+                    play_source=play_source,
+                    operation_context="hang_up"
+                )
 
             play_source = TextSource(text="Désolé, pouvez-vous me répeter votre date de naissance ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
@@ -452,7 +540,7 @@ async def confirm_birthdate():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_birthdate",
-                operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/get_birthdate"
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_birthdate"
             )
 
         elif model_response == "oui":
@@ -467,25 +555,47 @@ async def confirm_birthdate():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_lastname",
-                operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/get_lastname"
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_lastname"
             )
         else:
-            play_source = TextSource(
-                text=f"Pardonnez moi, je n'ai pas compris. Êtes-vous bien né  ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-            )
+            date_litterale = date_vers_litteral(birthdate)
+
+            # Formatage en version littérale
+            play_source = TextSource(text=f"Vous confirmez que vous êtes né {date_litterale} ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
                 input_type=RecognizeInputType.SPEECH,
                 target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
-                end_silence_timeout=1,
+                end_silence_timeout=0.5,
                 play_prompt=play_source,
                 interrupt_prompt=False,
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
-                operation_context="confirm_call_intent",
-                operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/confirm_call_intent"
+                operation_context="confirm_birthdate",
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/confirm_birthdate"
             )
+    elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
+        birthdate_error += 1
+        if birthdate_error > 2:
+            hang_up("Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.")
+
+        date_litterale = date_vers_litteral(birthdate)
+
+        play_source = TextSource(text=f"Je n'ai pas entendu, Vous confirmez que vous êtes né {date_litterale} ?", voice_name="fr-FR-VivienneMultilingualNeural")
+
+        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+            input_type=RecognizeInputType.SPEECH,
+            target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
+            end_silence_timeout=0.5,
+            play_prompt=play_source,
+            interrupt_prompt=False,
+            speech_language="fr-FR",
+            initial_silence_timeout=5,
+            operation_context="confirm_birthdate",
+            operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/confirm_birthdate"
+        )
     return jsonify({"success": "success"})
+
 ########## CONFIRMATION ##########
 
 @app.route("/confirm_call_intent", methods=["POST"])
@@ -502,13 +612,13 @@ async def confirm_call_intent():
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
                 input_type=RecognizeInputType.SPEECH,
                 target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
-                end_silence_timeout=1,
+                end_silence_timeout=0.5,
                 play_prompt=play_source,
                 interrupt_prompt=False,
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="start_conversation",
-                operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/handleResponse"
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/handleResponse"
             )
         elif model_response == "oui":
             if rdv_intent == "prise de rendez-vous" or rdv_intent == "prise de rendez-vous.":
@@ -531,15 +641,30 @@ async def confirm_call_intent():
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
                 input_type=RecognizeInputType.SPEECH,
                 target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
-                end_silence_timeout=1,
+                end_silence_timeout=0.5,
                 play_prompt=play_source,
                 interrupt_prompt=False,
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="confirm_call_intent",
-                operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/confirm_call_intent"
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/confirm_call_intent"
             )
+    if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
+        play_source = TextSource(
+            text=f"Pardonnez moi, je n'ai pas compris. Est-ce bien pour un ou une {rdv_intent} ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+        )
 
+        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+            input_type=RecognizeInputType.SPEECH,
+            target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
+            end_silence_timeout=0.5,
+            play_prompt=play_source,
+            interrupt_prompt=False,
+            speech_language="fr-FR",
+            initial_silence_timeout=5,
+            operation_context="confirm_call_intent",
+            operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/confirm_call_intent"
+        )
     return jsonify({"success": "success"})
 
 ########## PRISE DE RENDEZ-VOUS ##########
@@ -573,7 +698,7 @@ async def confirm_rdv():
                     speech_language="fr-FR",
                     initial_silence_timeout=5,
                     operation_context="rdv_exam_type",
-                    operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/rdv_exam_type"
+                    operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/rdv_exam_type"
                 )
             else:
                 play_source = TextSource(
@@ -586,7 +711,7 @@ async def confirm_rdv():
                 )
         elif model_response == "oui":
             task_creneaux = asyncio.create_task(get_creneaux_async(sous_type=sous_type_id, exam_type=exam_id))
-            speak("Très bien, laissez moi un instant le temps que je récupère les créneaux disponibles pour ce type d'examen")
+            speak("Je regarde les disponibilités, un instant...")
             creneaux = await task_creneaux
             all_creneaux = creneaux
 
@@ -603,18 +728,39 @@ async def confirm_rdv():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_creneaux_choice",
-                operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/get_creneaux_choice"
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_creneaux_choice"
             )
         else:
             play_source = TextSource(
-                text="Pardonnez moi, pouvez-vous me répéter l'intitulé de l'examen que vous souhaitez passer ? ", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+                text="Je ne vous ai pas compris, pour quel type d'examen voulez-vous prendre rendez-vous ? ", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
             )
 
-            call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
-                play_source=play_source,
-            )
-            type_exam_error += 1
+            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+                input_type=RecognizeInputType.SPEECH,
+                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+                end_silence_timeout=0.5,
+                play_prompt=play_source,
+                interrupt_prompt=False,
+                speech_language="fr-FR",
+                initial_silence_timeout=5,
+                operation_context="rdv_exam_type",
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/rdv_exam_type"
+            ) 
+            
+    elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
+        play_source = TextSource(text="Je ne vous ai pas entendu. Pouvez-vous répeter l'intitulé de l'examen ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
+        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+            input_type=RecognizeInputType.SPEECH,
+            target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+            end_silence_timeout=0.5,
+            play_prompt=play_source,
+            interrupt_prompt=False,
+            speech_language="fr-FR",
+            initial_silence_timeout=5,
+            operation_context="rdv_exam_type",
+            operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/rdv_exam_type"
+        )  
     return jsonify({"status": "success"})
 
 @app.route("/rdv_exam_type", methods=["POST"])
@@ -640,7 +786,7 @@ async def rdv_exam_type():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="rdv_exam_type",
-                operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/rdv_exam_type"
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/rdv_exam_type"
             )
         else :
             exam_id = exam_type["type_examen_id"]
@@ -658,7 +804,7 @@ async def rdv_exam_type():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="confirm_rdv",
-                operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/confirm_rdv"
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/confirm_rdv"
             )
 
     return jsonify({"status": "success"})
@@ -684,45 +830,10 @@ async def get_creneaux_choice():
 
         creneau_choice = await task_creneau_choice
 
-        dt = datetime.fromisoformat(creneau_choice)
-
-        matched_creneau = None
-        for key, value in all_creneaux.items():
-            full_datetime_str = value['date'][:10] + 'T' + value['heureDebut'] + ':00'
-            current_dt = datetime.fromisoformat(full_datetime_str)
-            if current_dt == dt:
-                matched_creneau = value
-                break
-
-        if matched_creneau is not None:
-            # Création de la phrase
-
-            phrase = f"{dt.day} {french_months[dt.month]} à {dt.hour} heures {dt.minute:02d}"
-
-            creneauDate = phrase
-            chosen_creneau = matched_creneau
-
-            if rdv_intent == "prise de rendez-vous" or rdv_intent == "prise de rendez-vous.":
-                play_source = TextSource(text=f"Vous avez choisi le {phrase}. Puis-je avoir votre date de naissance ?", voice_name="fr-FR-VivienneMultilingualNeural")
-                call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                    input_type=RecognizeInputType.SPEECH,
-                    target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
-                    end_silence_timeout=1,
-                    play_prompt=play_source,
-                    interrupt_prompt=False,
-                    speech_language="fr-FR",
-                    initial_silence_timeout=5,
-                    operation_context="get_birthdate",
-                    operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/get_birthdate"
-                )
-            elif rdv_intent == "modification de rendez-vous" or rdv_intent == "modification de rendez-vous":
-                speak(f"Très bien, votre rendez-vous sera déplacé au {phrase}", voice_name="fr-FR-VivienneMultilingualNeural")
-                modify_creneau()
-
-        else:
+        if creneau_choice is None:
             text = build_creneaux_phrase(creneaux=all_creneaux)
 
-            play_source = TextSource(text="Je n'ai pas compris le créneau que vous avez choisi. ", voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = TextSource(text=f"Je n'ai pas compris le créneau que vous avez choisi. {text}", voice_name="fr-FR-VivienneMultilingualNeural")
 
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
                 input_type=RecognizeInputType.SPEECH,
@@ -733,8 +844,75 @@ async def get_creneaux_choice():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_creneaux_choice",
-                operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/get_creneaux_choice"
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_creneaux_choice"
             )
+        else:
+            dt = datetime.fromisoformat(creneau_choice)
+
+            matched_creneau = None
+            for key, value in all_creneaux.items():
+                full_datetime_str = value['date'][:10] + 'T' + value['heureDebut'] + ':00'
+                current_dt = datetime.fromisoformat(full_datetime_str)
+                if current_dt == dt:
+                    matched_creneau = value
+                    break
+
+            if matched_creneau is not None:
+                # Création de la phrase
+
+                phrase = f"{dt.day} {french_months[dt.month]} à {dt.hour} heures {dt.minute:02d}"
+
+                creneauDate = phrase
+                chosen_creneau = matched_creneau
+
+                if rdv_intent == "prise de rendez-vous" or rdv_intent == "prise de rendez-vous.":
+                    play_source = TextSource(text=f"Vous avez choisi le {phrase}. Puis-je avoir votre date de naissance ?", voice_name="fr-FR-VivienneMultilingualNeural")
+                    call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+                        input_type=RecognizeInputType.SPEECH,
+                        target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
+                        end_silence_timeout=0.5,
+                        play_prompt=play_source,
+                        interrupt_prompt=False,
+                        speech_language="fr-FR",
+                        initial_silence_timeout=5,
+                        operation_context="get_birthdate",
+                        operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_birthdate"
+                    )
+                elif rdv_intent == "modification de rendez-vous" or rdv_intent == "modification de rendez-vous":
+                    speak(f"Très bien, votre rendez-vous sera déplacé au {phrase}", voice_name="fr-FR-VivienneMultilingualNeural")
+                    modify_creneau()
+
+            else:
+                text = build_creneaux_phrase(creneaux=all_creneaux)
+
+                play_source = TextSource(text=f"Je n'ai pas compris le créneau que vous avez choisi. {text}", voice_name="fr-FR-VivienneMultilingualNeural")
+
+                call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+                    input_type=RecognizeInputType.SPEECH,
+                    target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+                    end_silence_timeout=0.5,
+                    play_prompt=play_source,
+                    interrupt_prompt=False,
+                    speech_language="fr-FR",
+                    initial_silence_timeout=5,
+                    operation_context="get_creneaux_choice",
+                    operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_creneaux_choice"
+                )
+    elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
+        play_source = TextSource(text=f"Je n'ai pas compris le créneau que vous avez choisi. {text}", voice_name="fr-FR-VivienneMultilingualNeural")
+
+        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+            input_type=RecognizeInputType.SPEECH,
+            target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+            end_silence_timeout=0.5,
+            play_prompt=play_source,
+            interrupt_prompt=False,
+            speech_language="fr-FR",
+            initial_silence_timeout=5,
+            operation_context="get_creneaux_choice",
+            operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_creneaux_choice"
+        )
+    
     return jsonify({"status": "success"})
 
 @app.route("/handleResponse", methods=["POST"])
@@ -786,17 +964,32 @@ async def handleResponse():
         call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
             input_type=RecognizeInputType.SPEECH,
             target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
-            end_silence_timeout=1,
+            end_silence_timeout=0.5,
             play_prompt=play_source,
             interrupt_prompt=False,
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="confirm_call_intent",
-            operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/confirm_call_intent"
+            operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/confirm_call_intent"
         )
 
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
-        print("ERROR RECOGNIZE")
+        play_source = TextSource(
+            text="Désolé, je n'ai pas compris, voulez-vous prendre, modifier ou annuler un rendez-vous ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+        )
+    
+        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+            input_type=RecognizeInputType.SPEECH,
+            target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+            end_silence_timeout=0.5,
+            play_prompt=play_source,
+            interrupt_call_media_operation=False,
+            interrupt_prompt=False,
+            operation_context="start_conversation",
+            speech_language="fr-FR",
+            initial_silence_timeout=20,
+            operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/handleResponse"
+        )
 
     return jsonify({"success": "success"})
 
@@ -822,46 +1015,41 @@ async def handleResponse():
 
 @app.route("/has_ordonnance", methods=["POST"])
 async def has_ordonnance():
+    global ordonnance_error
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "has_ordonnance":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         speak("D'accord")
         model_response = get_positive_negative(user_response)
 
         if model_response == "non":
-            play_source = TextSource(
-                text="Désolé nous pouvons pas vous planifier un rendez vous sans ordonnance prescrite de votre médecin. Pour passer un examen d’imagerie, il faut avoir la prescription d’un médecin. Sans ordonnance, ce n’est pas possible. Pour avoir une ordonnance, je vous conseille de consulter un médecin. Je vous souhaite une excellente journée et à bientôt.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-            )
-
-            call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
-                play_source=play_source,
-                operation_context="hang_up"
-            )
+            hang_up("Désolé nous pouvons pas vous planifier un rendez vous sans ordonnance prescrite de votre médecin. Pour passer un examen d’imagerie, il faut avoir la prescription d’un médecin. Sans ordonnance, ce n’est pas possible. Pour avoir une ordonnance, je vous conseille de consulter un médecin. Je vous souhaite une excellente journée et à bientôt.")
         elif model_response == "oui":
             play_source = TextSource(text="Quel examen voulez vous passer ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
                 input_type=RecognizeInputType.SPEECH,
                 target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
-                end_silence_timeout=1,
+                end_silence_timeout=0.5,
                 play_prompt=play_source,
                 interrupt_prompt=False,
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="rdv_exam_type",
-                operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/rdv_exam_type"
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/rdv_exam_type"
             )
         else:
             play_source = TextSource(text="Désolé, je n'ai pas compris, Avez-vous une ordonnance ?", voice_name="fr-FR-VivienneMultilingualNeural")
+
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
                 input_type=RecognizeInputType.SPEECH,
                 target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
-                end_silence_timeout=1,
+                end_silence_timeout=0.5,
                 play_prompt=play_source,
                 interrupt_prompt=False,
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="has_ordonnance",
-                operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/has_ordonnance"
+                operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/has_ordonnance"
             )
 
     return jsonify({"status": "success"})
@@ -869,15 +1057,14 @@ async def has_ordonnance():
 ########## ASYNC ##########
 
 async def get_firstname_async(user_response):
-    url = "https://lyraetalk-patientidentification-creneauextractor.azurewebsites.net/api/ia_modules_script_hugging_face?code=h7RbiwESjKdGApwZ4ro3JoGGZLJczjvkKxpj2JT_uas6AzFua0y1zg=="
+    url = "https://lyrae-talk-functions.azurewebsites.net/api/get_prenom?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
 
     headers = {
         "Content-Type": "application/json"
     }
 
     payload = {
-        "action": "extraire_prenom",
-        "texte": user_response
+        "text": "Mon prénom est " + user_response
     }
 
     try:
@@ -892,12 +1079,12 @@ async def get_firstname_async(user_response):
         return "Erreur lors de la communication avec le modèle."
 
 async def get_lastname_async(user_response):
-    url = "https://get-nom.azurewebsites.net/api/get_nom_famille?code=-MluM5OTMM-I-Iq00V-lQbyUBado5N4uDfAMVjuAKyczAzFuzWLu8Q=="
+    url = "https://lyrae-talk-functions.azurewebsites.net/api/get_nom_famille?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
     headers = {
         "Content-Type": "application/json"
     }
     payload = {
-        "text": user_response
+        "text": "Mon nom de famille est " + user_response
     }
 
     try:
@@ -912,7 +1099,7 @@ async def get_lastname_async(user_response):
         return "Erreur lors de la communication avec le modèle."
 
 async def get_birthdate_async(user_response):
-    url = "https://get-date-naissance.azurewebsites.net/api/get_date_naissance?code=6y8-9aG2MNbWB5WVsjW_QaOQsXLakrA1RFIuaKx4vHDsAzFu-ekgHg=="
+    url = "https://lyrae-talk-functions.azurewebsites.net/api/get_date_naissance?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
 
     headers = {
         "Content-Type": "application/json"
@@ -934,13 +1121,12 @@ async def get_birthdate_async(user_response):
         return "Erreur lors de la communication avec le modèle."
 
 async def extract_creneau_async(user_response):
-    url = "https://lyraetalk-patientidentification-creneauextractor.azurewebsites.net/api/ia_modules_script_hugging_face?code=h7RbiwESjKdGApwZ4ro3JoGGZLJczjvkKxpj2JT_uas6AzFua0y1zg=="
+    url = "https://lyrae-talk-functions.azurewebsites.net/api/date_time_extractor?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
     headers = {
         "Content-Type": "application/json"
     }
     payload = {
-        "texte": user_response,
-        "action": "extraire_creneau"
+        "text": user_response
     }
 
     try:
@@ -1012,7 +1198,7 @@ async def get_exam_type_async(user_response):
         return "Erreur lors de la communication avec le modèle."
 
 async def get_intent_async(user_response):
-    url = "https://lyraetalk-get-intention.azurewebsites.net/api/detect_intention?code=l3FK0en4_Wc_3ncpcmy5NXGTGB1OKoz6SBnG3egHEgbBAzFuMd7isA=="
+    url = "https://lyrae-talk-functions.azurewebsites.net/api/detect_intention?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
     headers = {
         "Content-Type": "application/json"
     }
@@ -1048,7 +1234,7 @@ async def get_rdv_intent_async(user_response):
         return "Erreur lors de la communication avec le modèle."
 
 def get_positive_negative(user_response):
-    url = "https://analyse-reponse-consentement.azurewebsites.net/api/response_analyzer?code=XhZeOIcgHJC5htmtRy5Ckh9FFl7m2QyFpIMqI8NS0-jTAzFuqP2mJw=="
+    url = "https://lyrae-talk-functions.azurewebsites.net/api/analyseur_reponse?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
     headers = {
         "Content-Type": "application/json"
     }
@@ -1071,7 +1257,7 @@ def get_positive_negative(user_response):
 
 # async def build_rdv_phrase(planned_rdv):
 #     if len(planned_rdv) == 1:
-        
+
 #     else:
 
 def build_creneaux_phrase(creneaux):
@@ -1130,7 +1316,7 @@ def continue_conversation(model_response):
         operation_context="start_conversation",
         speech_language="fr-FR",
         initial_silence_timeout=20,
-        operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/handleResponse"
+        operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/handleResponse"
     )
 
 def handle_prise_rdv():
@@ -1140,13 +1326,13 @@ def handle_prise_rdv():
     call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
         input_type=RecognizeInputType.SPEECH,
         target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
-        end_silence_timeout=1,
+        end_silence_timeout=0.5,
         play_prompt=play_source,
         interrupt_prompt=False,
         speech_language="fr-FR",
         initial_silence_timeout=5,
         operation_context="has_ordonnance",
-        operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/has_ordonnance"
+        operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/has_ordonnance"
     )
 
 def handle_modification():
@@ -1155,13 +1341,13 @@ def handle_modification():
     call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
         input_type=RecognizeInputType.SPEECH,
         target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
-        end_silence_timeout=1,
+        end_silence_timeout=0.5,
         play_prompt=play_source,
         interrupt_prompt=False,
         speech_language="fr-FR",
         initial_silence_timeout=5,
         operation_context="get_birthdate",
-        operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/get_birthdate"
+        operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_birthdate"
     )
     return "ok"
 
@@ -1171,13 +1357,13 @@ def handle_consultation():
     call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
         input_type=RecognizeInputType.SPEECH,
         target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
-        end_silence_timeout=1,
+        end_silence_timeout=0.5,
         play_prompt=play_source,
         interrupt_prompt=False,
         speech_language="fr-FR",
         initial_silence_timeout=5,
         operation_context="get_birthdate",
-        operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/get_birthdate"
+        operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_birthdate"
     )
 
 # def handle_annulation(user_response):
@@ -1190,34 +1376,35 @@ def start_conversation(call_connection_id, callerId):
     global caller
     caller = callerId
     
-    play_source = TextSource(
-        text="Pour des raisons de qualité et de suivi, cet appel peut être enregistré.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-    )
+    # play_source = TextSource(
+    #     text="Pour des raisons de qualité et de suivi, cet appel peut être enregistré.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+    # )
 
     # call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
     #     play_source=play_source
     # )
 
-    play_source = TextSource(
-        text="Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Je peux prendre, modifier ou annuler vos rendez-vous, ainsi que vous fournir des informations. Comment puis-je vous aider aujourd’hui ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-    )
-
     # play_source = TextSource(
-    #     text="Oui ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+    #     text="Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Je peux prendre, modifier ou annuler vos rendez-vous, ainsi que vous fournir des informations. Comment puis-je vous aider aujourd’hui ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
     # )
+
+    play_source = TextSource(
+        text="Oui ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+    )
 
     call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
         input_type=RecognizeInputType.SPEECH,
         target_participant=PhoneNumberIdentifier("+" + callerId.strip()),
         end_silence_timeout=0.5,
         play_prompt=play_source,
-        interrupt_call_media_operation=False,
-        interrupt_prompt=False,
+        interrupt_call_media_operation=True,
+        interrupt_prompt=True,
         operation_context="start_conversation",
         speech_language="fr-FR",
         initial_silence_timeout=20,
-        operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/handleResponse"
+        operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/handleResponse"
     )
+
     # call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
     #     input_type=RecognizeInputType.SPEECH,
     #     target_participant=PhoneNumberIdentifier("+" + callerId.strip()),
@@ -1228,7 +1415,7 @@ def start_conversation(call_connection_id, callerId):
     #     operation_context="get_birthdate",
     #     speech_language="fr-FR",
     #     initial_silence_timeout=20,
-    #     operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/get_birthdate"
+    #     operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_birthdate"
     # )
 
 def speak(text):
@@ -1382,8 +1569,6 @@ async def find_patient():
     # global caller
     # caller = callerId
 
-    creneauDate = "Le 23 avril à 9 heures 30"
-
     results = patientCollection.find({
         "dateNaissance": {
             "$regex": f"^{birthdate}"
@@ -1430,7 +1615,9 @@ async def find_patient():
                         "typeExamen": exam_id,
                         "codeExamen": sous_type_id
                     })
-                    speak(f"Parfait, vous avez donc rendez-vous {creneauDate} au nom de {lastname}.")
+                    phrase_creneau = full_date_vers_litteral(chosen_creneau.get("date").split("T")[0] + "T" + chosen_creneau.get("heureDebut") + ":00")
+
+                    speak(f"Parfait, vous avez donc rendez-vous {phrase_creneau} au nom de {lastname}.")
                     continue_conversation("Puis-je faire autre chose pour vous ?")
                 else:
                     speak("Désolé, je n'ai pas pu valider votre rendez-vous. Je vais vous rediriger vers une secrétaire.")
@@ -1452,7 +1639,7 @@ async def find_patient():
                         operation_context="start_conversation",
                         speech_language="fr-FR",
                         initial_silence_timeout=20,
-                        operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/handleResponse"
+                        operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/handleResponse"
                     )
                 elif len(planned_rdv) == 1:
                     speak("J'ai en effet trouvé un rendez-vous à votre nom.")
@@ -1483,7 +1670,7 @@ async def find_patient():
                             speech_language="fr-FR",
                             initial_silence_timeout=5,
                             operation_context="get_creneaux_choice",
-                            operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/get_creneaux_choice"
+                            operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/get_creneaux_choice"
                         )
                     else:
                         play_source = TextSource(text="Puis-je faire autre chose pour vous ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural")
@@ -1498,7 +1685,7 @@ async def find_patient():
                             operation_context="start_conversation",
                             speech_language="fr-FR",
                             initial_silence_timeout=20,
-                            operation_callback_url="https://8c6f-2a01-cb00-844-1d00-ed91-9e6b-6ccc-dab8.ngrok-free.app/handleResponse"
+                            operation_callback_url="https://d37c-2a01-cb00-844-1d00-fd5b-c64-1cc2-1dd8.ngrok-free.app/handleResponse"
                         )
                 else:
                     speak("En effet, j'ai bien trouvé plusieurs rendez-vous à votre nom.")
@@ -1518,9 +1705,5 @@ async def find_patient():
                 operation_context="hang_up"
             )
 
-
-
-    # speak("trouvé")
-
-if __name__ == "__main__":
-    app.run(port=5000, debug=True)
+if __name__ == '__main__':
+    app.run(debug=True)
