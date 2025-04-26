@@ -1572,11 +1572,11 @@ async def find_patient():
             "$regex": f"^{birthdate}$"
         },
         "nom": {
-            "$regex": f"^{lastname}$", 
+            "$regex": f"^{lastname}$",
             "$options": "i"  # Case-insensitive
         },
         "prenom": {
-            "$regex": f"^{strip_accents(firstname)}$", 
+            "$regex": f"^{strip_accents(firstname)}$",
             "$options": "i"  # Case-insensitive
         }
     })
