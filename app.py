@@ -9,6 +9,7 @@ from pymongo import MongoClient
 from bson.json_util import dumps
 from datetime import date, datetime
 import logging
+import unicodedata
 
 COGNITIVE_SERVICE_ENDPOINT = "https://lyraecognitivesservicesus.cognitiveservices.azure.com"
 SPEECH_KEY='CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U2XJ3w3AAAAACOGuWEK'
@@ -95,6 +96,12 @@ def date_vers_litteral(date_str):
     annee = date_obj.year
 
     return f"Le {jour} {mois} {annee}"
+
+def strip_accents(text):
+    return ''.join(
+        c for c in unicodedata.normalize('NFD', text)
+        if unicodedata.category(c) != 'Mn'
+    )
 
 async def get_model_response_async(user_response):
     url = "https://medical-rad-rag-assistant.azurewebsites.net/api/rag_query?code=MjVVHBDAeLnYyXz0FzwYsaGxSjFXT99s4vaQg_nUlKe9AzFuuU3Z4Q=="
@@ -1098,8 +1105,6 @@ async def get_lastname_async(user_response):
         "Content-Type": "application/json"
     }
 
-    speak( "Mon nom de famille est " + user_response)
-
     payload = {
         "text": "Mon nom de famille est " + user_response
     }
@@ -1188,7 +1193,6 @@ async def get_creneaux_async(sous_type, exam_type):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(url, headers=headers, json=payload) as response:
-                speak("j'ai trouvé les créneaux")
                 response.raise_for_status()
                 data = await response.json()
                 print("creneaux", data)
@@ -1563,40 +1567,16 @@ async def find_patient():
     global rdv_intent
     global all_creneaux
 
-    # global sous_type_id
-    # sous_type_id = "N01RXPOI"
-    # global exam_id
-    # exam_id = "RX"
-    # global chosen_creneau
-    # chosen_creneau = {
-    #     "codeSite": "N01",
-    #     "numeroPoste": "N01RX1",
-    #     "date": "2025-04-25T00:00:00",
-    #     "heureDebut": "08:30",
-    #     "heureFin": "08:45",
-    #     "codesMedecins": [
-    #         "JRAC01",
-    #         "CTOU01"
-    #     ],
-    #     "prescripteur": "N",
-    #     "typeExamen": "RX",
-    #     "codeExamen": "N01RXPOI"
-    # }
-    # rdv_intent = "prise de rendez-vous"
-
-    # global caller
-    # caller = callerId
-
     results = patientCollection.find({
         "dateNaissance": {
-            "$regex": f"^{birthdate}"
+            "$regex": f"^{birthdate}$"
         },
         "nom": {
             "$regex": f"^{lastname}$", 
             "$options": "i"  # Case-insensitive
         },
         "prenom": {
-            "$regex": f"^{firstname}$", 
+            "$regex": f"^{strip_accents(firstname)}$", 
             "$options": "i"  # Case-insensitive
         }
     })
