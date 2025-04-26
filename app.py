@@ -349,6 +349,7 @@ async def get_lastname():
         task_get_lastname = asyncio.create_task(get_lastname_async(user_response=clean_name))
         lastname = await task_get_lastname
 
+        lastname = lastname
         if clean_name is None:
             if lastname_error > 2:
                 play_source = TextSource(
@@ -1572,7 +1573,7 @@ async def find_patient():
 
     firstname = strip_accents(firstname)
 
-    payload = {"data": f"{birthdate}, {firstname}, {lastname}"}
+    payload = {"data": f"{birthdate + 'T00:00:00'}, {firstname}, {lastname}"}
     
     try:
         response = requests.post(url, json=payload)
@@ -1584,7 +1585,7 @@ async def find_patient():
     
     results = patientCollection.find({
         "dateNaissance": {
-            "$regex": f"^{birthdate}$"
+            "$regex": f"^{birthdate + 'T00:00:00'}$"
         },
         "nom": {
             "$regex": f"^{lastname}$",
