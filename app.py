@@ -626,7 +626,7 @@ async def confirm_call_intent():
     global rdv_intent
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "confirm_call_intent":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
-        speak("D'accord, un instant")
+        speak("D'accord")
         model_response = get_positive_negative(user_response)
 
         if model_response == "négative":
@@ -744,6 +744,11 @@ async def confirm_rdv():
             task_creneaux = asyncio.create_task(get_creneaux_async(sous_type=sous_type_id, exam_type=exam_id))
             speak("Je regarde les disponibilités, un instant...")
             creneaux = await task_creneaux
+
+            while creneaux is None:
+                task_creneaux = asyncio.create_task(get_creneaux_async(sous_type=sous_type_id, exam_type=exam_id))
+                creneaux = await task_creneaux
+
             all_creneaux = creneaux
 
             print("creneaux", creneaux)
@@ -971,11 +976,44 @@ async def handleResponse():
 
         elif intent.lower() == "modification de rendez-vous":
             rdv_intent = intent.lower()
-            play_source = TextSource(text="Vous voulez modifier un rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = TextSource(
+                text="Désolé, je ne suis pas encore assez qualifié pour faire ceci. Voulez-vous prendre, consulter ou annuler un rendez-vous ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+            )
+    
+            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+                input_type=RecognizeInputType.SPEECH,
+                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+                end_silence_timeout=0.5,
+                play_prompt=play_source,
+                interrupt_call_media_operation=False,
+                interrupt_prompt=False,
+                operation_context="start_conversation",
+                speech_language="fr-FR",
+                initial_silence_timeout=20,
+                operation_callback_url="https://lyraeapi.azurewebsites.net/handleResponse"
+            )
+            return jsonify({"success": "success"})
+            # play_source = TextSource(text="Vous voulez modifier un rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
 
-        elif intent == "Annulation de rendez-vous":
+        elif intent.lower() == "annulation de rendez-vous" or intent.lower() == "annulation de rendez-vous.":
             rdv_intent = intent.lower()
-            play_source = TextSource(text="Vous voulez annuler un rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = TextSource(
+                text="Désolé, je ne suis pas encore assez qualifié pour faire ceci. Voulez-vous prendre, consulter ou modifier un rendez-vous ? Vous pouvez aussi simplement me poser une question.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+            )
+    
+            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+                input_type=RecognizeInputType.SPEECH,
+                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+                end_silence_timeout=0.5,
+                play_prompt=play_source,
+                interrupt_call_media_operation=False,
+                interrupt_prompt=False,
+                operation_context="start_conversation",
+                speech_language="fr-FR",
+                initial_silence_timeout=20,
+                operation_callback_url="https://lyraeapi.azurewebsites.net/handleResponse"
+            )
+            return jsonify({"success": "success"})
 
         elif intent.lower() == "consultation de rendez-vous" or intent.lower() == "consultation de rendez-vous.":
             rdv_intent = intent.lower()
@@ -1200,6 +1238,7 @@ async def get_creneaux_async(sous_type, exam_type):
                 return data
     except aiohttp.ClientError as e:
         speak(f"Je ne peux pas trouver les créneaux parce que {e}")
+        return None
         print(f"Erreur lors de l'appel au modèle : {e}")
         return "Erreur lors de la communication avec le modèle."
 
@@ -1620,6 +1659,8 @@ async def find_patient():
                 rdv = createRDV(email=email)
                     
                 if rdv.get("success") is True:
+                    speak("insertion en bdd")
+
                     rdvCollection.insert_one({
                         "idPatient": first_result.get("idPatient"),
                         "numeroRDV": rdv.get("data").get("numeroExamen"),
@@ -1628,12 +1669,13 @@ async def find_patient():
                         "typeExamen": exam_id,
                         "codeExamen": sous_type_id
                     })
+                    speak("construction de la phrase")
                     phrase_creneau = full_date_vers_litteral(chosen_creneau.get("date").split("T")[0] + "T" + chosen_creneau.get("heureDebut") + ":00")
 
                     speak(f"Parfait, vous avez donc rendez-vous {phrase_creneau} au nom de {lastname}.")
                     continue_conversation("Puis-je faire autre chose pour vous ?")
                 else:
-                    speak("Désolé, je n'ai pas pu valider votre rendez-vous. Je vais vous rediriger vers une secrétaire.")
+                    hang_up("Désolé, je n'ai pas pu valider votre rendez-vous. Je vais vous rediriger vers une secrétaire.")
 
             elif rdv_intent == "modification de rendez-vous" or rdv_intent == "modification de rendez-vous." or rdv_intent == "consultation de rendez-vous" :
                 planned_rdv = getRDV(first_result.get("idPatient"))
