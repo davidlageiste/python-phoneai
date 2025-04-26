@@ -189,12 +189,6 @@ async def get_firstname():
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "get_firstname":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
 
-        clean_firstname = user_response.replace(".", "")
-        task_get_firstname = asyncio.create_task(get_firstname_async(user_response=clean_firstname))
-
-        firstname = await task_get_firstname
-        clean_firstname = firstname.strip().strip()
-
         if user_response == "":
             firstname_error += 1
             if firstname_error > 2:
@@ -215,7 +209,12 @@ async def get_firstname():
             )
 
         else:
+            clean_firstname = user_response.replace(".", "")
+            task_get_firstname = asyncio.create_task(get_firstname_async(user_response=clean_firstname))
             speak("Très bien")
+
+            firstname = await task_get_firstname
+            clean_firstname = firstname.strip().strip()
 
             if clean_firstname is None or clean_firstname == "Erreur lors de la communication avec le modèle.":
                     firstname_error += 1
