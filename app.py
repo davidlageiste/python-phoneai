@@ -282,7 +282,7 @@ async def confirm_firstname():
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         model_response = get_positive_negative(user_response)
 
-        if model_response == "negative":
+        if model_response == "négative":
             firstname_error += 1
             if firstname_error > 2:
                 hang_up("Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.")
@@ -415,7 +415,7 @@ async def confirm_lastname():
         speak("D'accord")
         model_response = get_positive_negative(user_response)
 
-        if model_response == "negative":
+        if model_response == "négative":
             birthdate_error += 1
             if birthdate_error > 2:
                 play_source = TextSource(
@@ -540,7 +540,7 @@ async def confirm_birthdate():
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         model_response = get_positive_negative(user_response)
 
-        if model_response == "negative":
+        if model_response == "négative":
             birthdate_error += 1
             if birthdate_error > 2:
                 play_source = TextSource(
@@ -629,7 +629,7 @@ async def confirm_call_intent():
         speak("D'accord, un instant")
         model_response = get_positive_negative(user_response)
 
-        if model_response == "negative":
+        if model_response == "négative":
             play_source = TextSource(text="Il semblerait que je n'ai pas compris votre demande, souhaitez-vous prendre un rendez-vous, modifier un rendez-vous, consulter un rendez-vous planifié, annuler un rendez-vous ou obtenir une information ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
@@ -712,7 +712,7 @@ async def confirm_rdv():
         speak("D'accord")
         model_response = get_positive_negative(user_response=user_response)
 
-        if model_response == "negative":
+        if model_response == "négative":
             exam_id = None
             sous_type_id = None
             if type_exam_error <= 2:
@@ -1041,7 +1041,7 @@ async def has_ordonnance():
         speak("D'accord")
         model_response = get_positive_negative(user_response)
 
-        if model_response == "negative":
+        if model_response == "négative":
             hang_up("Désolé nous pouvons pas vous planifier un rendez vous sans ordonnance prescrite de votre médecin. Pour passer un examen d’imagerie, il faut avoir la prescription d’un médecin. Sans ordonnance, ce n’est pas possible. Pour avoir une ordonnance, je vous conseille de consulter un médecin. Je vous souhaite une excellente journée et à bientôt.")
         elif model_response == "positive":
             play_source = TextSource(text="Quel examen voulez vous passer ?", voice_name="fr-FR-VivienneMultilingualNeural")
@@ -1147,6 +1147,7 @@ async def extract_creneau_async(user_response):
     headers = {
         "Content-Type": "application/json"
     }
+
     payload = {
         "text": user_response
     }
