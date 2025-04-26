@@ -193,7 +193,7 @@ async def get_firstname():
         task_get_firstname = asyncio.create_task(get_firstname_async(user_response=clean_firstname))
 
         firstname = await task_get_firstname
-        firstname = firstname.strip()
+        clean_firstname = firstname.strip().strip()
 
         if user_response == "":
             firstname_error += 1
@@ -250,7 +250,7 @@ async def get_firstname():
                     operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_firstname"
                 )
 
-    elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed" and request.json[0].get("data").get("operationContext") == "get_firstname":
+    elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
         firstname_error += 1
         if firstname_error > 2:
             hang_up("Il semblerait que nous n'arrivons pas à nous comprendre. Je vous transfère vers une secrétaire.")
@@ -287,7 +287,7 @@ async def confirm_firstname():
             if firstname_error > 2:
                 hang_up("Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.")
 
-            play_source = TextSource(text="Désolé, pouvez-vous me répeter votre prénom ?", voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = TextSource(text="Désolé, pouvez-vous me répéter votre prénom ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
                 input_type=RecognizeInputType.SPEECH,
@@ -552,7 +552,7 @@ async def confirm_birthdate():
                     operation_context="hang_up"
                 )
 
-            play_source = TextSource(text="Désolé, pouvez-vous me répeter votre date de naissance ?", voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = TextSource(text="Désolé, pouvez-vous me répéter votre date de naissance ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
                 input_type=RecognizeInputType.SPEECH,
@@ -1568,6 +1568,21 @@ async def find_patient():
     global rdv_intent
     global all_creneaux
 
+    url = "https://5940-2a01-e0a-3c3-cfa0-14ba-f10b-34ca-fb3c.ngrok-free.app/api/test"
+
+    firstname = strip_accents(firstname)
+
+    payload = {
+        "data": f"{'dateNaissance': {'$regex': '^{birthdate}$'},'nom': {'$regex': '^{lastname}$','$options': 'i'},'prenom': {'$regex': '^{firstname}$','$options': 'i'}}"
+    }
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()  # Raises HTTPError for bad status
+        data = response.json()
+        print("Création: ", data)
+    except requests.RequestException as e:
+        speak("requête fail")
+    
     results = patientCollection.find({
         "dateNaissance": {
             "$regex": f"^{birthdate}$"
@@ -1586,7 +1601,7 @@ async def find_patient():
     first_result = next(results, None)  # Get the first match, or None if no match
     json_results = dumps(list(resultsTwo), indent=4)
 
-    if json_results == []:
+    if first_result is None:
         play_source = TextSource(
             text="Désolé, je ne peux pas donner de RDV à un patient qui n'est pas déjà connu du cabinet. Vous êtes un nouveau patient : Je vous propose de vous transférer à la secrétaire", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
         )
