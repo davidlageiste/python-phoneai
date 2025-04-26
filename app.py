@@ -176,17 +176,23 @@ async def callback():
 
 @app.route("/get_firstname", methods=["POST"])
 async def get_firstname():
+    global firstname_error
     global firstname
 
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "get_firstname":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
 
         clean_firstname = user_response.replace(".", "")
-        task_get_firstname = asyncio.create_task(get_lastname_async(user_response=clean_firstname))
+        task_get_firstname = asyncio.create_task(get_firstname_async(user_response=clean_firstname))
+
         firstname = await task_get_firstname
-        firstname = task_get_firstname.strip()
+        firstname = firstname.strip()
 
         if user_response == "":
+            firstname_error += 1
+            if firstname_error > 2:
+                hang_up("Il semblerait que nous n'arrivons pas à nous comprendre. Je vous transfère vers une secrétaire.")
+
             play_source = TextSource(text="Je n'ai pas compris, pouvez-vous répéter votre prénom ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
@@ -205,6 +211,9 @@ async def get_firstname():
             speak("Très bien")
 
             if clean_firstname is None or clean_firstname == "Erreur lors de la communication avec le modèle.":
+                    firstname_error += 1
+                    if firstname_error > 2:
+                        hang_up("Il semblerait que nous n'arrivons pas à nous comprendre. Je vous transfère vers une secrétaire.")
                     play_source = TextSource(text="Je n'ai pas compris, pouvez-vous répéter votre prénom ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
                     call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
@@ -235,6 +244,10 @@ async def get_firstname():
                 )
 
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed" and request.json[0].get("data").get("operationContext") == "get_firstname":
+        firstname_error += 1
+        if firstname_error > 2:
+            hang_up("Il semblerait que nous n'arrivons pas à nous comprendre. Je vous transfère vers une secrétaire.")
+            
         play_source = TextSource(text="Je n'ai pas compris, pouvez-vous répéter votre prénom ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
         call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
@@ -325,7 +338,7 @@ async def get_lastname():
         # Remove every "." that comes from the AI response
 
         speak("Merci")
-        clean_name = task_get_lastname.replace(".", "")
+        clean_name = user_response.replace(".", "")
         task_get_lastname = asyncio.create_task(get_lastname_async(user_response=clean_name))
         lastname = await task_get_lastname
 
@@ -1013,26 +1026,6 @@ async def handleResponse():
 
     return jsonify({"success": "success"})
 
-# @app.route("/handleConsentement", methods=["POST"])
-# async def handleConsentement():
-#     # if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "get_consentement":
-#         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-#         # url = "https://analyse-reponse-consentement.azurewebsites.net/api/response_analyzer?code=XhZeOIcgHJC5htmtRy5Ckh9FFl7m2QyFpIMqI8NS0-jTAzFuqP2mJw=="
-#         # headers = {
-#         #     "Content-Type": "application/json"
-#         # }
-#         # payload = {"text": user_response}
-#         # try:
-#         #     response = requests.post(url, headers=headers, json=payload)
-#         #     response.raise_for_status()  # Lève une exception si le statut HTTP n'est pas 200
-#         #     print(response.json())
-#         #     return response.json().get("response", "Pas de réponse trouvée.")
-#         # except requests.exceptions.RequestException as e:
-#         #     print(f"Erreur lors de l'appel au modèle : {e}")
-#         #     return "Erreur lors de la communication avec le modèle."
-
-#     return jsonify({"status": "success"})
-
 @app.route("/has_ordonnance", methods=["POST"])
 async def has_ordonnance():
     global ordonnance_error
@@ -1104,6 +1097,9 @@ async def get_lastname_async(user_response):
     headers = {
         "Content-Type": "application/json"
     }
+
+    speak( "Mon nom de famille est " + user_response)
+
     payload = {
         "text": "Mon nom de famille est " + user_response
     }
@@ -1167,9 +1163,6 @@ async def get_creneaux_async(sous_type, exam_type):
     headers = {
         "Content-Type": "application/json"
     }
-
-    speak(f"exam type est {exam_type}")
-    speak(f"soustype est {sous_type}")
 
     if exam_type == "ECHOGRAPHIE":
         exam_type = 'EC'
