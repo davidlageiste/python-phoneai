@@ -1572,9 +1572,8 @@ async def find_patient():
 
     firstname = strip_accents(firstname)
 
-    payload = {
-        "data": f"{'dateNaissance': {'$regex': '^{birthdate}$'},'nom': {'$regex': '^{lastname}$','$options': 'i'},'prenom': {'$regex': '^{firstname}$','$options': 'i'}}"
-    }
+    payload = {"data": f"{birthdate}, {firstname}, {lastname}"}
+    
     try:
         response = requests.post(url, json=payload)
         response.raise_for_status()  # Raises HTTPError for bad status
