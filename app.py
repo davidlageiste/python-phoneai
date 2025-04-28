@@ -104,7 +104,7 @@ def strip_accents(text):
     )
 
 async def get_model_response_async(user_response):
-    url = "https://medical-rad-rag-assistant.azurewebsites.net/api/rag_query?code=MjVVHBDAeLnYyXz0FzwYsaGxSjFXT99s4vaQg_nUlKe9AzFuuU3Z4Q=="
+    url = "https://lyrae-talk-functions.azurewebsites.net/api/module_info?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json={"text": user_response}) as response:
             data = await response.json()
@@ -164,6 +164,8 @@ async def callback():
     print(request.json[0].get("type"))
     data = request.json[0]
 
+    if request.json and request.json[0].get("type") == "Microsoft.Communication.AnswerFailed":
+        print(request.json[0])
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         print(request.json[0])
@@ -273,6 +275,142 @@ async def get_firstname():
 
     return jsonify({"success": "success"})
 
+@app.route("/get_lastname", methods=["POST"])
+async def get_lastname():
+    global lastname
+    global lastname_error
+
+    if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "get_lastname":
+        user_response = request.json[0].get("data").get("speechResult").get("speech")
+        # Remove every "." that comes from the AI response
+
+        speak("Merci")
+        clean_name = user_response.replace(".", "")
+        task_get_lastname = asyncio.create_task(get_lastname_async(user_response=clean_name))
+        lastname = await task_get_lastname
+
+        lastname = lastname
+        if clean_name is None:
+            if lastname_error > 2:
+                play_source = TextSource(
+                    text="Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+                )
+
+                call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
+                    play_source=play_source,
+                    operation_context="hang_up"
+                )
+
+            lastname_error += 1
+            play_source = TextSource(text="Je n'ai pas compris, pouvez-vous épeler votre nom de famille à nouveau ?", voice_name="fr-FR-VivienneMultilingualNeural")
+
+            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+                input_type=RecognizeInputType.SPEECH,
+                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+                end_silence_timeout=1,
+                play_prompt=play_source,
+                interrupt_prompt=False,
+                speech_language="fr-FR",
+                initial_silence_timeout=5,
+                operation_context="get_lastname",
+                operation_callback_url="https://lyraeapi.azurewebsites.net/get_lastname"
+            )
+
+        else:
+            lastname = clean_name
+            play_source = TextSource(text=f"{lastname}, c'est bien ça ?", voice_name="fr-FR-VivienneMultilingualNeural")
+
+            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+                input_type=RecognizeInputType.SPEECH,
+                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+                end_silence_timeout=0.5,
+                play_prompt=play_source,
+                interrupt_prompt=False,
+                speech_language="fr-FR",
+                initial_silence_timeout=10,
+                operation_context="confirm_lastname",
+                operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_lastname"
+            )
+
+    elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed" and request.json[0].get("data").get("operationContext") == "get_lastname":
+        play_source = TextSource(text="Je n'ai pas compris, pouvez-vous épeler votre nom de famille à nouveau ?", voice_name="fr-FR-VivienneMultilingualNeural")
+
+        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+            input_type=RecognizeInputType.SPEECH,
+            target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+            end_silence_timeout=0.5,
+            play_prompt=play_source,
+            interrupt_prompt=False,
+            speech_language="fr-FR",
+            initial_silence_timeout=5,
+            operation_context="get_lastname",
+            operation_callback_url="https://lyraeapi.azurewebsites.net/get_lastname"
+        )    
+        
+    return jsonify({"success": "success"})
+
+@app.route("/get_birthdate", methods=["POST"])
+async def get_birthdate():
+    global birthdate
+    if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "get_birthdate":
+        speak("Merci, un instant s'il vous plaît")
+        user_response = request.json[0].get("data").get("speechResult").get("speech")
+        speak("user said", user_response)
+        task_get_birthdate = asyncio.create_task(get_birthdate_async(user_response=user_response))
+
+        birthdate = await task_get_birthdate
+
+        if birthdate is None:
+            play_source = TextSource(text="Je n'ai pas compris, quelle est votre date de naissance ?", voice_name="fr-FR-VivienneMultilingualNeural")
+
+            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+                input_type=RecognizeInputType.SPEECH,
+                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+                end_silence_timeout=0.5,
+                play_prompt=play_source,
+                interrupt_prompt=False,
+                speech_language="fr-FR",
+                initial_silence_timeout=5,
+                operation_context="confirm_birthdate",
+                operation_callback_url="https://lyraeapi.azurewebsites.net/get_birthdate"
+            )
+        else:
+            date_litterale = date_vers_litteral(birthdate)
+            print(date_litterale)
+
+            # Formatage en version littérale 
+            play_source = TextSource(text=f"Vous confirmez que vous êtes né {date_litterale} ?", voice_name="fr-FR-VivienneMultilingualNeural")
+
+        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+            input_type=RecognizeInputType.SPEECH,
+            target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+            end_silence_timeout=0.5,
+            play_prompt=play_source,
+            interrupt_prompt=False,
+            speech_language="fr-FR",
+            initial_silence_timeout=5,
+            operation_context="confirm_birthdate",
+            operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_birthdate"
+        )
+
+    elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
+        play_source = TextSource(text="Je n'ai pas compris, quelle est votre date de naissance ?", voice_name="fr-FR-VivienneMultilingualNeural")
+
+        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+            input_type=RecognizeInputType.SPEECH,
+            target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+            end_silence_timeout=0.5,
+            play_prompt=play_source,
+            interrupt_prompt=False,
+            speech_language="fr-FR",
+            initial_silence_timeout=5,
+            operation_context="confirm_birthdate",
+            operation_callback_url="https://lyraeapi.azurewebsites.net/get_birthdate"
+        )
+    return jsonify({"success": "success"})
+
+########## CONFIRMATION ##########
+
 @app.route("/confirm_firstname", methods=["POST"])
 async def confirm_firstname():
     global firstname_error
@@ -337,90 +475,18 @@ async def confirm_firstname():
 
     return jsonify({"success": "success"})
 
-@app.route("/get_lastname", methods=["POST"])
-async def get_lastname():
-    global lastname
-    global lastname_error
-
-    if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "get_lastname":
-        user_response = request.json[0].get("data").get("speechResult").get("speech")
-        # Remove every "." that comes from the AI response
-
-        speak("Merci")
-        clean_name = user_response.replace(".", "")
-        task_get_lastname = asyncio.create_task(get_lastname_async(user_response=clean_name))
-        lastname = await task_get_lastname
-
-        lastname = lastname
-        if clean_name is None:
-            if lastname_error > 2:
-                play_source = TextSource(
-                    text="Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-                )
-
-                call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
-                    play_source=play_source,
-                    operation_context="hang_up"
-                )
-
-            lastname_error += 1
-            play_source = TextSource(text="Je n'ai pas compris, pouvez-vous épeler votre nom de famille à nouveau ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                end_silence_timeout=0.5,
-                play_prompt=play_source,
-                interrupt_prompt=False,
-                speech_language="fr-FR",
-                initial_silence_timeout=5,
-                operation_context="get_lastname",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/get_lastname"
-            )
-
-        else:
-            lastname = clean_name
-            play_source = TextSource(text=f"{lastname}, c'est bien ça ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                end_silence_timeout=0.5,
-                play_prompt=play_source,
-                interrupt_prompt=False,
-                speech_language="fr-FR",
-                initial_silence_timeout=10,
-                operation_context="confirm_lastname",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_lastname"
-            )
-
-    elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed" and request.json[0].get("data").get("operationContext") == "get_lastname":
-        play_source = TextSource(text="Je n'ai pas compris, pouvez-vous épeler votre nom de famille à nouveau ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-            input_type=RecognizeInputType.SPEECH,
-            target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-            end_silence_timeout=0.5,
-            play_prompt=play_source,
-            interrupt_prompt=False,
-            speech_language="fr-FR",
-            initial_silence_timeout=5,
-            operation_context="get_lastname",
-            operation_callback_url="https://lyraeapi.azurewebsites.net/get_lastname"
-        )    
-        
-    return jsonify({"success": "success"})
-
 @app.route("/confirm_lastname", methods=["POST"])
 async def confirm_lastname():
+    global lastname_error
+    
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         speak("D'accord")
         model_response = get_positive_negative(user_response)
 
         if model_response == "négative":
-            birthdate_error += 1
-            if birthdate_error > 2:
+            lastname_error += 1
+            if lastname_error > 2:
                 play_source = TextSource(
                     text="Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
                 )
@@ -472,66 +538,6 @@ async def confirm_lastname():
                 operation_context="confirm_lastname",
                 operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_lastname"
             )
-    return jsonify({"success": "success"})
-
-@app.route("/get_birthdate", methods=["POST"])
-async def get_birthdate():
-    global birthdate
-    if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "get_birthdate":
-        speak("Merci, un instant s'il vous plaît")
-        user_response = request.json[0].get("data").get("speechResult").get("speech")
-
-        task_get_birthdate = asyncio.create_task(get_birthdate_async(user_response=user_response))
-
-        birthdate = await task_get_birthdate
-
-        if birthdate is None:
-            play_source = TextSource(text="Je n'ai pas compris, quelle est votre date de naissance ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                end_silence_timeout=0.5,
-                play_prompt=play_source,
-                interrupt_prompt=False,
-                speech_language="fr-FR",
-                initial_silence_timeout=5,
-                operation_context="confirm_birthdate",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/get_birthdate"
-            )
-        else:
-            date_litterale = date_vers_litteral(birthdate)
-            print(date_litterale)
-
-            # Formatage en version littérale
-            play_source = TextSource(text=f"Vous confirmez que vous êtes né {date_litterale} ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-            input_type=RecognizeInputType.SPEECH,
-            target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-            end_silence_timeout=0.5,
-            play_prompt=play_source,
-            interrupt_prompt=False,
-            speech_language="fr-FR",
-            initial_silence_timeout=5,
-            operation_context="confirm_birthdate",
-            operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_birthdate"
-        )
-
-    elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
-        play_source = TextSource(text="Je n'ai pas compris, quelle est votre date de naissance ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-            input_type=RecognizeInputType.SPEECH,
-            target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-            end_silence_timeout=0.5,
-            play_prompt=play_source,
-            interrupt_prompt=False,
-            speech_language="fr-FR",
-            initial_silence_timeout=5,
-            operation_context="confirm_birthdate",
-            operation_callback_url="https://lyraeapi.azurewebsites.net/get_birthdate"
-        )
     return jsonify({"success": "success"})
 
 @app.route("/confirm_birthdate", methods=["POST"])
@@ -622,9 +628,8 @@ async def confirm_birthdate():
         )
     return jsonify({"success": "success"})
 
-########## CONFIRMATION ##########
-
 @app.route("/confirm_call_intent", methods=["POST"])
+
 async def confirm_call_intent():
     global rdv_intent
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "confirm_call_intent":
@@ -961,13 +966,14 @@ async def handleResponse():
     global caller
 
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "start_conversation":
+        speak("Très bien, laissez-moi un instant")
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         task_intent = asyncio.create_task(get_intent_async(user_response=user_response))
-        speak("Très bien, laissez-moi un instant")
         intent = await task_intent
         play_source = None
-        if intent == "renseignements":
+        if intent.lower() == "renseignements" or intent.lower() == "renseignements.":
             rdv_intent = intent.lower()
+            print(intent)
             task = asyncio.create_task(get_model_response_async(user_response))
             model_response = await task
             speak(model_response)
@@ -980,7 +986,7 @@ async def handleResponse():
         elif intent.lower() == "modification de rendez-vous":
             rdv_intent = intent.lower()
             play_source = TextSource(
-                text="Désolé, je ne suis pas encore assez qualifié pour faire ceci. Voulez-vous prendre, consulter ou annuler un rendez-vous ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+                text="Désolé, je ne suis pas encore assez qualifié pour faire ceci. Voulez-vous prendre, consulter ou annuler un rendez-vous ou obtenir une information ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
             )
     
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
@@ -1021,6 +1027,24 @@ async def handleResponse():
         elif intent.lower() == "consultation de rendez-vous" or intent.lower() == "consultation de rendez-vous.":
             rdv_intent = intent.lower()
             play_source = TextSource(text="Vous voulez consulter un rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
+
+        elif intent.lower() == "autre" or intent.lower() == "autre.":
+            play_source = TextSource(
+                text="Hors-sujet. Voulez-vous prendre, consulter ou annuler un rendez-vous.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+            )
+    
+            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+                input_type=RecognizeInputType.SPEECH,
+                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+                end_silence_timeout=0.5,
+                play_prompt=play_source,
+                interrupt_call_media_operation=False,
+                interrupt_prompt=False,
+                operation_context="start_conversation",
+                speech_language="fr-FR",
+                initial_silence_timeout=20,
+                operation_callback_url="https://lyraeapi.azurewebsites.net/handleResponse"
+            )
 
         else:
             play_source = TextSource(
@@ -1083,7 +1107,7 @@ async def has_ordonnance():
         model_response = get_positive_negative(user_response)
 
         if model_response == "négative":
-            hang_up("Désolé nous pouvons pas vous planifier un rendez vous sans ordonnance prescrite de votre médecin. Pour passer un examen d’imagerie, il faut avoir la prescription d’un médecin. Sans ordonnance, ce n’est pas possible. Pour avoir une ordonnance, je vous conseille de consulter un médecin. Je vous souhaite une excellente journée et à bientôt.")
+            hang_up("Désolé nous pouvons pas vous planifier un rendez-vous sans ordonnance prescrite de votre médecin. Pour passer un examen d'imagerie, il faut avoir la prescription d'un médecin. Sans ordonnance, ce n'est pas possible. Pour avoir une ordonnance, je vous conseille de consulter un médecin. Je vous souhaite une excellente journée et à bientôt.")
         elif model_response == "positive":
             play_source = TextSource(text="Quel examen voulez vous passer ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
@@ -1320,7 +1344,6 @@ def get_positive_negative(user_response):
             print(f"Erreur lors de l'appel au modèle : {e}")
             logging.info(f"error, {e}")
             return "Erreur lors de la communication avec le modèle."
-
 
 ########## CONVERSATION ##########
 
@@ -1755,7 +1778,7 @@ async def find_patient():
             print("Email:", email)
         else:
             play_source = TextSource(
-                text="Désolé, je ne peux pas donner de RDV à un patient qui n'est pas déjà connu du cabinet. Vous êtes un nouveau patient : Je vous propose de vous transférer à la secrétaire", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+                text="Désolé, je ne peux pas donner de rendez-vous à un patient qui n'est pas déjà connu du cabinet. Vous êtes un nouveau patient : Je vous propose de vous transférer à la secrétaire", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
             )
 
             call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
