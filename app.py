@@ -112,11 +112,14 @@ async def get_model_response_async(user_response):
             return data.get("response", "No response found")
 
 def get_model_response(text):
-    url = "https://medical-rad-rag-assistant.azurewebsites.net/api/rag_query?code=MjVVHBDAeLnYyXz0FzwYsaGxSjFXT99s4vaQg_nUlKe9AzFuuU3Z4Q=="
+    url = "https://lyrae-talk-functions.azurewebsites.net/api/module_info?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
+
     headers = {
         "Content-Type": "application/json"
     }
+
     payload = {"text": text}
+
     try:
         response = requests.post(url, headers=headers, json=payload)
         response.raise_for_status()  # Lève une exception si le statut HTTP n'est pas 200
@@ -1076,7 +1079,7 @@ async def has_ordonnance():
     global ordonnance_error
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "has_ordonnance":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
-        speak("D'accord")
+        speak("Très bien")
         model_response = get_positive_negative(user_response)
 
         if model_response == "négative":
@@ -1525,7 +1528,7 @@ def createRDV(email, externalNumber = None):
     global firstname
     global birthdate
 
-    url = "https://ai2xplore.azurewebsites.net/api/createRDV"
+    url = "https://localhost:8008/api/createRDV"
     
     print("CREATING RDV WITH:", {
         "email": email,
@@ -1545,7 +1548,7 @@ def createRDV(email, externalNumber = None):
 
     if externalNumber is not None:
         payload.externalNumber = externalNumber
-    
+
     print(payload)
 
     try:
