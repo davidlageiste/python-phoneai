@@ -128,6 +128,21 @@ def get_model_response(text):
         print(f"Erreur lors de l'appel au modèle : {e}")
         return "Erreur lors de la communication avec le modèle."
 
+def start_recognizing(callback_url, context, play_source):
+
+    call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+        input_type=RecognizeInputType.SPEECH,
+        target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+        end_silence_timeout=0.5,
+        play_prompt=play_source,
+        interrupt_call_media_operation=False,
+        interrupt_prompt=False,
+        operation_context=context,
+        speech_language="fr-FR",
+        initial_silence_timeout=20,
+        operation_callback_url=callback_url
+    )
+
 def hang_up(text):
     play_source = TextSource(
         text=text, source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
@@ -1030,7 +1045,7 @@ async def handleResponse():
 
         elif intent.lower() == "autre" or intent.lower() == "autre.":
             play_source = TextSource(
-                text="Hors-sujet. Voulez-vous prendre, consulter ou annuler un rendez-vous.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+                text="Je suis désolé, votre question n’entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
             )
     
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
