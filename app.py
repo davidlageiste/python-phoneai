@@ -192,8 +192,6 @@ async def callback():
         call_connection_id = data.get("data").get("callConnectionId")
         server_call_id = data.get("data").get("serverCallId")
         caller = request.args.get('caller')
-        speak(caller)
-        caller = request.args.get('caller')
         target = "+33801150143"
         target = PhoneNumberIdentifier(target)
 
