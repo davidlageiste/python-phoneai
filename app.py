@@ -192,6 +192,7 @@ async def callback():
         call_connection_id = data.get("data").get("callConnectionId")
         server_call_id = data.get("data").get("serverCallId")
         caller = request.args.get('caller')
+        speak(caller)
         caller = request.args.get('caller')
         target = "+33801150143"
         target = PhoneNumberIdentifier(target)
@@ -206,7 +207,7 @@ async def callback():
         # handle_prise_rdv(caller)
     if request.json and request.json[0].get("type") == "Microsoft.Communication.PlayCompleted" and request.json[0].get("data").get("operationContext") == "hang_up":
         call_automation_client.get_call_connection(call_connection_id).hang_up(is_for_everyone=True)
-    return jsonify({"status": "success"})    
+    return jsonify({"status": "success"})
 
 ########## IDENTIFICATION ##########
 
