@@ -188,6 +188,8 @@ async def callback():
         print(request.json[0])
     if request.json and request.json[0].get("type") == "Microsoft.Communication.PlayFailed":
         print(request.json[0])
+    if request.json and request.json[0].get("type") == "Microsoft.Communication.CallTransferFailed":
+        print(request.json[0])
     if request.json and request.json[0].get("type") == "Microsoft.Communication.CallConnected":
         call_connection_id = data.get("data").get("callConnectionId")
         server_call_id = data.get("data").get("serverCallId")
