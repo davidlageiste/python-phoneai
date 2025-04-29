@@ -194,8 +194,14 @@ async def callback():
         call_connection_id = data.get("data").get("callConnectionId")
         server_call_id = data.get("data").get("serverCallId")
         caller = request.args.get('caller')
-    
-        start_conversation(call_connection_id=call_connection_id, callerId=caller)
+        target = PhoneNumberIdentifier("+33801150376")
+
+        call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
+            target_participant=target,
+            transferee=PhoneNumberIdentifier("+" + caller.strip()),
+            operation_callback_url=f"https://lyraeapi.azurewebsites.net/callback",
+        )
+        # start_conversation(call_connection_id=call_connection_id, callerId=caller)
         # await find_patient(caller)
         # handle_prise_rdv(caller)
     if request.json and request.json[0].get("type") == "Microsoft.Communication.PlayCompleted" and request.json[0].get("data").get("operationContext") == "hang_up":
