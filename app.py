@@ -194,16 +194,8 @@ async def callback():
         call_connection_id = data.get("data").get("callConnectionId")
         server_call_id = data.get("data").get("serverCallId")
         caller = request.args.get('caller')
-        target = "+33801150376"
-        target = PhoneNumberIdentifier(target)
-
-        call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
-            target_participant=target,
-            transferee=PhoneNumberIdentifier("+" + caller.strip()),
-            operation_callback_url=f"https://lyraeapi.azurewebsites.net/callback",
-            source_caller_id_number=PhoneNumberIdentifier("+" + caller.strip())
-        )
-        # start_conversation(call_connection_id=call_connection_id, callerId=caller)
+    
+        start_conversation(call_connection_id=call_connection_id, callerId=caller)
         # await find_patient(caller)
         # handle_prise_rdv(caller)
     if request.json and request.json[0].get("type") == "Microsoft.Communication.PlayCompleted" and request.json[0].get("data").get("operationContext") == "hang_up":
@@ -1577,7 +1569,7 @@ def createRDV(email, externalNumber = None):
     global firstname
     global birthdate
 
-    url = "https://localhost:8008/api/createRDV"
+    url = "https://ai2xplore.azurewebsites.net/api/createRDV"
     
     print("CREATING RDV WITH:", {
         "email": email,
@@ -1658,20 +1650,6 @@ async def find_patient():
     global creneauDate
     global rdv_intent
     global all_creneaux
-
-    url = "https://5940-2a01-e0a-3c3-cfa0-14ba-f10b-34ca-fb3c.ngrok-free.app/api/test"
-
-    firstname = strip_accents(firstname)
-
-    payload = {"data": f"{birthdate + 'T00:00:00'}, {firstname}, {lastname}"}
-    
-    try:
-        response = requests.post(url, json=payload)
-        response.raise_for_status()  # Raises HTTPError for bad status
-        data = response.json()
-        print("Création: ", data)
-    except requests.RequestException as e:
-        speak("requête fail")
     
     results = patientCollection.find({
         "dateNaissance": {
