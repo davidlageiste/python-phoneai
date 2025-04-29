@@ -200,7 +200,8 @@ async def callback():
         call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
             target_participant=target,
             transferee=PhoneNumberIdentifier("+" + caller.strip()),
-            operation_callback_url=f"https://lyraeapi.azurewebsites.net/callback?caller={caller}"
+            operation_callback_url=f"https://lyraeapi.azurewebsites.net/callback",
+            source_caller_id_number=PhoneNumberIdentifier("+" + caller.strip())
         )
         # start_conversation(call_connection_id=call_connection_id, callerId=caller)
         # await find_patient(caller)
