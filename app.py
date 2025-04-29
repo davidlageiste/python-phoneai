@@ -10,6 +10,7 @@ from bson.json_util import dumps
 from datetime import date, datetime
 import logging
 import unicodedata
+import re 
 
 COGNITIVE_SERVICE_ENDPOINT = "https://lyraecognitivesservicesus.cognitiveservices.azure.com"
 SPEECH_KEY='CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U2XJ3w3AAAAACOGuWEK'
@@ -23,7 +24,7 @@ db = client['neuracorp']
 patientCollection = db['patientsDB']
 rdvCollection = db["rdv"]
 
-call_automation_client = CallAutomationClient.from_connection_string("endpoint=https://lyraetalk.france.communication.azure.com/;accesskey=3w3cK83UG45fDt4zOVi4mwSsApOvCbqfZhn1tKFn4TPMp5d5umCYJQQJ99ALACULyCpuAreVAAAAAZCS6qkJ")
+call_automation_client = CallAutomationClient.from_connection_string("endpoint=https://lyraetalktest.france.communication.azure.com/;accesskey=93iEbCDIKt4jKOkuGPgmOzhDBYKeKmCZJvxBt3ZGD7UOUVH56NzjJQQJ99BDACULyCpuAreVAAAAAZCS7YQ9")
 speech_config = speechsdk.SpeechConfig(subscription=SPEECH_KEY,region=SPEECH_REGION)
 
 global call_connection_id
@@ -86,6 +87,13 @@ def full_date_vers_litteral(date_str):
         return f"Le {jour} {mois} à {heure} {heure_label}"
     else:
         return f"Le {jour} {mois} à {heure} {heure_label} et {minute} {minute_label}"
+
+def is_date_formatted(date):
+    try:
+        datetime.strptime(date, "%Y-%m-%d")
+        return True
+    except ValueError:
+        return False
 
 def date_vers_litteral(date_str):
     # Conversion en objet datetime
@@ -153,6 +161,15 @@ def hang_up(text):
         operation_context="hang_up"
     )
 
+def countPatientInDB(query):
+    count = patientCollection.count_documents(query)
+    return count
+
+def findPatientInDB(query):
+    results = patientCollection.find(query)
+    
+    return 
+
 ########## ENTRY POINT ##########
 
 @app.route("/incoming_call", methods=["POST"])
@@ -167,7 +184,7 @@ def incoming_call():
     caller = data.get("data").get("from").get("phoneNumber").get("value")
     encodedContext = data.get("data").get("incomingCallContext")
 
-    call_automation_client.answer_call(incoming_call_context=encodedContext, callback_url=f"https://lyraeapi.azurewebsites.net/callback?caller={caller}", cognitive_services_endpoint=COGNITIVE_SERVICE_ENDPOINT)
+    call_automation_client.answer_call(incoming_call_context=encodedContext, callback_url=f"https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/callback?caller={caller}", cognitive_services_endpoint=COGNITIVE_SERVICE_ENDPOINT)
     return jsonify({"status": "success"})
 
 @app.route("/callback", methods=["POST"])
@@ -225,7 +242,7 @@ async def get_firstname():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_firstname",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/get_firstname"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_firstname"
             )
 
         else:
@@ -251,7 +268,7 @@ async def get_firstname():
                         speech_language="fr-FR",
                         initial_silence_timeout=5,
                         operation_context="get_firstname",
-                        operation_callback_url="https://lyraeapi.azurewebsites.net/get_firstname"
+                        operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_firstname"
                     )
 
             else: 
@@ -266,7 +283,7 @@ async def get_firstname():
                     speech_language="fr-FR",
                     initial_silence_timeout=10,
                     operation_context="confirm_firstname",
-                    operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_firstname"
+                    operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/confirm_firstname"
                 )
 
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
@@ -285,7 +302,7 @@ async def get_firstname():
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="get_firstname",
-            operation_callback_url="https://lyraeapi.azurewebsites.net/get_firstname"
+            operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_firstname"
         )
 
     return jsonify({"success": "success"})
@@ -328,7 +345,7 @@ async def get_lastname():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_lastname",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/get_lastname"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_lastname"
             )
 
         else:
@@ -344,7 +361,7 @@ async def get_lastname():
                 speech_language="fr-FR",
                 initial_silence_timeout=10,
                 operation_context="confirm_lastname",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_lastname"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/confirm_lastname"
             )
 
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed" and request.json[0].get("data").get("operationContext") == "get_lastname":
@@ -359,7 +376,7 @@ async def get_lastname():
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="get_lastname",
-            operation_callback_url="https://lyraeapi.azurewebsites.net/get_lastname"
+            operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_lastname"
         )    
         
     return jsonify({"success": "success"})
@@ -367,15 +384,16 @@ async def get_lastname():
 @app.route("/get_birthdate", methods=["POST"])
 async def get_birthdate():
     global birthdate
+
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "get_birthdate":
         speak("Merci, un instant s'il vous plaît")
         user_response = request.json[0].get("data").get("speechResult").get("speech")
-        speak("user said", user_response)
+        speak(f"user said {user_response}")
         task_get_birthdate = asyncio.create_task(get_birthdate_async(user_response=user_response))
 
         birthdate = await task_get_birthdate
 
-        if birthdate is None:
+        if birthdate is None or is_date_formatted(birthdate) == False:
             play_source = TextSource(text="Je n'ai pas compris, quelle est votre date de naissance ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
@@ -387,7 +405,7 @@ async def get_birthdate():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="confirm_birthdate",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/get_birthdate"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_birthdate"
             )
         else:
             date_litterale = date_vers_litteral(birthdate)
@@ -405,7 +423,7 @@ async def get_birthdate():
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="confirm_birthdate",
-            operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_birthdate"
+            operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/confirm_birthdate"
         )
 
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
@@ -420,7 +438,7 @@ async def get_birthdate():
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="confirm_birthdate",
-            operation_callback_url="https://lyraeapi.azurewebsites.net/get_birthdate"
+            operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_birthdate"
         )
     return jsonify({"success": "success"})
 
@@ -453,7 +471,7 @@ async def confirm_firstname():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_firstname",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/get_firstname"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_firstname"
             )
 
         elif model_response == "positive":
@@ -471,7 +489,7 @@ async def confirm_firstname():
                 speech_language="fr-FR",
                 initial_silence_timeout=10,
                 operation_context="confirm_firstname",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_firstname"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/confirm_firstname"
             )
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
         play_source = TextSource(text=f"Je n'ai pas compris, {firstname}, c'est bien ça ?", voice_name="fr-FR-VivienneMultilingualNeural")
@@ -485,7 +503,7 @@ async def confirm_firstname():
             speech_language="fr-FR",
             initial_silence_timeout=10,
             operation_context="confirm_firstname",
-            operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_firstname"
+            operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/confirm_firstname"
         )
 
     return jsonify({"success": "success"})
@@ -522,7 +540,7 @@ async def confirm_lastname():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_lastname",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/get_lastname"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_lastname"
             )
 
         elif model_response == "positive":
@@ -537,7 +555,7 @@ async def confirm_lastname():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_firstname",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/get_firstname"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_firstname"
             )
         else:
             play_source = TextSource(text=f"Je n'ai pas compris, {lastname}, c'est bien ça ?", voice_name="fr-FR-VivienneMultilingualNeural")
@@ -551,7 +569,7 @@ async def confirm_lastname():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="confirm_lastname",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_lastname"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/confirm_lastname"
             )
     return jsonify({"success": "success"})
 
@@ -587,23 +605,44 @@ async def confirm_birthdate():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_birthdate",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/get_birthdate"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_birthdate"
             )
 
         elif model_response == "positive":
-            play_source = TextSource(text="Pouvez-vous m'épeler votre nom de famille ?", voice_name="fr-FR-VivienneMultilingualNeural")
 
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                end_silence_timeout=0.5,
-                play_prompt=play_source,
-                interrupt_prompt=False,
-                speech_language="fr-FR",
-                initial_silence_timeout=5,
-                operation_context="get_lastname",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/get_lastname"
-            )
+            count = countPatientInDB({
+                "dateNaissance": {
+                    "$regex": f"^{birthdate + 'T00:00:00'}$"
+                }
+            })
+
+            if count > 1 or count == 0:
+                play_source = TextSource(text="Pouvez-vous m'épeler votre nom de famille ?", voice_name="fr-FR-VivienneMultilingualNeural")
+
+                call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+                    input_type=RecognizeInputType.SPEECH,
+                    target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+                    end_silence_timeout=0.5,
+                    play_prompt=play_source,
+                    interrupt_prompt=False,
+                    speech_language="fr-FR",
+                    initial_silence_timeout=5,
+                    operation_context="get_lastname",
+                    operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_lastname"
+                )
+            else:
+                results = findPatientInDB({
+                    "dateNaissance": {
+                        "$regex": f"^{birthdate + 'T00:00:00'}$"
+                    }
+                })
+
+                first_result = next(results, None)
+                print(first_result)
+                # play_source = TextSource(text=f"", voice_name="fr-FR-VivienneMultilingualNeural")
+
+
+
         else:
             date_litterale = date_vers_litteral(birthdate)
 
@@ -619,8 +658,9 @@ async def confirm_birthdate():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="confirm_birthdate",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_birthdate"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/confirm_birthdate"
             )
+
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
         birthdate_error += 1
         if birthdate_error > 2:
@@ -639,7 +679,7 @@ async def confirm_birthdate():
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="confirm_birthdate",
-            operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_birthdate"
+            operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/confirm_birthdate"
         )
     return jsonify({"success": "success"})
 
@@ -664,7 +704,7 @@ async def confirm_call_intent():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="start_conversation",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/handleResponse"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/handleResponse"
             )
         elif model_response == "positive":
             if rdv_intent == "prise de rendez-vous" or rdv_intent == "prise de rendez-vous.":
@@ -672,7 +712,7 @@ async def confirm_call_intent():
             elif rdv_intent == "modification de rendez-vous" or rdv_intent == "modification de rendez-vous.":
                 handle_modification()
 
-            elif intent == "Annulation de rendez-vous":
+            elif rdv_intent == "Annulation de rendez-vous":
                 rdv_intent = intent.lower()
                 handle_annulation()
 
@@ -697,7 +737,7 @@ async def confirm_call_intent():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="confirm_call_intent",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_call_intent"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/confirm_call_intent"
             )
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
         intent_error += 1
@@ -717,11 +757,20 @@ async def confirm_call_intent():
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="confirm_call_intent",
-            operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_call_intent"
+            operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/confirm_call_intent"
         )
     return jsonify({"success": "success"})
 
 ########## PRISE DE RENDEZ-VOUS ##########
+
+@app.route("/module_informatif", methods=["POST"])
+async def module_informatif():
+    if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "confirm_rdv":
+        user_response = request.json[0].get("data").get("speechResult").get("speech")
+        task = asyncio.create_task(get_model_response_async(user_response))
+        model_response = await task
+        speak(model_response)
+    return jsonify({"success", "success"})
 
 @app.route("/confirm_rdv", methods=["POST"])
 async def confirm_rdv():
@@ -752,7 +801,7 @@ async def confirm_rdv():
                     speech_language="fr-FR",
                     initial_silence_timeout=5,
                     operation_context="rdv_exam_type",
-                    operation_callback_url="https://lyraeapi.azurewebsites.net/rdv_exam_type"
+                    operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/rdv_exam_type"
                 )
             else:
                 play_source = TextSource(
@@ -787,7 +836,7 @@ async def confirm_rdv():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_creneaux_choice",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/get_creneaux_choice"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_creneaux_choice"
             )
         else:
             play_source = TextSource(
@@ -803,7 +852,7 @@ async def confirm_rdv():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="rdv_exam_type",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/rdv_exam_type"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/rdv_exam_type"
             ) 
             
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
@@ -818,7 +867,7 @@ async def confirm_rdv():
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="rdv_exam_type",
-            operation_callback_url="https://lyraeapi.azurewebsites.net/rdv_exam_type"
+            operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/rdv_exam_type"
         )  
     return jsonify({"status": "success"})
 
@@ -829,6 +878,9 @@ async def rdv_exam_type():
 
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "rdv_exam_type":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
+        pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
+        if re.search(pattern, user_response, re.IGNORECASE):
+            hang_up("Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.")
         task_type = asyncio.create_task(get_exam_type_async(user_response=user_response))
         speak("D'accord")
         exam_type = await task_type
@@ -845,7 +897,7 @@ async def rdv_exam_type():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="rdv_exam_type",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/rdv_exam_type"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/rdv_exam_type"
             )
         else :
             exam_id = exam_type["type_examen_id"]
@@ -863,7 +915,7 @@ async def rdv_exam_type():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="confirm_rdv",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_rdv"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/confirm_rdv"
             )
 
     return jsonify({"status": "success"})
@@ -903,7 +955,7 @@ async def get_creneaux_choice():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_creneaux_choice",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/get_creneaux_choice"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_creneaux_choice"
             )
         else:
             dt = datetime.fromisoformat(creneau_choice)
@@ -935,7 +987,7 @@ async def get_creneaux_choice():
                         speech_language="fr-FR",
                         initial_silence_timeout=5,
                         operation_context="get_birthdate",
-                        operation_callback_url="https://lyraeapi.azurewebsites.net/get_birthdate"
+                        operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_birthdate"
                     )
                 elif rdv_intent == "modification de rendez-vous" or rdv_intent == "modification de rendez-vous":
                     speak(f"Très bien, votre rendez-vous sera déplacé au {phrase}", voice_name="fr-FR-VivienneMultilingualNeural")
@@ -955,7 +1007,7 @@ async def get_creneaux_choice():
                     speech_language="fr-FR",
                     initial_silence_timeout=5,
                     operation_context="get_creneaux_choice",
-                    operation_callback_url="https://lyraeapi.azurewebsites.net/get_creneaux_choice"
+                    operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_creneaux_choice"
                 )
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
         play_source = TextSource(text=f"Je n'ai pas compris le créneau que vous avez choisi. {text}", voice_name="fr-FR-VivienneMultilingualNeural")
@@ -969,7 +1021,7 @@ async def get_creneaux_choice():
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="get_creneaux_choice",
-            operation_callback_url="https://lyraeapi.azurewebsites.net/get_creneaux_choice"
+            operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_creneaux_choice"
         )
     
     return jsonify({"status": "success"})
@@ -983,15 +1035,28 @@ async def handleResponse():
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "start_conversation":
         speak("Très bien, laissez-moi un instant")
         user_response = request.json[0].get("data").get("speechResult").get("speech")
+        pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
+        if re.search(pattern, user_response, re.IGNORECASE):
+            hang_up("Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.")
         task_intent = asyncio.create_task(get_intent_async(user_response=user_response))
+        
         intent = await task_intent
         play_source = None
+
         if intent.lower() == "renseignements" or intent.lower() == "renseignements.":
             rdv_intent = intent.lower()
-            print(intent)
-            task = asyncio.create_task(get_model_response_async(user_response))
-            model_response = await task
-            speak(model_response)
+            task_is_question = asyncio.create_task(is_question_async(user_response))
+            is_question = await task_is_question
+            if is_question is True:
+                task = asyncio.create_task(get_model_response_async(user_response))
+                model_response = await task
+                speak(model_response)
+            else:
+                play_source = TextSource(
+                    text="Bien sûr, posez-moi votre question", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+                )
+                start_recognizing("https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/module_informatif", "module_informatif", play_source)
+
             continue_conversation("Puis-je faire autre chose pour vous ?")
 
         elif intent.lower() == "prise de rendez-vous" or intent.lower() == "prise de rendez-vous.":
@@ -1003,19 +1068,9 @@ async def handleResponse():
             play_source = TextSource(
                 text="Désolé, je ne suis pas encore assez qualifié pour faire ceci. Voulez-vous prendre, consulter ou annuler un rendez-vous ou obtenir une information ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
             )
-    
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                end_silence_timeout=0.5,
-                play_prompt=play_source,
-                interrupt_call_media_operation=False,
-                interrupt_prompt=False,
-                operation_context="start_conversation",
-                speech_language="fr-FR",
-                initial_silence_timeout=20,
-                operation_callback_url="https://lyraeapi.azurewebsites.net/handleResponse"
-            )
+
+            start_recognizing("https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/handleResponse", "start_conversation", play_source=play_source)
+            
             return jsonify({"success": "success"})
             # play_source = TextSource(text="Vous voulez modifier un rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
 
@@ -1035,7 +1090,7 @@ async def handleResponse():
                 operation_context="start_conversation",
                 speech_language="fr-FR",
                 initial_silence_timeout=20,
-                operation_callback_url="https://lyraeapi.azurewebsites.net/handleResponse"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/handleResponse"
             )
             return jsonify({"success": "success"})
 
@@ -1045,7 +1100,7 @@ async def handleResponse():
 
         elif intent.lower() == "autre" or intent.lower() == "autre.":
             play_source = TextSource(
-                text="Je suis désolé, votre question n’entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+                text="Je suis désolé, votre question n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
             )
     
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
@@ -1058,7 +1113,7 @@ async def handleResponse():
                 operation_context="start_conversation",
                 speech_language="fr-FR",
                 initial_silence_timeout=20,
-                operation_callback_url="https://lyraeapi.azurewebsites.net/handleResponse"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/handleResponse"
             )
 
         else:
@@ -1076,7 +1131,7 @@ async def handleResponse():
                 operation_context="start_conversation",
                 speech_language="fr-FR",
                 initial_silence_timeout=20,
-                operation_callback_url="https://lyraeapi.azurewebsites.net/handleResponse"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/handleResponse"
             )
 
             return jsonify({"succes": "success"})
@@ -1090,7 +1145,7 @@ async def handleResponse():
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="confirm_call_intent",
-            operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_call_intent"
+            operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/confirm_call_intent"
         )
 
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
@@ -1108,7 +1163,7 @@ async def handleResponse():
             operation_context="start_conversation",
             speech_language="fr-FR",
             initial_silence_timeout=20,
-            operation_callback_url="https://lyraeapi.azurewebsites.net/handleResponse"
+            operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/handleResponse"
         )
 
     return jsonify({"success": "success"})
@@ -1117,8 +1172,8 @@ async def handleResponse():
 async def has_ordonnance():
     global ordonnance_error
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "has_ordonnance":
-        user_response = request.json[0].get("data").get("speechResult").get("speech")
         speak("Très bien")
+        user_response = request.json[0].get("data").get("speechResult").get("speech")
         model_response = get_positive_negative(user_response)
 
         if model_response == "négative":
@@ -1135,7 +1190,7 @@ async def has_ordonnance():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="rdv_exam_type",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/rdv_exam_type"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/rdv_exam_type"
             )
         else:
             play_source = TextSource(text="Désolé, je n'ai pas compris, Avez-vous une ordonnance ?", voice_name="fr-FR-VivienneMultilingualNeural")
@@ -1149,7 +1204,7 @@ async def has_ordonnance():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="has_ordonnance",
-                operation_callback_url="https://lyraeapi.azurewebsites.net/has_ordonnance"
+                operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/has_ordonnance"
             )
 
     return jsonify({"status": "success"})
@@ -1360,6 +1415,28 @@ def get_positive_negative(user_response):
             logging.info(f"error, {e}")
             return "Erreur lors de la communication avec le modèle."
 
+async def is_question_async(text):
+    url = "https://lyrae-talk-functions.azurewebsites.net/api/question_detection?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
+
+    headers = {
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "text": text
+    }
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, json=payload) as response:
+                response.raise_for_status()
+                data = await response.json()
+                print("birthdate", data)
+                return data.get("response", "Pas de réponse trouvée.")
+    except aiohttp.ClientError as e:
+        print(f"Erreur lors de l'appel au modèle : {e}")
+        return "Erreur lors de la communication avec le modèle."
+
 ########## CONVERSATION ##########
 
 def build_creneaux_phrase(creneaux):
@@ -1418,7 +1495,7 @@ def continue_conversation(model_response):
         operation_context="start_conversation",
         speech_language="fr-FR",
         initial_silence_timeout=20,
-        operation_callback_url="https://lyraeapi.azurewebsites.net/handleResponse"
+        operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/handleResponse"
     )
 
 def handle_prise_rdv():
@@ -1434,7 +1511,7 @@ def handle_prise_rdv():
         speech_language="fr-FR",
         initial_silence_timeout=5,
         operation_context="has_ordonnance",
-        operation_callback_url="https://lyraeapi.azurewebsites.net/has_ordonnance"
+        operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/has_ordonnance"
     )
 
 def handle_modification():
@@ -1449,7 +1526,7 @@ def handle_modification():
         speech_language="fr-FR",
         initial_silence_timeout=5,
         operation_context="get_birthdate",
-        operation_callback_url="https://lyraeapi.azurewebsites.net/get_birthdate"
+        operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_birthdate"
     )
     return "ok"
 
@@ -1465,7 +1542,7 @@ def handle_consultation():
         speech_language="fr-FR",
         initial_silence_timeout=5,
         operation_context="get_birthdate",
-        operation_callback_url="https://lyraeapi.azurewebsites.net/get_birthdate"
+        operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_birthdate"
     )
 
 # def handle_annulation(user_response):
@@ -1486,13 +1563,13 @@ def start_conversation(call_connection_id, callerId):
         play_source=play_source
     )
 
-    play_source = TextSource(
-        text="Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Je peux prendre, modifier ou annuler vos rendez-vous, ainsi que vous fournir des informations. Comment puis-je vous aider aujourd’hui ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-    )
-
     # play_source = TextSource(
-    #     text="Oui ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+    #     text="Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Je peux prendre, modifier ou annuler vos rendez-vous, ainsi que vous fournir des informations. Comment puis-je vous aider aujourd’hui ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
     # )
+
+    play_source = TextSource(
+        text="Oui ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+    )
 
     call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
         input_type=RecognizeInputType.SPEECH,
@@ -1504,7 +1581,7 @@ def start_conversation(call_connection_id, callerId):
         operation_context="start_conversation",
         speech_language="fr-FR",
         initial_silence_timeout=20,
-        operation_callback_url="https://lyraeapi.azurewebsites.net/handleResponse"
+        operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/handleResponse"
     )
 
     # call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
@@ -1517,7 +1594,7 @@ def start_conversation(call_connection_id, callerId):
     #     operation_context="get_birthdate",
     #     speech_language="fr-FR",
     #     initial_silence_timeout=20,
-    #     operation_callback_url="https://lyraeapi.azurewebsites.net/get_birthdate"
+    #     operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_birthdate"
     # )
 
 def speak(text):
@@ -1648,20 +1725,6 @@ async def find_patient():
     global rdv_intent
     global all_creneaux
 
-    url = "https://5940-2a01-e0a-3c3-cfa0-14ba-f10b-34ca-fb3c.ngrok-free.app/api/test"
-
-    firstname = strip_accents(firstname)
-
-    payload = {"data": f"{birthdate + 'T00:00:00'}, {firstname}, {lastname}"}
-    
-    try:
-        response = requests.post(url, json=payload)
-        response.raise_for_status()  # Raises HTTPError for bad status
-        data = response.json()
-        print("Création: ", data)
-    except requests.RequestException as e:
-        speak("requête fail")
-    
     results = patientCollection.find({
         "dateNaissance": {
             "$regex": f"^{birthdate + 'T00:00:00'}$"
@@ -1676,13 +1739,11 @@ async def find_patient():
         }
     })
 
-    resultsTwo = results
     first_result = next(results, None)  # Get the first match, or None if no match
-    json_results = dumps(list(resultsTwo), indent=4)
 
     if first_result is None:
         play_source = TextSource(
-            text="Désolé, je ne peux pas donner de RDV à un patient qui n'est pas déjà connu du cabinet. Vous êtes un nouveau patient : Je vous propose de vous transférer à la secrétaire", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+            text="Désolé, je ne peux pas donner de rendez-vous à un patient qui n'est pas déjà connu du cabinet. Vous êtes un nouveau patient : Je vous propose de vous transférer à la secrétaire", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
         )
 
         call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
@@ -1735,7 +1796,7 @@ async def find_patient():
                         operation_context="start_conversation",
                         speech_language="fr-FR",
                         initial_silence_timeout=20,
-                        operation_callback_url="https://lyraeapi.azurewebsites.net/handleResponse"
+                        operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/handleResponse"
                     )
                 elif len(planned_rdv) == 1:
                     speak("J'ai en effet trouvé un rendez-vous à votre nom.")
@@ -1766,7 +1827,7 @@ async def find_patient():
                             speech_language="fr-FR",
                             initial_silence_timeout=5,
                             operation_context="get_creneaux_choice",
-                            operation_callback_url="https://lyraeapi.azurewebsites.net/get_creneaux_choice"
+                            operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/get_creneaux_choice"
                         )
                     else:
                         play_source = TextSource(text="Puis-je faire autre chose pour vous ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural")
@@ -1781,7 +1842,7 @@ async def find_patient():
                             operation_context="start_conversation",
                             speech_language="fr-FR",
                             initial_silence_timeout=20,
-                            operation_callback_url="https://lyraeapi.azurewebsites.net/handleResponse"
+                            operation_callback_url="https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/handleResponse"
                         )
                 else:
                     speak("En effet, j'ai bien trouvé plusieurs rendez-vous à votre nom.")
