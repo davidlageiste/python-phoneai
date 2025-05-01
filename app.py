@@ -1619,21 +1619,15 @@ def start_conversation(call_connection_id, callerId):
     global caller
     caller = callerId
     
-    play_source = TextSource(
-        text="Pour des raisons de qualité et de suivi, cet appel peut être enregistré.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-    )
+    # speak("Pour des raisons de qualité et de suivi, cet appel peut être enregistré.")
 
-    call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
-        play_source=play_source
+    play_source = TextSource(
+        text="Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Comment puis-je vous aider aujourd’hui ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
     )
 
     # play_source = TextSource(
-    #     text="Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Je peux prendre, modifier ou annuler vos rendez-vous, ainsi que vous fournir des informations. Comment puis-je vous aider aujourd’hui ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+    #     text="Oui ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
     # )
-
-    play_source = TextSource(
-        text="Oui ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-    )
 
     call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
         input_type=RecognizeInputType.SPEECH,
