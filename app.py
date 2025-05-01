@@ -24,7 +24,7 @@ db = client['neuracorp']
 patientCollection = db['patientsDB']
 rdvCollection = db["rdv"]
 
-call_automation_client = CallAutomationClient.from_connection_string("endpoint=https://lyraetalktest.france.communication.azure.com/;accesskey=93iEbCDIKt4jKOkuGPgmOzhDBYKeKmCZJvxBt3ZGD7UOUVH56NzjJQQJ99BDACULyCpuAreVAAAAAZCS7YQ9")
+call_automation_client = CallAutomationClient.from_connection_string("endpoint=https://lyraetalk.france.communication.azure.com/;accesskey=9UN73P1bujRMwYm6rR9oaQx3slKfLHlTTEN5YeMkqXdhZ7WBmJ95JQQJ99ALACULyCpuAreVAAAAAZCS5f71")
 speech_config = speechsdk.SpeechConfig(subscription=SPEECH_KEY,region=SPEECH_REGION)
 
 global call_connection_id
@@ -212,14 +212,14 @@ async def callback():
         server_call_id = data.get("data").get("serverCallId")
         caller = request.args.get('caller')
 
-        target = PhoneNumberIdentifier("+33801150376")
+        # target = PhoneNumberIdentifier("+33801150376")
 
-        call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
-            target_participant=target,
-            transferee=PhoneNumberIdentifier("+" + caller.strip()),
-            operation_callback_url=f"https://lyraeapi.azurewebsites.net/callback",
-        )
-        # start_conversation(call_connection_id=call_connection_id, callerId=caller)
+        # call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
+        #     target_participant=target,
+        #     transferee=PhoneNumberIdentifier("+" + caller.strip()),
+        #     operation_callback_url=f"https://lyraeapi.azurewebsites.net/callback",
+        # )
+        start_conversation(call_connection_id=call_connection_id, callerId=caller)
         # await find_patient(caller)
         # handle_prise_rdv(caller)
     if request.json and request.json[0].get("type") == "Microsoft.Communication.PlayCompleted" and request.json[0].get("data").get("operationContext") == "hang_up":
@@ -1071,13 +1071,34 @@ async def handleResponse():
 
         elif intent.lower() == "prise de rendez-vous" or intent.lower() == "prise de rendez-vous.":
             rdv_intent = intent.lower()
-            play_source = TextSource(text="Vous voulez prendre rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = TextSource(
+                text="Je suis désolé, votre requête n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+            )
+            target = PhoneNumberIdentifier("+33668827897")
+
+            call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
+                target_participant=target,
+                transferee=PhoneNumberIdentifier("+" + caller.strip()),
+                operation_callback_url=f"https://lyraeapi.azurewebsites.net/callback",
+            )
+
+            # play_source = TextSource(text="Vous voulez prendre rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
 
         elif intent.lower() == "modification de rendez-vous":
             rdv_intent = intent.lower()
             play_source = TextSource(
-                text="Désolé, je ne suis pas encore assez qualifié pour faire ceci. Voulez-vous prendre, consulter ou annuler un rendez-vous ou obtenir une information ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+                text="Je suis désolé, votre requête n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
             )
+            target = PhoneNumberIdentifier("+33668827897")
+
+            call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
+                target_participant=target,
+                transferee=PhoneNumberIdentifier("+" + caller.strip()),
+                operation_callback_url=f"https://lyraeapi.azurewebsites.net/callback",
+            )
+            # play_source = TextSource(
+            #     text="Désolé, je ne suis pas encore assez qualifié pour faire ceci. Voulez-vous prendre, consulter ou annuler un rendez-vous ou obtenir une information ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+            # )
 
             start_recognizing("https://lyraeapi.azurewebsites.net/handleResponse", "start_conversation", play_source=play_source)
             
@@ -1085,10 +1106,22 @@ async def handleResponse():
             # play_source = TextSource(text="Vous voulez modifier un rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
 
         elif intent.lower() == "annulation de rendez-vous" or intent.lower() == "annulation de rendez-vous.":
-            rdv_intent = intent.lower()
             play_source = TextSource(
-                text="Désolé, je ne suis pas encore assez qualifié pour faire ceci. Voulez-vous prendre, consulter ou modifier un rendez-vous ? Vous pouvez aussi simplement me poser une question.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+                text="Je suis désolé, votre requête n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
             )
+            target = PhoneNumberIdentifier("+33668827897")
+
+            call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
+                target_participant=target,
+                transferee=PhoneNumberIdentifier("+" + caller.strip()),
+                operation_callback_url=f"https://lyraeapi.azurewebsites.net/callback",
+            )
+            rdv_intent = intent.lower()
+            return jsonify({"success": "success"})
+
+            # play_source = TextSource(
+            #     text="Désolé, je ne suis pas encore assez qualifié pour faire ceci. Voulez-vous prendre, consulter ou modifier un rendez-vous ? Vous pouvez aussi simplement me poser une question.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+            # )
     
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
                 input_type=RecognizeInputType.SPEECH,
@@ -1105,30 +1138,51 @@ async def handleResponse():
             return jsonify({"success": "success"})
 
         elif intent.lower() == "consultation de rendez-vous" or intent.lower() == "consultation de rendez-vous.":
+            play_source = TextSource(
+                text="Je suis désolé, votre requête n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+            )
+            target = PhoneNumberIdentifier("+33668827897")
+
+            call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
+                target_participant=target,
+                transferee=PhoneNumberIdentifier("+" + caller.strip()),
+                operation_callback_url=f"https://lyraeapi.azurewebsites.net/callback",
+            )
             rdv_intent = intent.lower()
-            play_source = TextSource(text="Vous voulez consulter un rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
+            return jsonify({"success": "success"})
+            # play_source = TextSource(text="Vous voulez consulter un rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
 
         elif intent.lower() == "autre" or intent.lower() == "autre.":
             play_source = TextSource(
                 text="Je suis désolé, votre question n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
             )
-    
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                end_silence_timeout=0.5,
-                play_prompt=play_source,
-                interrupt_call_media_operation=False,
-                interrupt_prompt=False,
-                operation_context="start_conversation",
-                speech_language="fr-FR",
-                initial_silence_timeout=20,
-                operation_callback_url="https://lyraeapi.azurewebsites.net/handleResponse"
-            )
 
+            target = PhoneNumberIdentifier("+33668827897")
+
+            call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
+                target_participant=target,
+                transferee=PhoneNumberIdentifier("+" + caller.strip()),
+                operation_callback_url=f"https://lyraeapi.azurewebsites.net/callback",
+            )
+            return jsonify({"success": "success"})
+
+            # call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+            #     input_type=RecognizeInputType.SPEECH,
+            #     target_participant=PhoneNumberIdentifier("+" + caller.strip()),
+            #     end_silence_timeout=0.5,
+            #     play_prompt=play_source,
+            #     interrupt_call_media_operation=False,
+            #     interrupt_prompt=False,
+            #     operation_context="start_conversation",
+            #     speech_language="fr-FR",
+            #     initial_silence_timeout=20,
+            #     operation_callback_url="https://lyraeapi.azurewebsites.net/handleResponse"
+            # )
+
+            
         else:
             play_source = TextSource(
-                text="Désolé, je n'ai pas compris, voulez-vous prendre, modifier ou annuler un rendez-vous ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+                text="Désolé, je n'ai pas compris, qui puis-je faire pour vous ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
             )
     
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
@@ -1144,7 +1198,7 @@ async def handleResponse():
                 operation_callback_url="https://lyraeapi.azurewebsites.net/handleResponse"
             )
 
-            return jsonify({"succes": "success"})
+            return jsonify({"success": "success"})
 
         call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
             input_type=RecognizeInputType.SPEECH,
