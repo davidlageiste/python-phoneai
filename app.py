@@ -212,14 +212,14 @@ async def callback():
         server_call_id = data.get("data").get("serverCallId")
         caller = request.args.get('caller')
 
-        target = PhoneNumberIdentifier("+33801150143")
+        # target = PhoneNumberIdentifier("+33801150143")
 
-        call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
-            target_participant=target,
-            transferee=PhoneNumberIdentifier("+" + caller.strip()),
-            operation_callback_url=f"https://lyraeapi.azurewebsites.net/callback",
-        )
-        # start_conversation(call_connection_id=call_connection_id, callerId=caller)
+        # call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
+        #     target_participant=target,
+        #     transferee=PhoneNumberIdentifier("+" + caller.strip()),
+        #     operation_callback_url=f"https://lyraeapi.azurewebsites.net/callback",
+        # )
+        start_conversation(call_connection_id=call_connection_id, callerId=caller)
         # await find_patient(caller)
         # handle_prise_rdv(caller)
     if request.json and request.json[0].get("type") == "Microsoft.Communication.PlayCompleted" and request.json[0].get("data").get("operationContext") == "hang_up":
@@ -1049,12 +1049,12 @@ async def handleResponse():
         if re.search(pattern, user_response, re.IGNORECASE):
             hang_up("Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.")
         task_intent = asyncio.create_task(get_intent_async(user_response=user_response))
-        
+
         intent = await task_intent
         play_source = None
 
         if intent.lower() == "renseignements" or intent.lower() == "renseignements.":
-            rdv_intent = intent.lower()
+            rdv_intent = intent.lower():
             task_is_question = asyncio.create_task(is_question_async(user_response))
             is_question = await task_is_question
             if is_question is True:
@@ -1071,7 +1071,9 @@ async def handleResponse():
 
         elif intent.lower() == "prise de rendez-vous" or intent.lower() == "prise de rendez-vous.":
             rdv_intent = intent.lower()
-            play_source = TextSource(text="Vous voulez prendre rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = TextSource(text="Je vais vous transférer vers une secrétaire pour que vous puissiez prendre rendez-vous.",voice_name="fr-FR-VivienneMultilingualNeural")
+
+            # play_source = TextSource(text="Vous voulez prendre rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
 
         elif intent.lower() == "modification de rendez-vous":
             rdv_intent = intent.lower()
@@ -1079,9 +1081,14 @@ async def handleResponse():
                 text="Désolé, je ne suis pas encore assez qualifié pour faire ceci. Voulez-vous prendre, consulter ou annuler un rendez-vous ou obtenir une information ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
             )
 
-            start_recognizing("https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/handleResponse", "start_conversation", play_source=play_source)
+            hang_up("Je vais vous transférer vers une secrétaire pour que vous puissiez modifier votre rendez-vous.")
+
+            # play_source = TextSource(text="Je vais vous transférer vers une secrétaire pour que vous puissiez modifier votre rendez-vous.",voice_name="fr-FR-VivienneMultilingualNeural")
+            # start_recognizing("https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/handleResponse", "start_conversation", play_source)
+
+            # start_recognizing("https://f44e-2a01-cb00-844-1d00-619b-c346-9642-7d3a.ngrok-free.app/handleResponse", "start_conversation", play_source=play_source)
             
-            return jsonify({"success": "success"})
+            # return jsonify({"success": "success"})
             # play_source = TextSource(text="Vous voulez modifier un rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
 
         elif intent.lower() == "annulation de rendez-vous" or intent.lower() == "annulation de rendez-vous.":
@@ -1106,7 +1113,8 @@ async def handleResponse():
 
         elif intent.lower() == "consultation de rendez-vous" or intent.lower() == "consultation de rendez-vous.":
             rdv_intent = intent.lower()
-            play_source = TextSource(text="Vous voulez consulter un rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = TextSource(text="Je vais vous transférer vers une secrétaire pour votre requête.",voice_name="fr-FR-VivienneMultilingualNeural")
+            # play_source = TextSource(text="Vous voulez consulter un rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
 
         elif intent.lower() == "autre" or intent.lower() == "autre.":
             play_source = TextSource(
@@ -1128,7 +1136,7 @@ async def handleResponse():
 
         else:
             play_source = TextSource(
-                text="Désolé, je n'ai pas compris, voulez-vous prendre, modifier ou annuler un rendez-vous ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+                text="Désolé, je n'ai pas compris, que puis-je faire pour vous ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
             )
     
             call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
@@ -1160,7 +1168,7 @@ async def handleResponse():
 
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
         play_source = TextSource(
-            text="Désolé, je n'ai pas compris, voulez-vous prendre, modifier ou annuler un rendez-vous ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+            text="Désolé, je n'ai pas compris, que puis-je faire pour vous ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
         )
     
         call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
