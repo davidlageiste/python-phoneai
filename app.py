@@ -1076,9 +1076,8 @@ async def handleResponse():
 
         elif intent.lower() == "prise de rendez-vous" or intent.lower() == "prise de rendez-vous.":
             rdv_intent = intent.lower()
-            play_source = TextSource(
-                text="Je suis désolé, votre requête n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-            )
+    
+            speak("Je suis désolé, votre requête n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.")
             target = PhoneNumberIdentifier("+33297415591")
 
             call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
@@ -1091,9 +1090,7 @@ async def handleResponse():
 
         elif intent.lower() == "modification de rendez-vous":
             rdv_intent = intent.lower()
-            play_source = TextSource(
-                text="Je suis désolé, votre requête n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-            )
+            speak("Je suis désolé, votre requête n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.")
             target = PhoneNumberIdentifier("+33297415591")
 
             call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
@@ -1111,9 +1108,7 @@ async def handleResponse():
             # play_source = TextSource(text="Vous voulez modifier un rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
 
         elif intent.lower() == "annulation de rendez-vous" or intent.lower() == "annulation de rendez-vous.":
-            play_source = TextSource(
-                text="Je suis désolé, votre requête n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-            )
+            speak("Je suis désolé, votre requête n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.")
             target = PhoneNumberIdentifier("+33297415591")
 
             call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
@@ -1143,9 +1138,11 @@ async def handleResponse():
             return jsonify({"success": "success"})
 
         elif intent.lower() == "consultation de rendez-vous" or intent.lower() == "consultation de rendez-vous.":
-            play_source = TextSource(
-                text="Je suis désolé, votre requête n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-            )
+            # play_source = TextSource(
+            #     text="Je suis désolé, votre requête n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
+            # )
+            speak("Je suis désolé, votre requête n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.")
+
             target = PhoneNumberIdentifier("+33297415591")
 
             call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
@@ -1158,9 +1155,7 @@ async def handleResponse():
             # play_source = TextSource(text="Vous voulez consulter un rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
 
         elif intent.lower() == "autre" or intent.lower() == "autre.":
-            play_source = TextSource(
-                text="Je suis désolé, votre question n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-            )
+            speak("Je suis désolé, votre requête n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.")
 
             target = PhoneNumberIdentifier("+33297415591")
 
