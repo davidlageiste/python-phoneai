@@ -56,6 +56,9 @@ ordonnance_error = 0
 global birthdate_error
 birthdate_error = 0
 
+global intent_error
+intent_error = 0
+
 rdv_intent = None
 intent = None
 lastname = None
@@ -697,6 +700,8 @@ async def confirm_birthdate():
 
 async def confirm_call_intent():
     global rdv_intent
+    global intent_error
+
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "confirm_call_intent":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         speak("D'accord")
@@ -1200,17 +1205,17 @@ async def handleResponse():
 
             return jsonify({"success": "success"})
 
-        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-            input_type=RecognizeInputType.SPEECH,
-            target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
-            end_silence_timeout=0.5,
-            play_prompt=play_source,
-            interrupt_prompt=False,
-            speech_language="fr-FR",
-            initial_silence_timeout=5,
-            operation_context="confirm_call_intent",
-            operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_call_intent"
-        )
+        # call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
+        #     input_type=RecognizeInputType.SPEECH,
+        #     target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
+        #     end_silence_timeout=0.5,
+        #     play_prompt=play_source,
+        #     interrupt_prompt=False,
+        #     speech_language="fr-FR",
+        #     initial_silence_timeout=5,
+        #     operation_context="confirm_call_intent",
+        #     operation_callback_url="https://lyraeapi.azurewebsites.net/confirm_call_intent"
+        # )
 
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
         play_source = TextSource(
