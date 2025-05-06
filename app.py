@@ -11,6 +11,7 @@ from datetime import date, datetime
 import logging
 import unicodedata
 import re 
+import random
 
 COGNITIVE_SERVICE_ENDPOINT = "https://lyraecognitivesservicesus.cognitiveservices.azure.com"
 SPEECH_KEY='CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U2XJ3w3AAAAACOGuWEK'
@@ -74,6 +75,55 @@ french_months = {
     5: "mai", 6: "juin", 7: "juillet", 8: "août",
     9: "septembre", 10: "octobre", 11: "novembre", 12: "décembre"
 }
+
+phrases_bank = {
+    "general": [
+        "D'accord, un instant.",
+        "Très bien, un instant je vous prie.",
+        "Je vois, je regarde cela.",
+        "Entendu, un instant.",
+        "Parfait, un instant je vous prie.",
+        "C'est bien pris en compte, je regarde cela.",
+        "Merci pour cette précision.",
+        "C’est enregistré, un instant je vous prie.",
+        "C'est noté, un instant.",
+        "Je prends note de cela."
+    ],
+    "informationel": [
+        "Je regarde ça pour vous, attendez un instant.",
+        "Je vais vérifier cette information, ne quittez pas.",
+        "Je consulte les données, cela prend juste quelques secondes.",
+        "Je cherche la réponse à votre question, merci de patienter un instant.",
+        "Je me renseigne pour vous, je vous dis ça tout de suite.",
+    ],
+    "prise_rdv": [
+        "Je regarde les disponibilités, un instant.",
+        "Je consulte le planning pour trouver un créneau adapté.",
+        "Je vérifie les créneaux disponibles, cela prend juste quelques secondes.",
+        "Je cherche les prochaines disponibilités, merci de patienter.",
+        "Je vérifie les rendez-vous ouverts pour vous proposer une option.",
+    ],
+    "modification_rdv": [
+        "Je consulte votre dossier pour voir les modifications possibles.",
+        "Je regarde les disponibilités pour ajuster votre rendez-vous.",
+        "Je vérifie les options pour modifier votre rendez-vous, un instant.",
+        "Je me charge de la modification, cela prend juste un court instant.",
+        "Je cherche la meilleure solution pour ajuster votre rendez-vous, merci de patienter.",
+    ],
+    "annulation_rdv": [
+        "Je vérifie votre dossier pour procéder à l'annulation.",
+        "Je prends en compte votre demande, un instant.",
+        "Je m’occupe de l’annulation, cela prend juste un petit moment.",
+        "Je vérifie les conditions d’annulation avant de finaliser votre demande.",
+        "Je procède à l’annulation de votre rendez-vous, merci de patienter un instant.",
+    ]
+}
+
+def get_phrase(category):
+    phrases = phrases_bank.get(category)
+    if not phrases:
+        return f"[Aucune phrase disponible pour la catégorie : {category}]"
+    return random.choice(phrases)
 
 def full_date_vers_litteral(date_str):
     # Conversion en objet datetime
@@ -261,7 +311,7 @@ async def get_firstname():
         else:
             clean_firstname = user_response.replace(".", "")
             task_get_firstname = asyncio.create_task(get_firstname_async(user_response=clean_firstname))
-            speak("Très bien")
+            speak(get_phrase("general")
 
             firstname = await task_get_firstname
             clean_firstname = firstname.strip().strip()
@@ -329,7 +379,7 @@ async def get_lastname():
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         # Remove every "." that comes from the AI response
 
-        speak("Merci")
+        speak(get_phrase("general")
         clean_name = user_response.replace(".", "")
         task_get_lastname = asyncio.create_task(get_lastname_async(user_response=clean_name))
         lastname = await task_get_lastname
@@ -399,7 +449,7 @@ async def get_birthdate():
     global birthdate
 
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "get_birthdate":
-        speak("Merci, un instant s'il vous plaît")
+        speak(get_phrase("general")
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         speak(f"user said {user_response}")
         task_get_birthdate = asyncio.create_task(get_birthdate_async(user_response=user_response))
@@ -527,7 +577,7 @@ async def confirm_lastname():
     
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
-        speak("D'accord")
+        speak(get_phrase("general")
         model_response = get_positive_negative(user_response)
 
         if model_response == "négative":
@@ -591,7 +641,7 @@ async def confirm_birthdate():
     global birthdate_error
     
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "confirm_birthdate":
-        speak("Très bien.")
+        speak(get_phrase("general")
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         model_response = get_positive_negative(user_response)
 
@@ -704,7 +754,7 @@ async def confirm_call_intent():
 
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "confirm_call_intent":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
-        speak("D'accord")
+        speak(get_phrase("general")
         model_response = get_positive_negative(user_response)
 
         if model_response == "négative":
@@ -796,7 +846,7 @@ async def confirm_rdv():
 
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "confirm_rdv":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
-        speak("D'accord")
+        speak(get_phrase("general"))
         model_response = get_positive_negative(user_response=user_response)
 
         if model_response == "négative":
@@ -829,7 +879,7 @@ async def confirm_rdv():
                 )
         elif model_response == "positive":
             task_creneaux = asyncio.create_task(get_creneaux_async(sous_type=sous_type_id, exam_type=exam_id))
-            speak("Je regarde les disponibilités, un instant...")
+            speak(get_phrase("prise_rdv"))
             creneaux = await task_creneaux
 
             while creneaux is None:
@@ -897,7 +947,7 @@ async def rdv_exam_type():
         if re.search(pattern, user_response, re.IGNORECASE):
             hang_up("Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.")
         task_type = asyncio.create_task(get_exam_type_async(user_response=user_response))
-        speak("D'accord")
+        speak(get_phrase("general"))
         exam_type = await task_type
 
         if exam_type["type_examen"] == None or exam_type["code_examen"] == None:
@@ -1048,7 +1098,7 @@ async def handleResponse():
     global caller
 
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "start_conversation":
-        speak("Très bien, laissez-moi un instant")
+        speak(get_phrase("general"))
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
         if re.search(pattern, user_response, re.IGNORECASE):
@@ -1236,7 +1286,7 @@ async def handleResponse():
 async def has_ordonnance():
     global ordonnance_error
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "has_ordonnance":
-        speak("Très bien")
+        speak(get_phrase("general"))
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         model_response = get_positive_negative(user_response)
 
@@ -1870,7 +1920,7 @@ async def find_patient():
 
                     if rdv_intent == "modification de rendez-vous" or rdv_intent.lower() == "modification de rendez-vous.":
                         task_creneaux = asyncio.create_task(get_creneaux_async(sous_type=planned_rdv[0].get("codeExamen"), exam_type=planned_rdv[0].get("typeExamen")))
-                        speak("Je vais chercher des nouveaux créneaux disponibles pour votre examen.")
+                        speak(get_phrase("modification_rdv"))
                         creneaux = await task_creneaux
                         all_creneaux = creneaux
                         text = build_creneaux_phrase(creneaux=creneaux)
