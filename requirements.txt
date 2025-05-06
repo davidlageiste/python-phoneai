@@ -7,3 +7,7 @@ requests==2.31.0
 python-dotenv==1.0.0
 aiohttp
 pymongo==4.11.3 
+
+elevenlabs
+python-dotenv
+azure-identity
