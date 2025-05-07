@@ -19,7 +19,7 @@ import unicodedata
 import re
 
 from utils.tts import text_to_speech, generate_text_to_speech
-
+from utils.recorded_audio import recorded_audios_keys
 
 COGNITIVE_SERVICE_ENDPOINT = (
     "https://lyraecognitivesservicesus.cognitiveservices.azure.com"
@@ -184,15 +184,7 @@ def start_recognizing(callback_url, context, play_source):
 
 
 def hang_up(text):
-    recorded = [
-        "misunderstand",
-        "misunderstand_unfortunately",
-        "misunderstand_excuse",
-        "hang_up_emergency",
-        "hang_up_prescription",
-        "hang_up_rdv_error",
-    ]
-    if text in recorded:
+    if text in recorded_audios_keys:
         play_source = text_to_speech("fixed_file_source", text)
     else:
         play_source = text_to_speech("file_source", text)
@@ -218,9 +210,16 @@ def findPatientInDB(query):
 
 @app.route("/generate_audio_batch", methods=["POST"])
 def generate_audio_batch():
-    if generate_text_to_speech():
-        return jsonify({"status": "success"})
-    return jsonify({"status": "error"})
+    if request.json and request.json["item"]:
+        generate_text_to_speech(request.json["item"])
+    else:
+        generate_text_to_speech()
+
+    return jsonify({"status": "success"})
+
+    # if generate_text_to_speech():
+    #     return jsonify({"status": "success"})
+    # return jsonify({"status": "error"})
 
 
 @app.route("/incoming_call", methods=["POST"])
@@ -241,7 +240,7 @@ def incoming_call():
 
     call_automation_client.answer_call(
         incoming_call_context=encodedContext,
-        callback_url=f"https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/callback?caller={caller}",
+        callback_url=f"https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/callback?caller={caller}",
         cognitive_services_endpoint=COGNITIVE_SERVICE_ENDPOINT,
     )
     return jsonify({"status": "success"})
@@ -295,7 +294,7 @@ async def callback():
         # call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
         #     target_participant=target,
         #     transferee=PhoneNumberIdentifier("+" + caller.strip()),
-        #     operation_callback_url=f"https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/callback",
+        #     operation_callback_url=f"https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/callback",
         # )
         start_conversation(call_connection_id=call_connection_id, callerId=caller)
         # await find_patient(caller)
@@ -348,7 +347,7 @@ async def get_firstname():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_firstname",
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_firstname",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_firstname",
             )
 
         else:
@@ -386,7 +385,7 @@ async def get_firstname():
                     speech_language="fr-FR",
                     initial_silence_timeout=5,
                     operation_context="get_firstname",
-                    operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_firstname",
+                    operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_firstname",
                 )
 
             else:
@@ -409,7 +408,7 @@ async def get_firstname():
                     speech_language="fr-FR",
                     initial_silence_timeout=10,
                     operation_context="confirm_firstname",
-                    operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/confirm_firstname",
+                    operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/confirm_firstname",
                 )
 
     elif (
@@ -437,7 +436,7 @@ async def get_firstname():
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="get_firstname",
-            operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_firstname",
+            operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_firstname",
         )
 
     return jsonify({"success": "success"})
@@ -457,7 +456,7 @@ async def get_lastname():
         # Remove every "." that comes from the AI response
 
         # speak("Merci")
-        speak("thanks")
+        speak("ok")
         clean_name = user_response.replace(".", "")
         task_get_lastname = asyncio.create_task(
             get_lastname_async(user_response=clean_name)
@@ -500,7 +499,7 @@ async def get_lastname():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_lastname",
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_lastname",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_lastname",
             )
 
         else:
@@ -522,7 +521,7 @@ async def get_lastname():
                 speech_language="fr-FR",
                 initial_silence_timeout=10,
                 operation_context="confirm_lastname",
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/confirm_lastname",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/confirm_lastname",
             )
 
     elif (
@@ -547,7 +546,7 @@ async def get_lastname():
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="get_lastname",
-            operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_lastname",
+            operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_lastname",
         )
 
     return jsonify({"success": "success"})
@@ -563,7 +562,7 @@ async def get_birthdate():
         and request.json[0].get("data").get("operationContext") == "get_birthdate"
     ):
         # speak("Merci, un instant s'il vous plaît")
-        speak("wait")
+        speak("ok")
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         # speak(f"user said {user_response}")
         speak(f"user said {user_response}")
@@ -591,7 +590,7 @@ async def get_birthdate():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="confirm_birthdate",
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_birthdate",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_birthdate",
             )
         else:
             date_litterale = date_vers_litteral(birthdate)
@@ -617,7 +616,7 @@ async def get_birthdate():
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="confirm_birthdate",
-            operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/confirm_birthdate",
+            operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/confirm_birthdate",
         )
 
     elif (
@@ -641,7 +640,7 @@ async def get_birthdate():
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="confirm_birthdate",
-            operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_birthdate",
+            operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_birthdate",
         )
     return jsonify({"success": "success"})
 
@@ -686,7 +685,7 @@ async def confirm_firstname():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_firstname",
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_firstname",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_firstname",
             )
 
         elif model_response == "positive":
@@ -715,7 +714,7 @@ async def confirm_firstname():
                 speech_language="fr-FR",
                 initial_silence_timeout=10,
                 operation_context="confirm_firstname",
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/confirm_firstname",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/confirm_firstname",
             )
     if (
         request.json
@@ -740,7 +739,7 @@ async def confirm_firstname():
             speech_language="fr-FR",
             initial_silence_timeout=10,
             operation_context="confirm_firstname",
-            operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/confirm_firstname",
+            operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/confirm_firstname",
         )
 
     return jsonify({"success": "success"})
@@ -756,7 +755,7 @@ async def confirm_lastname():
     ):
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         # speak("D'accord")
-        speak("ok2")
+        speak("ok")
         model_response = get_positive_negative(user_response)
 
         if model_response == "négative":
@@ -794,7 +793,7 @@ async def confirm_lastname():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_lastname",
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_lastname",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_lastname",
             )
 
         elif model_response == "positive":
@@ -815,7 +814,7 @@ async def confirm_lastname():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_firstname",
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_firstname",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_firstname",
             )
         else:
             # play_source = TextSource(
@@ -837,7 +836,7 @@ async def confirm_lastname():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="confirm_lastname",
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/confirm_lastname",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/confirm_lastname",
             )
     return jsonify({"success": "success"})
 
@@ -891,7 +890,7 @@ async def confirm_birthdate():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_birthdate",
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_birthdate",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_birthdate",
             )
 
         elif model_response == "positive":
@@ -918,7 +917,7 @@ async def confirm_birthdate():
                     speech_language="fr-FR",
                     initial_silence_timeout=5,
                     operation_context="get_lastname",
-                    operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_lastname",
+                    operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_lastname",
                 )
             else:
                 results = findPatientInDB(
@@ -952,7 +951,7 @@ async def confirm_birthdate():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="confirm_birthdate",
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/confirm_birthdate",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/confirm_birthdate",
             )
 
     elif (
@@ -985,7 +984,7 @@ async def confirm_birthdate():
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="confirm_birthdate",
-            operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/confirm_birthdate",
+            operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/confirm_birthdate",
         )
     return jsonify({"success": "success"})
 
@@ -1002,7 +1001,7 @@ async def confirm_call_intent():
     ):
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         # speak("D'accord")
-        speak("ok2")
+        speak("ok")
         model_response = get_positive_negative(user_response)
 
         if model_response == "négative":
@@ -1023,7 +1022,7 @@ async def confirm_call_intent():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="start_conversation",
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/handleResponse",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/handleResponse",
             )
         elif model_response == "positive":
             if (
@@ -1073,7 +1072,7 @@ async def confirm_call_intent():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="confirm_call_intent",
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/confirm_call_intent",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/confirm_call_intent",
             )
     if (
         request.json
@@ -1104,7 +1103,7 @@ async def confirm_call_intent():
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="confirm_call_intent",
-            operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/confirm_call_intent",
+            operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/confirm_call_intent",
         )
     return jsonify({"success": "success"})
 
@@ -1141,7 +1140,7 @@ async def confirm_rdv():
     ):
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         # speak("D'accord")
-        speak("ok2")
+        speak("ok")
         model_response = get_positive_negative(user_response=user_response)
 
         if model_response == "négative":
@@ -1166,7 +1165,7 @@ async def confirm_rdv():
                     speech_language="fr-FR",
                     initial_silence_timeout=5,
                     operation_context="rdv_exam_type",
-                    operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/rdv_exam_type",
+                    operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/rdv_exam_type",
                 )
             else:
                 # play_source = TextSource(
@@ -1188,7 +1187,7 @@ async def confirm_rdv():
                 get_creneaux_async(sous_type=sous_type_id, exam_type=exam_id)
             )
             # speak("Je regarde les disponibilités, un instant...")
-            speak("wait_appointment")
+            speak("take_appointment")
             creneaux = await task_creneaux
 
             while creneaux is None:
@@ -1217,7 +1216,7 @@ async def confirm_rdv():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_creneaux_choice",
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_creneaux_choice",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_creneaux_choice",
             )
         else:
             # play_source = TextSource(
@@ -1238,7 +1237,7 @@ async def confirm_rdv():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="rdv_exam_type",
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/rdv_exam_type",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/rdv_exam_type",
             )
 
     elif (
@@ -1262,7 +1261,7 @@ async def confirm_rdv():
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="rdv_exam_type",
-            operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/rdv_exam_type",
+            operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/rdv_exam_type",
         )
     return jsonify({"status": "success"})
 
@@ -1285,7 +1284,7 @@ async def rdv_exam_type():
             get_exam_type_async(user_response=user_response)
         )
         # speak("D'accord")
-        speak("ok2")
+        speak("ok")
         exam_type = await task_type
 
         if exam_type["type_examen"] == None or exam_type["code_examen"] == None:
@@ -1306,7 +1305,7 @@ async def rdv_exam_type():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="rdv_exam_type",
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/rdv_exam_type",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/rdv_exam_type",
             )
         else:
             exam_id = exam_type["type_examen_id"]
@@ -1332,7 +1331,7 @@ async def rdv_exam_type():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="confirm_rdv",
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/confirm_rdv",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/confirm_rdv",
             )
 
     return jsonify({"status": "success"})
@@ -1391,7 +1390,7 @@ async def get_creneaux_choice():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="get_creneaux_choice",
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_creneaux_choice",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_creneaux_choice",
             )
         else:
             dt = datetime.fromisoformat(creneau_choice)
@@ -1438,7 +1437,7 @@ async def get_creneaux_choice():
                         speech_language="fr-FR",
                         initial_silence_timeout=5,
                         operation_context="get_birthdate",
-                        operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_birthdate",
+                        operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_birthdate",
                     )
                 elif (
                     rdv_intent == "modification de rendez-vous"
@@ -1473,7 +1472,7 @@ async def get_creneaux_choice():
                     speech_language="fr-FR",
                     initial_silence_timeout=5,
                     operation_context="get_creneaux_choice",
-                    operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_creneaux_choice",
+                    operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_creneaux_choice",
                 )
     elif (
         request.json
@@ -1499,7 +1498,7 @@ async def get_creneaux_choice():
             speech_language="fr-FR",
             initial_silence_timeout=5,
             operation_context="get_creneaux_choice",
-            operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_creneaux_choice",
+            operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_creneaux_choice",
         )
 
     return jsonify({"status": "success"})
@@ -1517,7 +1516,7 @@ async def handleResponse():
         and request.json[0].get("data").get("operationContext") == "start_conversation"
     ):
         # speak("Très bien, laissez-moi un instant")
-        speak("wait2")
+        speak("ok")
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
         if re.search(pattern, user_response, re.IGNORECASE):
@@ -1544,7 +1543,7 @@ async def handleResponse():
                 # )
                 play_source = text_to_speech("fixed_file_source", "question")
                 start_recognizing(
-                    "https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/module_informatif",
+                    "https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/module_informatif",
                     "module_informatif",
                     play_source,
                 )
@@ -1568,7 +1567,7 @@ async def handleResponse():
             ).transfer_call_to_participant(
                 target_participant=target,
                 transferee=PhoneNumberIdentifier("+" + caller.strip()),
-                operation_callback_url=f"https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/callback",
+                operation_callback_url=f"https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/callback",
             )
 
             # play_source = TextSource(text="Vous voulez prendre rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
@@ -1586,14 +1585,14 @@ async def handleResponse():
             ).transfer_call_to_participant(
                 target_participant=target,
                 transferee=PhoneNumberIdentifier("+" + caller.strip()),
-                operation_callback_url=f"https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/callback",
+                operation_callback_url=f"https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/callback",
             )
             # play_source = TextSource(
             #     text="Désolé, je ne suis pas encore assez qualifié pour faire ceci. Voulez-vous prendre, consulter ou annuler un rendez-vous ou obtenir une information ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
             # )
 
             start_recognizing(
-                "https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/handleResponse",
+                "https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/handleResponse",
                 "start_conversation",
                 play_source=play_source,
             )
@@ -1616,7 +1615,7 @@ async def handleResponse():
             ).transfer_call_to_participant(
                 target_participant=target,
                 transferee=PhoneNumberIdentifier("+" + caller.strip()),
-                operation_callback_url=f"https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/callback",
+                operation_callback_url=f"https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/callback",
             )
             rdv_intent = intent.lower()
             return jsonify({"success": "success"})
@@ -1637,7 +1636,7 @@ async def handleResponse():
                 operation_context="start_conversation",
                 speech_language="fr-FR",
                 initial_silence_timeout=20,
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/handleResponse",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/handleResponse",
             )
             return jsonify({"success": "success"})
 
@@ -1660,7 +1659,7 @@ async def handleResponse():
             ).transfer_call_to_participant(
                 target_participant=target,
                 transferee=PhoneNumberIdentifier("+" + caller.strip()),
-                operation_callback_url=f"https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/callback",
+                operation_callback_url=f"https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/callback",
             )
             rdv_intent = intent.lower()
             return jsonify({"success": "success"})
@@ -1679,7 +1678,7 @@ async def handleResponse():
             ).transfer_call_to_participant(
                 target_participant=target,
                 transferee=PhoneNumberIdentifier("+" + caller.strip()),
-                operation_callback_url=f"https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/callback",
+                operation_callback_url=f"https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/callback",
             )
             return jsonify({"success": "success"})
 
@@ -1693,7 +1692,7 @@ async def handleResponse():
             #     operation_context="start_conversation",
             #     speech_language="fr-FR",
             #     initial_silence_timeout=20,
-            #     operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/handleResponse"
+            #     operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/handleResponse"
             # )
 
         else:
@@ -1716,7 +1715,7 @@ async def handleResponse():
                 operation_context="start_conversation",
                 speech_language="fr-FR",
                 initial_silence_timeout=20,
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/handleResponse",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/handleResponse",
             )
 
             return jsonify({"success": "success"})
@@ -1730,7 +1729,7 @@ async def handleResponse():
         #     speech_language="fr-FR",
         #     initial_silence_timeout=5,
         #     operation_context="confirm_call_intent",
-        #     operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/confirm_call_intent"
+        #     operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/confirm_call_intent"
         # )
 
     elif (
@@ -1756,7 +1755,7 @@ async def handleResponse():
             operation_context="start_conversation",
             speech_language="fr-FR",
             initial_silence_timeout=20,
-            operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/handleResponse",
+            operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/handleResponse",
         )
 
     return jsonify({"success": "success"})
@@ -1795,7 +1794,7 @@ async def has_ordonnance():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="rdv_exam_type",
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/rdv_exam_type",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/rdv_exam_type",
             )
         else:
             # play_source = TextSource(
@@ -1817,7 +1816,7 @@ async def has_ordonnance():
                 speech_language="fr-FR",
                 initial_silence_timeout=5,
                 operation_context="has_ordonnance",
-                operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/has_ordonnance",
+                operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/has_ordonnance",
             )
 
     return jsonify({"status": "success"})
@@ -2092,7 +2091,7 @@ def continue_conversation(model_response):
         operation_context="start_conversation",
         speech_language="fr-FR",
         initial_silence_timeout=20,
-        operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/handleResponse",
+        operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/handleResponse",
     )
 
 
@@ -2114,7 +2113,7 @@ def handle_prise_rdv():
         speech_language="fr-FR",
         initial_silence_timeout=5,
         operation_context="has_ordonnance",
-        operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/has_ordonnance",
+        operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/has_ordonnance",
     )
 
 
@@ -2136,7 +2135,7 @@ def handle_modification():
         speech_language="fr-FR",
         initial_silence_timeout=5,
         operation_context="get_birthdate",
-        operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_birthdate",
+        operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_birthdate",
     )
     return "ok"
 
@@ -2159,7 +2158,7 @@ def handle_consultation():
         speech_language="fr-FR",
         initial_silence_timeout=5,
         operation_context="get_birthdate",
-        operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_birthdate",
+        operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_birthdate",
     )
 
 
@@ -2191,7 +2190,7 @@ def start_conversation(call_connection_id, callerId):
         operation_context="start_conversation",
         speech_language="fr-FR",
         initial_silence_timeout=20,
-        operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/handleResponse",
+        operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/handleResponse",
     )
 
     # call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
@@ -2204,7 +2203,7 @@ def start_conversation(call_connection_id, callerId):
     #     operation_context="get_birthdate",
     #     speech_language="fr-FR",
     #     initial_silence_timeout=20,
-    #     operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_birthdate"
+    #     operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_birthdate"
     # )
 
 
@@ -2214,8 +2213,8 @@ def speak(text):
     # play_source = TextSource(
     #     text=text, source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
     # )
-    recorded = []
-    if text in recorded:
+
+    if text in recorded_audios_keys:
         play_source = text_to_speech("fixed_file_source", text)
     else:
         play_source = text_to_speech("file_source", text)
@@ -2446,7 +2445,7 @@ async def find_patient():
                         operation_context="start_conversation",
                         speech_language="fr-FR",
                         initial_silence_timeout=20,
-                        operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/handleResponse",
+                        operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/handleResponse",
                     )
                 elif len(planned_rdv) == 1:
                     # speak("J'ai en effet trouvé un rendez-vous à votre nom.")
@@ -2486,7 +2485,7 @@ async def find_patient():
                         # speak(
                         #     "Je vais chercher des nouveaux créneaux disponibles pour votre examen."
                         # )
-                        speak("wait_appointment2")
+                        speak("change_appointment")
                         creneaux = await task_creneaux
                         all_creneaux = creneaux
                         text = build_creneaux_phrase(creneaux=creneaux)
@@ -2508,7 +2507,7 @@ async def find_patient():
                             speech_language="fr-FR",
                             initial_silence_timeout=5,
                             operation_context="get_creneaux_choice",
-                            operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/get_creneaux_choice",
+                            operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/get_creneaux_choice",
                         )
                     else:
                         # play_source = TextSource(
@@ -2532,7 +2531,7 @@ async def find_patient():
                             operation_context="start_conversation",
                             speech_language="fr-FR",
                             initial_silence_timeout=20,
-                            operation_callback_url="https://e89d-2a01-e0a-e04-1310-8d54-261e-12c9-50b4.ngrok-free.app/handleResponse",
+                            operation_callback_url="https://6137-2a01-e0a-e04-1310-c032-dba4-17ad-8c76.ngrok-free.app/handleResponse",
                         )
                 else:
                     # speak(
