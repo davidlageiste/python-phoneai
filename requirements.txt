@@ -6,4 +6,7 @@ azure-cognitiveservices-speech==1.43.0
 requests==2.31.0
 python-dotenv==1.0.0
 aiohttp
-pymongo==4.11.3 
+pymongo==4.11.3
+elevenlabs
+python-dotenv
+azure-identity
