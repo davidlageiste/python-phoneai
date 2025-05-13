@@ -488,7 +488,7 @@ async def confirm_lastname():
                     }
                 })
                 date_litterale = date_vers_litteral(birthdate)
-                play_source = text_to_speech("file_source", f"{patient.get("nom")} {patient.get("prenom")} né {date_litterale} c'est bien vous ?")
+                play_source = text_to_speech("file_source", f"{patient.get('nom')} {patient.get('prenom')} né {date_litterale} c'est bien vous ?")
                 lastname = patient.get("nom")
                 firstname = patient.get("prenom")
                 start_recognizing(callback_url="/confirm_identity", play_source=play_source, context="confirm_identity")
@@ -577,7 +577,7 @@ async def confirm_birthdate():
                 })
 
                 date_litterale = date_vers_litteral(birthdate)
-                play_source = text_to_speech("file_source", f"{patient.get("nom")} {patient.get("prenom")} né {date_litterale} c'est bien vous ?")
+                play_source = text_to_speech("file_source", f"{patient.get('nom')} {patient.get('prenom')} né {date_litterale} c'est bien vous ?")
                 lastname = patient.get("nom")
                 firstname = patient.get("prenom")
                 start_recognizing(callback_url="/confirm_identity", play_source=play_source, context="confirm_identity")
