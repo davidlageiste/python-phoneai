@@ -11,7 +11,6 @@ from datetime import datetime, timedelta
 import logging
 import unicodedata
 import re 
-import numpy as np
 from utils.tts import text_to_speech, generate_text_to_speech
 from utils.recorded_audio import recorded_audios_keys
 
