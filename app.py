@@ -158,7 +158,7 @@ def start_recognizing(callback_url, context, play_source):
         operation_context=context,
         speech_language="fr-FR",
         initial_silence_timeout=20,
-        operation_callback_url=f"https://62fd-2a01-cb00-844-1d00-102c-822d-af7f-cb67.ngrok-free.app{callback_url}"
+        operation_callback_url=f"https://lyraeapi.azurewebsites.net{callback_url}"
     )
 
 def hang_up(text):
@@ -191,7 +191,7 @@ def incoming_call():
     caller = data.get("data").get("from").get("phoneNumber").get("value")
     encodedContext = data.get("data").get("incomingCallContext")
 
-    call_automation_client.answer_call(incoming_call_context=encodedContext, callback_url=f"https://62fd-2a01-cb00-844-1d00-102c-822d-af7f-cb67.ngrok-free.app/callback?caller={caller}", cognitive_services_endpoint=COGNITIVE_SERVICE_ENDPOINT)
+    call_automation_client.answer_call(incoming_call_context=encodedContext, callback_url=f"https://lyraeapi.azurewebsites.net/callback?caller={caller}", cognitive_services_endpoint=COGNITIVE_SERVICE_ENDPOINT)
     return jsonify({"status": "success"})
 
 @app.route("/callback", methods=["POST"])
@@ -224,7 +224,7 @@ async def callback():
         # call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
         #     target_participant=target,
         #     transferee=PhoneNumberIdentifier("+" + caller.strip()),
-        #     operation_callback_url=f"https://62fd-2a01-cb00-844-1d00-102c-822d-af7f-cb67.ngrok-free.app/callback",
+        #     operation_callback_url=f"https://lyraeapi.azurewebsites.net/callback",
         # )
         start_conversation(call_connection_id=call_connection_id, callerId=caller)
         # await find_patient(caller)
