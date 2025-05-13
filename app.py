@@ -1437,7 +1437,7 @@ def createRDV(email, externalNumber = None):
     global firstname
     global birthdate
 
-    url = "http://localhost:8080/api/createRDV"
+    url = "https://sparkso-universite.com:8080/api/createRDV"
     
     print("CREATING RDV WITH:", {
         "email": email,
@@ -1471,7 +1471,7 @@ def createRDV(email, externalNumber = None):
         return "Error occurred while creating RDV"
 
 def getRDV(patientId):
-    url = "http://localhost:8080/api/getRDV"
+    url = "https://sparkso-universite.com:8080/api/getRDV"
 
     # results = list(rdvCollection.find({
     #     "idPatient": patientId
@@ -1504,7 +1504,7 @@ def editRDV():
     global birthdate
     global patient_email
 
-    url = "http://localhost:8080/api/editRDV"
+    url = "https://sparkso-universite.com:8080/api/editRDV"
 
     payload = {
         "rdvId" : cancel_creneau.get("idExamen"),
@@ -1531,7 +1531,7 @@ def deleteRDV(rdvId):
     global firstname
     global birthdate
 
-    url = "http://localhost:8080/api/deleteRDV"
+    url = "https://sparkso-universite.com:8080/api/deleteRDV"
     payload = {
         "rdvId": rdvId,
         "externalUserNumber": "NEURACORP",
