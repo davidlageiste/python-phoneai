@@ -1,4 +1,4 @@
-from azure.communication.callautomation import CallAutomationClient, TextSource, FileSource, RecognizeInputType, PhoneNumberIdentifier
+from azure.communication.callautomation import CallAutomationClient, RecognizeInputType, PhoneNumberIdentifier
 from azure.storage.blob import BlobServiceClient
 import azure.cognitiveservices.speech as speechsdk
 from flask import Flask, request, jsonify
@@ -37,6 +37,7 @@ global rdv_intent
 global birthdate
 global lastname
 global firstname
+global patient_email
 global exam_id
 global sous_type_id
 global creneauDate
@@ -73,10 +74,7 @@ intent = None
 lastname = None
 firstname = None
 birthdate = None
-
-# birthdate = "1990-01-01"
-# lastname = "PROUST"
-# firstname = "CHARLES"
+patient_email = None
 
 french_months = {
     1: "janvier", 2: "février", 3: "mars", 4: "avril",
@@ -160,13 +158,11 @@ def start_recognizing(callback_url, context, play_source):
         operation_context=context,
         speech_language="fr-FR",
         initial_silence_timeout=20,
-        operation_callback_url=f"https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app{callback_url}"
+        operation_callback_url=f"https://62fd-2a01-cb00-844-1d00-102c-822d-af7f-cb67.ngrok-free.app{callback_url}"
     )
 
 def hang_up(text):
-    play_source = TextSource(
-        text=text, source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-    )
+    play_source = text_to_speech("file_source", text)
 
     call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
         play_source=play_source,
@@ -195,7 +191,7 @@ def incoming_call():
     caller = data.get("data").get("from").get("phoneNumber").get("value")
     encodedContext = data.get("data").get("incomingCallContext")
 
-    call_automation_client.answer_call(incoming_call_context=encodedContext, callback_url=f"https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/callback?caller={caller}", cognitive_services_endpoint=COGNITIVE_SERVICE_ENDPOINT)
+    call_automation_client.answer_call(incoming_call_context=encodedContext, callback_url=f"https://62fd-2a01-cb00-844-1d00-102c-822d-af7f-cb67.ngrok-free.app/callback?caller={caller}", cognitive_services_endpoint=COGNITIVE_SERVICE_ENDPOINT)
     return jsonify({"status": "success"})
 
 @app.route("/callback", methods=["POST"])
@@ -228,7 +224,7 @@ async def callback():
         # call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
         #     target_participant=target,
         #     transferee=PhoneNumberIdentifier("+" + caller.strip()),
-        #     operation_callback_url=f"https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/callback",
+        #     operation_callback_url=f"https://62fd-2a01-cb00-844-1d00-102c-822d-af7f-cb67.ngrok-free.app/callback",
         # )
         start_conversation(call_connection_id=call_connection_id, callerId=caller)
         # await find_patient(caller)
@@ -252,20 +248,8 @@ async def get_firstname():
             if firstname_error > 2:
                 hang_up("Il semblerait que nous n'arrivons pas à nous comprendre. Je vous transfère vers une secrétaire.")
 
-            play_source = TextSource(text="Je n'ai pas compris, pouvez-vous répéter votre prénom ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                end_silence_timeout=0.5,
-                play_prompt=play_source,
-                interrupt_prompt=False,
-                speech_language="fr-FR",
-                initial_silence_timeout=5,
-                operation_context="get_firstname",
-                operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/get_firstname"
-            )
-
+            play_source = text_to_speech("file_source", "Je n'ai pas compris, pouvez-vous répéter votre prénom ?")
+            start_recognizing("/get_firstname", "get_firstname", play_source)
         else:
             clean_firstname = user_response.replace(".", "")
             task_get_firstname = asyncio.create_task(get_firstname_async(user_response=clean_firstname))
@@ -278,53 +262,20 @@ async def get_firstname():
                     firstname_error += 1
                     if firstname_error > 2:
                         hang_up("Il semblerait que nous n'arrivons pas à nous comprendre. Je vous transfère vers une secrétaire.")
-                    play_source = TextSource(text="Je n'ai pas compris, pouvez-vous répéter votre prénom ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-                    call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                        input_type=RecognizeInputType.SPEECH,
-                        target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                        end_silence_timeout=0.5,
-                        play_prompt=play_source,
-                        interrupt_prompt=False,
-                        speech_language="fr-FR",
-                        initial_silence_timeout=5,
-                        operation_context="get_firstname",
-                        operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/get_firstname"
-                    )
+                    play_source = text_to_speech("file_source", "Je n'ai pas compris, pouvez-vous répéter votre prénom ?")
+                    start_recognizing("/get_firstname", "get_firstname", play_source)
 
             else: 
-                play_source = TextSource(text=f"{clean_firstname}, c'est bien ça ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-                call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                    input_type=RecognizeInputType.SPEECH,
-                    target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                    end_silence_timeout=0.5,
-                    play_prompt=play_source,
-                    interrupt_prompt=False,
-                    speech_language="fr-FR",
-                    initial_silence_timeout=10,
-                    operation_context="confirm_firstname",
-                    operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/confirm_firstname"
-                )
+                play_source = text_to_speech("file_source", f"{clean_firstname}, c'est bien ça ?")
+                start_recognizing("/confirm_firstname", "confirm_firstname", play_source)
 
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
         firstname_error += 1
         if firstname_error > 2:
             hang_up("Il semblerait que nous n'arrivons pas à nous comprendre. Je vous transfère vers une secrétaire.")
             
-        play_source = TextSource(text="Je n'ai pas compris, pouvez-vous répéter votre prénom ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-            input_type=RecognizeInputType.SPEECH,
-            target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-            end_silence_timeout=0.5,
-            play_prompt=play_source,
-            interrupt_prompt=False,
-            speech_language="fr-FR",
-            initial_silence_timeout=5,
-            operation_context="get_firstname",
-            operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/get_firstname"
-        )
+        play_source = text_to_speech("file_source", "Je n'ai pas compris, pouvez-vous répéter votre prénom ?")
+        start_recognizing("/get_firstname", "get_firstname", play_source)
 
     return jsonify({"success": "success"})
 
@@ -345,9 +296,7 @@ async def get_lastname():
         lastname = lastname
         if clean_name is None:
             if lastname_error > 2:
-                play_source = TextSource(
-                    text="Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-                )
+                play_source = text_to_speech("fixed_file_source", "misunderstand_unfortunately")
 
                 call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
                     play_source=play_source,
@@ -355,50 +304,17 @@ async def get_lastname():
                 )
 
             lastname_error += 1
-            play_source = TextSource(text="Je n'ai pas compris, pouvez-vous épeler votre nom de famille à nouveau ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                end_silence_timeout=1,
-                play_prompt=play_source,
-                interrupt_prompt=False,
-                speech_language="fr-FR",
-                initial_silence_timeout=5,
-                operation_context="get_lastname",
-                operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/get_lastname"
-            )
+            play_source = text_to_speech("fixed_file_source", "repeat_lastname")
+            start_recognizing("/get_lastname", "get_lastname", play_source)
 
         else:
             lastname = clean_name
-            play_source = TextSource(text=f"{lastname}, c'est bien ça ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                end_silence_timeout=0.5,
-                play_prompt=play_source,
-                interrupt_prompt=False,
-                speech_language="fr-FR",
-                initial_silence_timeout=10,
-                operation_context="confirm_lastname",
-                operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/confirm_lastname"
-            )
+            play_source = text_to_speech("file_source", f"{lastname}, c'est bien ça ?")
+            start_recognizing("/confirm_lastname", "confirm_lastname", play_source)
 
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed" and request.json[0].get("data").get("operationContext") == "get_lastname":
-        play_source = TextSource(text="Je n'ai pas compris, pouvez-vous épeler votre nom de famille à nouveau ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-            input_type=RecognizeInputType.SPEECH,
-            target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-            end_silence_timeout=0.5,
-            play_prompt=play_source,
-            interrupt_prompt=False,
-            speech_language="fr-FR",
-            initial_silence_timeout=5,
-            operation_context="get_lastname",
-            operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/get_lastname"
-        )    
+        play_source = text_to_speech("fixed_file_source", "repeat_lastname")
+        start_recognizing("/get_lastname", "get_lastname", play_source)
         
     return jsonify({"success": "success"})
 
@@ -414,52 +330,19 @@ async def get_birthdate():
         birthdate = await task_get_birthdate
 
         if birthdate is None or is_date_formatted(birthdate) == False:
-            play_source = TextSource(text="Je n'ai pas compris, quelle est votre date de naissance ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                end_silence_timeout=0.5,
-                play_prompt=play_source,
-                interrupt_prompt=False,
-                speech_language="fr-FR",
-                initial_silence_timeout=5,
-                operation_context="confirm_birthdate",
-                operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/get_birthdate"
-            )
+            play_source = text_to_speech("fixed_file_source", "repeat_birthdate")
+            start_recognizing("/get_birthdate", "get_birthdate", play_source)
         else:
             date_litterale = date_vers_litteral(birthdate)
             print(date_litterale)
-
             # Formatage en version littérale 
-            play_source = TextSource(text=f"Vous confirmez que vous êtes né {date_litterale} ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-            input_type=RecognizeInputType.SPEECH,
-            target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-            end_silence_timeout=0.5,
-            play_prompt=play_source,
-            interrupt_prompt=False,
-            speech_language="fr-FR",
-            initial_silence_timeout=5,
-            operation_context="confirm_birthdate",
-            operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/confirm_birthdate"
-        )
+            play_source = text_to_speech("file_source", f"Vous confirmez que vous êtes né {date_litterale} ?")
+            start_recognizing("/confirm_birthdate", "confirm_birthdate", play_source)
 
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
-        play_source = TextSource(text="Je n'ai pas compris, quelle est votre date de naissance ?", voice_name="fr-FR-VivienneMultilingualNeural")
+        play_source = text_to_speech("fixed_file_source", "repeat_birthdate")
+        start_recognizing("/get_birthdate", "get_birthdate", play_source)
 
-        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-            input_type=RecognizeInputType.SPEECH,
-            target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-            end_silence_timeout=0.5,
-            play_prompt=play_source,
-            interrupt_prompt=False,
-            speech_language="fr-FR",
-            initial_silence_timeout=5,
-            operation_context="confirm_birthdate",
-            operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/get_birthdate"
-        )
     return jsonify({"success": "success"})
 
 ########## CONFIRMATION ##########
@@ -473,13 +356,13 @@ async def confirm_creneau():
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         task_model_response = asyncio.create_task(get_positive_negative_async(user_response))
-        speak("D'accord")
+        speak("ok")
         model_response = await task_model_response
         if model_response == "négative":
             current_creneau_proposition += 1
             if current_creneau_proposition < len(all_creneaux):
                 text = build_single_date_phrase(creneau=all_creneaux, index=current_creneau_proposition)
-                play_source = TextSource(text=text, source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural")
+                play_source = text_to_speech("file_source", text)
                 start_recognizing("/confirm_creneau", "confirm_creneau", play_source)
             else:
                 current_creneau_proposition = 0
@@ -504,13 +387,16 @@ async def confirm_creneau():
                 creneaux = await task_creneaux
                 all_creneaux = creneaux
                 text = build_single_date_phrase(creneau=all_creneaux, index=current_creneau_proposition)
-                play_source = TextSource(text=text, source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural")
+                play_source = text_to_speech("file_source", text)
                 start_recognizing("/confirm_creneau", "confirm_creneau", play_source)
                 
         elif model_response == "positive":
             chosen_creneau = all_creneaux[str(current_creneau_proposition + 1)]
-            play_source = TextSource(text="Puis-je avoir votre date de naissance ?", voice_name="fr-FR-VivienneMultilingualNeural")
-            start_recognizing("/get_birthdate", "get_birthdate", play_source)
+            if lastname is not None or firstname is not None or birthdate is not None:
+                await find_patient()
+            else:
+                play_source = text_to_speech("fixed_file_source", "ask_birthdate2")
+                start_recognizing("/get_birthdate", "get_birthdate", play_source)
         else:
             speak("user said i don't know")
     return jsonify({"success": "success"})
@@ -525,7 +411,7 @@ async def confirm_firstname():
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "confirm_firstname":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         task_model_response = asyncio.create_task(get_positive_negative_async(user_response))
-        speak("D'accord")
+        speak("ok")
         model_response = await task_model_response
 
         if model_response == "négative":
@@ -533,19 +419,8 @@ async def confirm_firstname():
             if firstname_error > 2:
                 hang_up("Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.")
 
-            play_source = TextSource(text="Désolé, pouvez-vous me répéter votre prénom ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                end_silence_timeout=0.5,
-                play_prompt=play_source,
-                interrupt_prompt=False,
-                speech_language="fr-FR",
-                initial_silence_timeout=5,
-                operation_context="get_firstname",
-                operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/get_firstname"
-            )
+            play_source = text_to_speech("file_source", "Désolé, pouvez-vous me répéter votre prénom ?")
+            start_recognizing("/get_firstname", "get_firstname", play_source)
 
         elif model_response == "positive":
             speak("Très bien, merci")
@@ -553,11 +428,11 @@ async def confirm_firstname():
             return jsonify({"success": "success"})
         
         else: 
-            play_source = TextSource(text=f"Je n'ai pas compris, {firstname}, c'est bien ça ?", voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = text_to_speech("file_source", f"Je n'ai pas compris, {firstname}, c'est bien ça ?")
             start_recognizing("/confirm_firstname", "confirm_firstname", play_source)
 
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
-        play_source = TextSource(text=f"Je n'ai pas compris, {firstname}, c'est bien ça ?", voice_name="fr-FR-VivienneMultilingualNeural")
+        play_source = text_to_speech("file_source", f"Je n'ai pas compris, {firstname}, c'est bien ça ?")
         start_recognizing("/confirm_firstname", "confirm_firstname", play_source)
 
     return jsonify({"success": "success"})
@@ -571,34 +446,20 @@ async def confirm_lastname():
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         task_model_response = asyncio.create_task(get_positive_negative_async(user_response))
-        speak("D'accord")
+        speak("ok")
         model_response = await task_model_response
 
         if model_response == "négative":
             lastname_error += 1
             if lastname_error > 2:
-                play_source = TextSource(
-                    text="Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-                )
-
+                play_source = text_to_speech("fixed_file_source", "misunderstand_unfortunately")
                 call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
                     play_source=play_source,
                     operation_context="hang_up"
                 )
 
-            play_source = TextSource(text="Désolé, pouvez-vous m'épeler votre nom de famille ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                end_silence_timeout=0.5,
-                play_prompt=play_source,
-                interrupt_prompt=False,
-                speech_language="fr-FR",
-                initial_silence_timeout=5,
-                operation_context="get_lastname",
-                operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/get_lastname"
-            )
+            play_source = text_to_speech("fixed_file_source", "spell_lastname2")
+            start_recognizing("/get_lastname", "get_lastname", play_source)
 
         elif model_response == "positive":
             count = countPatientInDB({
@@ -612,19 +473,9 @@ async def confirm_lastname():
             })
 
             if count > 1 or count == 0:
-                play_source = TextSource(text="Et quel est votre prénom ?", voice_name="fr-FR-VivienneMultilingualNeural")
+                play_source = text_to_speech("fixed_file_source", "ask_firstname")
+                start_recognizing("/get_firstname", "get_firstname", play_source)
 
-                call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                    input_type=RecognizeInputType.SPEECH,
-                    target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                    end_silence_timeout=0.5,
-                    play_prompt=play_source,
-                    interrupt_prompt=False,
-                    speech_language="fr-FR",
-                    initial_silence_timeout=5,
-                    operation_context="get_firstname",
-                    operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/get_firstname"
-                )
                 return jsonify({"success": "success"})
             else:
                 patient = findPatientInDB({
@@ -637,44 +488,35 @@ async def confirm_lastname():
                     }
                 })
                 date_litterale = date_vers_litteral(birthdate)
-                play_source = TextSource(text=f"{patient.get("nom")} {patient.get("prenom")} né le {date_litterale} c'est bien vous ?", voice_name="fr-FR-VivienneMultilingualNeural")
+                play_source = text_to_speech("file_source", f"{patient.get("nom")} {patient.get("prenom")} né {date_litterale} c'est bien vous ?")
                 lastname = patient.get("nom")
                 firstname = patient.get("prenom")
                 start_recognizing(callback_url="/confirm_identity", play_source=play_source, context="confirm_identity")
 
         else:
-            play_source = TextSource(text=f"Je n'ai pas compris, {lastname}, c'est bien ça ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                end_silence_timeout=0.5,
-                play_prompt=play_source,
-                interrupt_prompt=False,
-                speech_language="fr-FR",
-                initial_silence_timeout=5,
-                operation_context="confirm_lastname",
-                operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/confirm_lastname"
-            )
+            play_source = text_to_speech("file_source", f"Je n'ai pas compris, {lastname}, c'est bien ça ?")
+            start_recognizing("/confirm_lastname", "confirm_lastname", play_source)
     return jsonify({"success": "success"})
 
 @app.route("/confirm_annulation", methods=["POST"])
 async def confirm_annulation():
     global cancel_creneau
+    global annulation_phrase
 
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         task_model_response = asyncio.create_task(get_positive_negative_async(user_response))
-        speak("D'accord")
+        speak("ok")
         model_response = await task_model_response
         
         if model_response == "négative":
-            speak("Lequel voulez-vous annuler ?")
+            play_source = text_to_speech("file_source", annulation_phrase)
+            start_recognizing("/get_creneaux_choice", "annulation", play_source)
         elif model_response == "positive":
             speak("Patientez un instant.")
             deletion = deleteRDV(cancel_creneau["idExamen"])
             if deletion is True :
-                play_source = TextSource(text="Votre rendez-vous a bien été supprimé. Puis-je faire autre chose pour vous ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural")
+                play_source = text_to_speech("file_source", "Votre rendez-vous a bien été supprimé. Puis-je faire autre chose pour vous ?")
                 start_recognizing("/handleResponse", "start_conversation", play_source)
             else:
                 hang_up("J'ai eu un problème lors de la suppression de votre rendez-vous. Je vous transfère vers une secrétaire.")
@@ -682,13 +524,13 @@ async def confirm_annulation():
             date_str = cancel_creneau['datePrevue'][:10]
             time_str = cancel_creneau['heurePrevue']
             
-            play_source = TextSource(text=f"Je n'ai pas compris, voulez-vous annuler le rendez-vous du {date_str} à {time_str} ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = text_to_speech("file_source", f"Je n'ai pas compris, voulez-vous annuler le rendez-vous du {date_str} à {time_str} ?")
             start_recognizing("/confirm_annulation", "annulation", play_source)
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
         date_str = cancel_creneau['datePrevue'][:10]
         time_str = cancel_creneau['heurePrevue']
-        
-        play_source = TextSource(text=f"Je n'ai pas compris, voulez-vous annuler le rendez-vous du {date_str} à {time_str} ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural")
+
+        play_source = text_to_speech("file_source", f"Je n'ai pas compris, voulez-vous annuler le rendez-vous du {date_str} à {time_str} ?")
         start_recognizing("/confirm_annulation", "annulation", play_source)
     return jsonify({"success": "success"})
 
@@ -701,34 +543,20 @@ async def confirm_birthdate():
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "confirm_birthdate":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         task_model_response = asyncio.create_task(get_positive_negative_async(user_response))
-        speak("D'accord")
+        speak("ok")
         model_response = await task_model_response
 
         if model_response == "négative":
             birthdate_error += 1
             if birthdate_error > 2:
-                play_source = TextSource(
-                    text="Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-                )
-
+                play_source = text_to_speech("fixed_file_source", "misunderstand_unfortunately")
                 call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
                     play_source=play_source,
                     operation_context="hang_up"
                 )
 
-            play_source = TextSource(text="Désolé, pouvez-vous me répéter votre date de naissance ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                end_silence_timeout=0.5,
-                play_prompt=play_source,
-                interrupt_prompt=False,
-                speech_language="fr-FR",
-                initial_silence_timeout=5,
-                operation_context="get_birthdate",
-                operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/get_birthdate"
-            )
+            play_source = text_to_speech("fixed_file_source", "repeat_birthdate2")
+            start_recognizing("/get_birthdate", "get_birthdate", play_source)
 
         elif model_response == "positive":
 
@@ -739,19 +567,8 @@ async def confirm_birthdate():
             })
 
             if count > 1 or count == 0:
-                play_source = TextSource(text="Pouvez-vous m'épeler votre nom de famille ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-                call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                    input_type=RecognizeInputType.SPEECH,
-                    target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                    end_silence_timeout=0.5,
-                    play_prompt=play_source,
-                    interrupt_prompt=False,
-                    speech_language="fr-FR",
-                    initial_silence_timeout=5,
-                    operation_context="get_lastname",
-                    operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/get_lastname"
-                )
+                play_source = text_to_speech("fixed_file_source", "spell_lastname")
+                start_recognizing("/get_lastname", "get_lastname", play_source)
             else:
                 patient = findPatientInDB({
                     "dateNaissance": {
@@ -760,7 +577,7 @@ async def confirm_birthdate():
                 })
 
                 date_litterale = date_vers_litteral(birthdate)
-                play_source = TextSource(text=f"{patient.get("nom")} {patient.get("prenom")} né le {date_litterale} c'est bien vous ?", voice_name="fr-FR-VivienneMultilingualNeural")
+                play_source = text_to_speech("file_source", f"{patient.get("nom")} {patient.get("prenom")} né {date_litterale} c'est bien vous ?")
                 lastname = patient.get("nom")
                 firstname = patient.get("prenom")
                 start_recognizing(callback_url="/confirm_identity", play_source=play_source, context="confirm_identity")
@@ -769,19 +586,8 @@ async def confirm_birthdate():
             date_litterale = date_vers_litteral(birthdate)
 
             # Formatage en version littérale
-            play_source = TextSource(text=f"Vous confirmez que vous êtes né {date_litterale} ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
-                end_silence_timeout=0.5,
-                play_prompt=play_source,
-                interrupt_prompt=False,
-                speech_language="fr-FR",
-                initial_silence_timeout=5,
-                operation_context="confirm_birthdate",
-                operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/confirm_birthdate"
-            )
+            play_source = text_to_speech("file_source", f"Vous confirmez que vous êtes né {date_litterale} ?")
+            start_recognizing("/confirm_birthdate", "confirm_birthdate", play_source)
 
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
         birthdate_error += 1
@@ -789,20 +595,9 @@ async def confirm_birthdate():
             hang_up("Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.")
 
         date_litterale = date_vers_litteral(birthdate)
-
-        play_source = TextSource(text=f"Je n'ai pas entendu, Vous confirmez que vous êtes né {date_litterale} ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-            input_type=RecognizeInputType.SPEECH,
-            target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
-            end_silence_timeout=0.5,
-            play_prompt=play_source,
-            interrupt_prompt=False,
-            speech_language="fr-FR",
-            initial_silence_timeout=5,
-            operation_context="confirm_birthdate",
-            operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/confirm_birthdate"
-        )
+        
+        play_source = text_to_speech("file_source", f"Je n'ai pas entendu, Vous confirmez que vous êtes né {date_litterale} ?")
+        start_recognizing("/confirm_birthdate", "confirm_birthdate", play_source)
     return jsonify({"success": "success"})
 
 @app.route("/confirm_call_intent", methods=["POST"])
@@ -813,29 +608,16 @@ async def confirm_call_intent():
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "confirm_call_intent":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         task_model_response = asyncio.create_task(get_positive_negative_async(user_response))
-        speak("D'accord")
+        speak("ok")
         model_response = await task_model_response
 
         if model_response == "négative":
-            play_source = TextSource(text="Il semblerait que je n'ai pas compris votre demande, souhaitez-vous prendre un rendez-vous, modifier un rendez-vous, consulter un rendez-vous planifié, annuler un rendez-vous ou obtenir une information ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
-                end_silence_timeout=0.5,
-                play_prompt=play_source,
-                interrupt_prompt=False,
-                speech_language="fr-FR",
-                initial_silence_timeout=5,
-                operation_context="start_conversation",
-                operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/handleResponse"
-            )
+            play_source = text_to_speech("fixed_file_source", "misunderstand_intent")
+            start_recognizing("/handleResponse", "start_conversation", play_source)
+            
         elif model_response == "positive":
             if rdv_intent == "prise de rendez-vous" or rdv_intent == "prise de rendez-vous.":
-                if lastname is not None or firstname is not None or birthdate is not None:
-                    await find_patient()
-                else:
-                    handle_prise_rdv()
+                handle_prise_rdv()
             elif rdv_intent == "modification de rendez-vous" or rdv_intent == "modification de rendez-vous.":
                 if lastname is not None or firstname is not None or birthdate is not None:
                     await find_patient()
@@ -867,9 +649,7 @@ async def confirm_call_intent():
             elif rdv_intent == "consultation de rendez-vous" or rdv_intent == "consultation de rendez-vous.":
                 text += "Est-ce bien pour une consultation de rendez-vous ?"
 
-            play_source = TextSource(
-                text=f"{text}", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-            )
+            play_source = text_to_speech("file_source", text)
             start_recognizing("/confirm_call_intent", "confirm_call_intent", play_source)
 
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
@@ -877,11 +657,9 @@ async def confirm_call_intent():
         if intent_error > 2:
             hang_up("Pardonnez moi, il semblerait que je n'arrive pas à vous comprendre. Je vous transfère vers une secrétaire.")
 
-        play_source = TextSource(
-            text=f"Pardonnez moi, je n'ai pas entendu. Est-ce bien pour un ou une {rdv_intent} ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-        )
-
+        play_source("file_source", f"Pardonnez moi, je n'ai pas entendu. Est-ce bien pour un ou une {rdv_intent} ?")
         start_recognizing("/confirm_call_intent", "confirm_call_intent", play_source)
+
     return jsonify({"success": "success"})
 
 @app.route("/confirm_identity", methods=["POST"])
@@ -893,7 +671,7 @@ async def confirm_identity():
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "confirm_identity":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         task_model_response = asyncio.create_task(get_positive_negative_async(user_response))
-        speak("D'accord")
+        speak("ok")
         model_response = await task_model_response
         
         if model_response == "négative":
@@ -903,7 +681,7 @@ async def confirm_identity():
             await find_patient()
         else:
             date_litterale = date_vers_litteral(birthdate)
-            play_source = TextSource(f"Désolé, je n'ai pas compris, vous êtes bien {lastname} {firstname}. Né le {date_litterale} ?")
+            play_source = text_to_speech("file_source", f"Désolé, je n'ai pas compris, vous êtes bien {lastname} {firstname}. Né {date_litterale} ?")
             start_recognizing("/confirm_identity", "confirm_identity", play_source=play_source)
     return jsonify({"success": "success"})
 
@@ -919,7 +697,7 @@ async def transfer_to_secretary():
         elif model_response == "positive":
             hang_up("Je transmets votre appel")
         else:
-            play_source = TextSource(text="Pardonnez-moi, je n'ai pas compris. Dois-je vous rediriger vers une secrétaire ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = text_to_speech("file_source", "Pardonnez-moi, je n'ai pas compris. Dois-je vous rediriger vers une secrétaire ?")
             start_recognizing("/transfer_to_secretary", "transfer_to_secretary", play_source)
     return jsonify({"success": "success"})
 
@@ -933,7 +711,7 @@ async def module_informatif():
         model_response = await task
         speak(model_response)
 
-        play_source = TextSource(text="Puis-je faire autre chose pour vous ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural")
+        play_source = text_to_speech("file_source", "Puis-je faire autre chose pour vous ?")
         start_recognizing("/handleResponse", "start_conversation", play_source)
 
     return jsonify({"success", "success"})
@@ -948,37 +726,17 @@ async def confirm_rdv():
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "confirm_rdv":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         task_model_response = asyncio.create_task(get_positive_negative_async(user_response))
-        speak("D'accord")
+        speak("ok")
         model_response = await task_model_response
 
         if model_response == "négative":
             exam_id = None
             sous_type_id = None
             if type_exam_error <= 2:
-                play_source = TextSource(
-                    text="Pardonnez moi, pouvez-vous me répéter l'intitulé de l'examen que vous souhaitez passer ? ", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-                )
-
-                call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                    input_type=RecognizeInputType.SPEECH,
-                    target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                    end_silence_timeout=0.5,
-                    play_prompt=play_source,
-                    interrupt_prompt=False,
-                    speech_language="fr-FR",
-                    initial_silence_timeout=5,
-                    operation_context="rdv_exam_type",
-                    operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/rdv_exam_type"
-                )
+                play_source = text_to_speech("fixed_file_source", "repeat_exam_type")
+                start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source)
             else:
-                play_source = TextSource(
-                    text="Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-                )
-
-                call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
-                    play_source=play_source,
-                    operation_context="hang_up"
-                )
+                hang_up("Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.")
         elif model_response == "positive":
             task_creneaux = asyncio.create_task(get_creneaux_async(sous_type=sous_type_id, exam_type=exam_id))
             speak("Je regarde les disponibilités, un instant...")
@@ -989,39 +747,15 @@ async def confirm_rdv():
             all_creneaux = creneaux
 
             text = build_single_date_phrase(creneau=creneaux)
-            play_source = TextSource(text=text, source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = text_to_speech("file_source", text)
             start_recognizing("/confirm_creneau", "confirm_creneau", play_source)
         else:
-            play_source = TextSource(
-                text="Je ne vous ai pas compris, pour quel type d'examen voulez-vous prendre rendez-vous ? ", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-            )
-
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                end_silence_timeout=0.5,
-                play_prompt=play_source,
-                interrupt_prompt=False,
-                speech_language="fr-FR",
-                initial_silence_timeout=5,
-                operation_context="rdv_exam_type",
-                operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/rdv_exam_type"
-            ) 
+            play_source = text_to_speech("fixed_file_source", "misunderstand_exam_type")
+            start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source)
             
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
-        play_source = TextSource(text="Je ne vous ai pas entendu. Pouvez-vous répeter l'intitulé de l'examen ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-            input_type=RecognizeInputType.SPEECH,
-            target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-            end_silence_timeout=0.5,
-            play_prompt=play_source,
-            interrupt_prompt=False,
-            speech_language="fr-FR",
-            initial_silence_timeout=5,
-            operation_context="rdv_exam_type",
-            operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/rdv_exam_type"
-        )  
+        play_source = text_to_speech("fixed_file_source", "repeat_exam_type2")
+        start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source) 
     return jsonify({"status": "success"})
 
 @app.route("/rdv_exam_type", methods=["POST"])
@@ -1035,19 +769,19 @@ async def rdv_exam_type():
         if re.search(pattern, user_response, re.IGNORECASE):
             hang_up("Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.")
         task_type = asyncio.create_task(get_exam_type_async(user_response=user_response))
-        speak("D'accord")
+        speak("ok")
         exam_type = await task_type
 
         if exam_type["type_examen"] is not None and exam_type["code_examen_id"] is None:
             hang_up("Désolé, il semblerait qu'il y ait un problème sur ce type d'examen. Je vais vous rediriger vers une secrétaire.")
         elif exam_type["type_examen"] == None or exam_type["code_examen"] == None:
-            play_source = TextSource(text="Désolé, je n'ai pas compris. Pouvez-vous répéter l'intitulé de l'examen pour lequel vous souhaitez prendre rendez-vous ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = text_to_speech("fixed_file_soure", "repeat_exam_type3")
             start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source)
         else :
             exam_id = exam_type["type_examen_id"]
             sous_type_id = exam_type["code_examen_id"]
             
-            play_source = TextSource(text=f"Vous m'avez dit {exam_type['code_examen']}, c'est ça ?", voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = text_to_speech("file_source", f"Vous m'avez dit {exam_type['code_examen']}, c'est ça ?")
             start_recognizing("/confirm_rdv", "confirm_rdv", play_source)
 
     return jsonify({"status": "success"})
@@ -1074,7 +808,7 @@ async def get_creneaux_choice():
         if creneau_choice is None:
             text = build_multiple_dates_phrase(creneaux=all_creneaux)
 
-            play_source = TextSource(text=f"Je n'ai pas compris le créneau que vous avez choisi. {text}", voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = text_to_speech("file_source", f"Je n'ai pas compris le créneau que vous avez choisi. {text}")
             start_recognizing("/get_creneaux_choice", "get_creneaux_choice", play_source)
         else:
             dt = datetime.fromisoformat(creneau_choice)
@@ -1096,35 +830,68 @@ async def get_creneaux_choice():
                 chosen_creneau = matched_creneau
 
                 if rdv_intent == "prise de rendez-vous" or rdv_intent == "prise de rendez-vous.":
-                    play_source = TextSource(text=f"Vous avez choisi le {phrase}. Puis-je avoir votre date de naissance ?", voice_name="fr-FR-VivienneMultilingualNeural")
+                    play_source = text_to_speech("file_source", f"Vous avez choisi le {phrase}. Puis-je avoir votre date de naissance ?")
                     start_recognizing("/get_birthdate", "get_birthdate", play_source)
-                    
-                elif rdv_intent == "modification de rendez-vous" or rdv_intent == "modification de rendez-vous":
-                    speak(f"Très bien, votre rendez-vous sera déplacé au {phrase}", voice_name="fr-FR-VivienneMultilingualNeural")
-                    modify_creneau()
 
             else:
                 text = build_multiple_dates_phrase(creneaux=all_creneaux)
-                play_source = TextSource(text=f"Je n'ai pas compris le créneau que vous avez choisi. {text}", voice_name="fr-FR-VivienneMultilingualNeural")
+                play_source = text_to_speech("file_source", f"Je n'ai pas compris le créneau que vous avez choisi. {text}")
                 start_recognizing("/get_creneaux_choice", "get_creneaux_choice", play_source)
 
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "modification":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
-
         task_creneau_choice = asyncio.create_task(extract_creneau_async(user_response=user_response))
-        
         speak("D'accord, patientez pendant que je vous réserve ce créneau.")
+        creneau_choice = await task_creneau_choice
+
+        if creneau_choice is None:
+            text = build_multiple_dates_phrase(creneaux=all_creneaux)
+
+            play_source = text_to_speech("file_source", f"Je n'ai pas compris le créneau que vous avez choisi. {text}")
+            start_recognizing("/get_creneaux_choice", "get_creneaux_choice", play_source)
+        else:
+            dt = datetime.fromisoformat(creneau_choice)
+
+            matched_creneau = None
+            for key, value in all_creneaux.items():
+                full_datetime_str = value['date'][:10] + 'T' + value['heureDebut'] + ':00'
+                current_dt = datetime.fromisoformat(full_datetime_str)
+                if current_dt == dt:
+                    matched_creneau = value
+                    break
+
+            if matched_creneau is not None:
+                # Création de la phrase
+
+                phrase = f"{dt.day} {french_months[dt.month]} à {dt.hour} heures {dt.minute:02d}"
+
+                creneauDate = phrase
+                chosen_creneau = matched_creneau
+
+                if rdv_intent == "prise de rendez-vous" or rdv_intent == "prise de rendez-vous.":
+                    play_source = text_to_speech("file_source", f"Vous avez choisi le {phrase}. Puis-je avoir votre date de naissance ?")
+                    start_recognizing("/get_birthdate", "get_birthdate", play_source)
+                    
+                elif rdv_intent == "modification de rendez-vous" or rdv_intent == "modification de rendez-vous":
+                    speak(f"Très bien, votre rendez-vous sera déplacé au {phrase}")
+                    editRDV()
+
+            else:
+                text = build_multiple_dates_phrase(creneaux=all_creneaux)
+                play_source = text_to_speech("file_source", f"Je n'ai pas compris le créneau que vous avez choisi. {text}")
+                start_recognizing("/get_creneaux_choice", "get_creneaux_choice", play_source)
+
 
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "annulation":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         task_creneau_choice = asyncio.create_task(extract_creneau_async(user_response=user_response))
-        speak("D'accord")
+        speak("ok")
         creneau_choice = await task_creneau_choice
 
         if creneau_choice is None:
             text = build_multiple_dates_phrase(creneaux=all_creneaux)
             
-            play_source = TextSource(text=f"Je n'ai pas compris le rendez-vous que vous souhaitez annuler. {annulation_phrase}", voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = text_to_speech("file_source", f"Je n'ai pas compris le rendez-vous que vous souhaitez annuler. {annulation_phrase}")
             start_recognizing("/get_creneaux_choice", "annulation", play_source)
         else:
             dt = datetime.fromisoformat(creneau_choice)
@@ -1141,14 +908,14 @@ async def get_creneaux_choice():
                 date_str = matched_creneau['datePrevue'][:10]
                 time_str = matched_creneau['heurePrevue']
                 
-                play_source = TextSource(text=f"Vous confirmez que vous voulez annuler votre rendez-vous du {date_str} à {time_str}", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural")
+                play_source = text_to_speech("file_soure", f"Vous confirmez que vous voulez annuler votre rendez-vous du {date_str} à {time_str}")
                 start_recognizing("/confirm_annulation", "annulation", play_source)
             else:
-                play_source = TextSource(text=f"Je n'ai pas compris le rendez-vous que vous souhaitez annuler. {annulation_phrase}", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural")
+                play_source = text_to_speech("file_soure", f"Je n'ai pas compris le rendez-vous que vous souhaitez annuler. {annulation_phrase}")
                 start_recognizing("/get_creneaux_choice", "annulation", play_source)
 
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
-        play_source = TextSource(text=f"Je n'ai pas compris le créneau que vous avez choisi. {text}", voice_name="fr-FR-VivienneMultilingualNeural")
+        play_source = text_to_speech("file_source", f"Je n'ai pas compris le créneau que vous avez choisi. {text}")
         start_recognizing("/get_creneaux_choice", "get_creneaux_choice", play_source)
     
     return jsonify({"status": "success"})
@@ -1187,77 +954,37 @@ async def handleResponse():
             return jsonify({"success": "success"})
         elif intent.lower() == "prise de rendez-vous" or intent.lower() == "prise de rendez-vous.":
             rdv_intent = intent.lower()
-            play_source = TextSource(text="Vous voulez prendre rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = text_to_speech("file_source", "Vous voulez prendre rendez-vous, c'est bien ça ?")
 
         elif intent.lower() == "modification de rendez-vous" or intent.lower() == "modification de rendez-vous.":
             rdv_intent = intent.lower()
-            play_source = TextSource(text="Vous voulez déplacer un rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = text_to_speech("file_source", "Vous voulez déplacer un rendez-vous, c'est bien ça ?")
         
         elif intent.lower() == "annulation de rendez-vous" or intent.lower() == "annulation de rendez-vous.":
             rdv_intent = intent.lower()
-            play_source = TextSource(text="Vous voulez annuler un rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = text_to_speech("file_source", "Vous voulez annuler un rendez-vous, c'est bien ça ?")
 
         elif intent.lower() == "consultation de rendez-vous" or intent.lower() == "consultation de rendez-vous.":
             rdv_intent = intent.lower()
-            play_source = TextSource(text="Vous voulez consulter un rendez-vous, c'est bien ça ?",voice_name="fr-FR-VivienneMultilingualNeural")
+            play_source = text_to_speech("file_source", "Vous voulez consulter un rendez-vous, c'est bien ça ?")
 
         elif intent.lower() == "autre" or intent.lower() == "autre.":
-            play_source = TextSource(
-                text="Je suis désolé, votre question n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-            )
-    
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                end_silence_timeout=0.5,
-                play_prompt=play_source,
-                interrupt_call_media_operation=False,
-                interrupt_prompt=False,
-                operation_context="start_conversation",
-                speech_language="fr-FR",
-                initial_silence_timeout=20,
-                operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/handleResponse"
-            )
+            play_source = text_to_speech("file_source", "Je suis désolé, votre question n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.")
+            start_recognizing("/handleResponse", "start_conversation", play_source)
 
         else:
-            play_source = TextSource(
-                text="Désolé, je n'ai pas compris, que puis-je faire pour vous ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-            )
-    
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-                end_silence_timeout=0.5,
-                play_prompt=play_source,
-                interrupt_call_media_operation=False,
-                interrupt_prompt=False,
-                operation_context="start_conversation",
-                speech_language="fr-FR",
-                initial_silence_timeout=20,
-                operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/handleResponse"
-            )
+            play_source = text_to_speech("fixed_file_source", "misunderstand_intent2")
+            start_recognizing("/handleResponse", "start_conversation", play_source)
+
 
             return jsonify({"succes": "success"})
 
         start_recognizing("/confirm_call_intent", "confirm_call_intent", play_source)
 
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
-        play_source = TextSource(
-            text="Désolé, je n'ai pas compris, que puis-je faire pour vous ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-        )
-    
-        call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-            input_type=RecognizeInputType.SPEECH,
-            target_participant=PhoneNumberIdentifier("+" + caller.strip()),
-            end_silence_timeout=0.5,
-            play_prompt=play_source,
-            interrupt_call_media_operation=False,
-            interrupt_prompt=False,
-            operation_context="start_conversation",
-            speech_language="fr-FR",
-            initial_silence_timeout=20,
-            operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/handleResponse"
-        )
+        play_source = text_to_speech("fixed_file_source", "misunderstand_intent2")
+        start_recognizing("/handleResponse", "start_conversation", play_source)
+
 
     return jsonify({"success": "success"})
 
@@ -1267,39 +994,17 @@ async def has_ordonnance():
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "has_ordonnance":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         task_model_response = asyncio.create_task(get_positive_negative_async(user_response))
-        speak("D'accord")
+        speak("ok")
         model_response = await task_model_response
 
         if model_response == "négative":
             hang_up("Désolé nous pouvons pas vous planifier un rendez-vous sans ordonnance prescrite de votre médecin. Pour passer un examen d'imagerie, il faut avoir la prescription d'un médecin. Sans ordonnance, ce n'est pas possible. Pour avoir une ordonnance, je vous conseille de consulter un médecin. Je vous souhaite une excellente journée et à bientôt.")
         elif model_response == "positive":
-            play_source = TextSource(text="Quel examen voulez vous passer ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
-                end_silence_timeout=0.5,
-                play_prompt=play_source,
-                interrupt_prompt=False,
-                speech_language="fr-FR",
-                initial_silence_timeout=5,
-                operation_context="rdv_exam_type",
-                operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/rdv_exam_type"
-            )
+            play_source = text_to_speech("file_source", "Quel examen voulez vous passer ?")
+            start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source)
         else:
-            play_source = TextSource(text="Désolé, je n'ai pas compris, Avez-vous une ordonnance ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-            call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-                input_type=RecognizeInputType.SPEECH,
-                target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
-                end_silence_timeout=0.5,
-                play_prompt=play_source,
-                interrupt_prompt=False,
-                speech_language="fr-FR",
-                initial_silence_timeout=5,
-                operation_context="has_ordonnance",
-                operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/has_ordonnance"
-            )
+            play_source = text_to_speech("file_source", "Désolé, je n'ai pas compris, Avez-vous une ordonnance ?")
+            start_recognizing("/has_ordonnance", "has_ordonnance", play_source)
 
     return jsonify({"status": "success"})
 
@@ -1660,54 +1365,19 @@ def continue_conversation(model_response):
     start_recognizing("/handleResponse", "start_conversation", play_source)
 
 def handle_prise_rdv():
-
-    play_source = TextSource(text="Avez-vous une ordonnance ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-    call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-        input_type=RecognizeInputType.SPEECH,
-        target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
-        end_silence_timeout=0.5,
-        play_prompt=play_source,
-        interrupt_prompt=False,
-        speech_language="fr-FR",
-        initial_silence_timeout=5,
-        operation_context="has_ordonnance",
-        operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/has_ordonnance"
-    )
+    play_source = text_to_speech("file_source", "Avez-vous une ordonannce ?")
+    start_recognizing("/has_ordonnance", "has_ordonnance", play_source)
 
 def handle_modification():
-    play_source = TextSource(text="Pour vous identifier, pouvez-vous me donner votre date de naissance ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-    call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-        input_type=RecognizeInputType.SPEECH,
-        target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
-        end_silence_timeout=0.5,
-        play_prompt=play_source,
-        interrupt_prompt=False,
-        speech_language="fr-FR",
-        initial_silence_timeout=5,
-        operation_context="get_birthdate",
-        operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/get_birthdate"
-    )
-    return "ok"
+    play_source = text_to_speech("fixed_file_source", "ask_birthdate")
+    start_recognizing("/get_birthdate", "get_birthdate", play_source)
 
 def handle_consultation():
-    play_source = TextSource(text="Pouvez-vous me donner votre date de naissance ?", voice_name="fr-FR-VivienneMultilingualNeural")
-
-    call_automation_client.get_call_connection(call_connection_id).start_recognizing_media(
-        input_type=RecognizeInputType.SPEECH,
-        target_participant=PhoneNumberIdentifier("+" + caller.strip()), 
-        end_silence_timeout=0.5,
-        play_prompt=play_source,
-        interrupt_prompt=False,
-        speech_language="fr-FR",
-        initial_silence_timeout=5,
-        operation_context="get_birthdate",
-        operation_callback_url="https://e61c-2a01-cb00-844-1d00-99cd-624f-9068-d13.ngrok-free.app/get_birthdate"
-    )
+    play_source = text_to_speech("fixed_file_source", "ask_birthdate")
+    start_recognizing("/get_birthdate", "get_birthdate", play_source)
 
 def handle_annulation():
-    play_source = TextSource(text="Pouvez-vous me donner votre date de naissance ?", voice_name="fr-FR-VivienneMultilingualNeural")
+    play_source = text_to_speech("fixed_file_source", "ask_birthdate")
     start_recognizing("/get_birthdate", "get_birthdate", play_source)
 
 def start_conversation(call_connection_id, callerId):
@@ -1716,19 +1386,18 @@ def start_conversation(call_connection_id, callerId):
     
     play_source = text_to_speech("fixed_file_source", "intro")
 
-    # play_source = TextSource(
-    #     text="Oui ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-    # )
+    # play_source = text_to_speech("file_source", "Oui ?")
 
     start_recognizing("/handleResponse", "start_conversation", play_source)
 
 def speak(text):
 
     global call_connection_id
-    play_source = TextSource(
-        text=text, source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-    )
 
+    if text in recorded_audios_keys:
+        play_source = text_to_speech("fixed_file_source", text)
+    else:
+        play_source = text_to_speech("file_source", text)
     call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
         play_source=play_source
     )
@@ -1827,8 +1496,35 @@ def getRDV(patientId):
 
     # return results
 
-def modify_creneau():
-    return "ok"
+def editRDV():
+    global chosen_creneau
+    global cancel_creneau
+    global firstname
+    global lastname
+    global birthdate
+    global patient_email
+
+    url = "http://localhost:8080/api/editRDV"
+
+    payload = {
+        "rdvId" : cancel_creneau.get("idExamen"),
+        "externalUserNumber": "NEURACORP",
+        "firstName": firstname,
+        "lastName": lastname,
+        "birthDate": birthdate,
+        "email": patient_email,
+        "newCreneau": chosen_creneau
+    }
+ 
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.RequestException as e:
+        print("Request failed:", e)
+        return "Error occurred while creating RDV"
+    
 
 def deleteRDV(rdvId):
     global lastname
@@ -1879,12 +1575,14 @@ async def find_patient():
     global birthdate
     global lastname
     global firstname
+    global patient_email
     global creneauDate
     global rdv_intent
     global all_creneaux
     global annulation_phrase
     global patient_rdv
     global cancel_creneau
+    
     # speak("ok")
     # global exam_id
     # exam_id = "RX"
@@ -1934,7 +1632,7 @@ async def find_patient():
         if rdv_intent == "prise de rendez-vous" or rdv_intent == "prise de rendez-vous.":
             speak("Ne quittez pas le temps que je confirme votre rendez-vous.")
             email = patient.get("email")
-            
+            patient_email = email
             # if first_result.get("externalNumber") is None:
             rdv = createRDV(email=email)
                 
@@ -1958,16 +1656,17 @@ async def find_patient():
             planned_rdv = getRDV(patient.get("idPatient"))
             if(patient.get("externalID", None) is not None):
                 planned_rdv_external = getRDV(patient.get("externalID"))
-                print("planned_rdv_external", planned_rdv_external)
                 planned_rdv = planned_rdv + planned_rdv_external
             
             if len(planned_rdv) == 0:
                 speak("Il semblerait que vous n'ayez pas de rendez-vous prévus ces prochains jours.")
-                play_source = TextSource(text="Puis-je faire autre chose pour vous ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural")
+                play_source = text_to_speech("file_source", "Puis-je faire autre chose pour vous ?")
                 start_recognizing("/handleResponse", "start_conversation", play_source)
 
             elif len(planned_rdv) == 1:
                 speak("J'ai en effet trouvé un rendez-vous à votre nom.")
+                
+                cancel_creneau = planned_rdv[0]
 
                 dt = datetime.fromisoformat(planned_rdv[0].get("datePrevue").split("T")[0] + "T" + planned_rdv[0].get("heurePrevue"))
                 formatted_date = f"le {dt.day} {french_months[dt.month]} {dt.year}"
@@ -1984,10 +1683,10 @@ async def find_patient():
                     creneaux = await task_creneaux
                     all_creneaux = creneaux
                     text = build_multiple_dates_phrase(creneaux=creneaux)
-                    play_source = TextSource(text=text, voice_name="fr-FR-VivienneMultilingualNeural")
+                    play_source = text_to_speech("file_source", text)
                     start_recognizing("/get_creneaux_choice", "modification", play_source)
-                
-                play_source = TextSource(text="Puis-je faire autre chose pour vous ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural")
+                    return ("ok")
+                play_source = text_to_speech("file_source", "Puis-je faire autre chose pour vous ?")
                 start_recognizing("/handleResponse", "start_conversation", play_source)
             else:
                 now = datetime.now()
@@ -2006,7 +1705,7 @@ async def find_patient():
                     continue_conversation("Puis-je faire autre chose pour vous ?")
                 else :
                     speak("Il semblerait que vous n'ayez pas de rendez-vous prévu dans le futur.")
-                    play_source = TextSource(text="Voulez-vous que je vous transfère vers une secrétaire pour avoir plus de détails ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural")
+                    play_source = text_to_speech("file_source", "Voulez-vous que je vous transfère vers une secrétaire pour avoir plus de détails ?")
                     start_recognizing("/transfer_to_secretary", "transfer_to_secretary", play_source)               
         elif rdv_intent == "annulation de rendez-vous" or rdv_intent == "annulation de rendez-vous.":
             speak("Donnez-moi un instant le temps que je trouve vos rendez-vous.")
@@ -2021,7 +1720,7 @@ async def find_patient():
                 if datetime.strptime(f"{rdv['datePrevue'][:10]}T{rdv['heurePrevue']}", "%Y-%m-%dT%H:%M") >= now
             ]
             if len(future_rdvs) == 0:
-                play_source = TextSource(text="Il semblerait que vous n'ayez pas de rendez-vous prévu. Voulez-vous que je vous transfère vers une secrétaire pour avoir plus d'informations ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural")
+                play_source = text_to_speech("file_source", "Il semblerait que vous n'ayez pas de rendez-vous prévu. Voulez-vous que je vous transfère vers une secrétaire pour avoir plus d'informations ?")
                 start_recognizing("/transfer_to_secretary", "transfer_unknown", play_source)
             elif len(future_rdvs) == 1:
                 speak("J'ai en effet trouvé un rendez-vous à votre nom.")
@@ -2033,7 +1732,7 @@ async def find_patient():
                 all_sous_type = get_sous_type_exam(planned_rdv[0].get("typeExamen"))
                 sous_type = next((item for item in all_sous_type if item["code"] == planned_rdv[0].get("codeExamen")), None)
                 speak(f"Vous avez rendez-vous {formatted_date} à {int(hours)} heure {int(minutes)} pour un ou une {sous_type.get('libelle')}.")
-                play_source = TextSource(text="Est-ce bien celui-là que vous voulez annuler ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural")
+                play_source = text_to_speech("file_source", "Est-ce bien celui-là que vous voulez annuler ?")
                 start_recognizing("/confirm_annulation", "confirm_annulation", play_source)
             else:
                 sorted_rdvs = sorted(
@@ -2045,23 +1744,17 @@ async def find_patient():
 
                 text = build_multiple_dates_phrase({i + 1: item for i, item in enumerate(sorted_rdvs)}, "annulation")
                 annulation_phrase = text
-                play_source = TextSource(text=f" {text}", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural")
+                play_source = text_to_speech("file_source", text)
                 start_recognizing("/get_creneaux_choice", "annulation", play_source)
     else:
         if rdv_intent == "prise de rendez-vous" or rdv_intent == "prise de rendez-vous.":
-            play_source = TextSource(
-                text="Désolé, je ne peux pas donner de rendez-vous à un patient qui n'est pas déjà connu du cabinet. Vous êtes un nouveau patient : Je vous propose de vous transférer à la secrétaire", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-            )
-
+            play_source = text_to_speech("fixed_file_source", "hang_up_not_known")
             call_automation_client.get_call_connection(call_connection_id).play_media_to_all(
                 play_source=play_source,
                 operation_context="hang_up"
             )
         elif rdv_intent == "consultation de rendez-vous" or rdv_intent == "consultation de rendez-vous.":
-            play_source = TextSource(
-                text="Il semblerait que vous ne soyez pas connu de nos services. Voulez-vous que je vous transfère vers une secrétaire afin d'obtenirs plus d'informations ?", source_locale="fr-FR", voice_name="fr-FR-VivienneMultilingualNeural"
-            )
-
+            play_source = text_to_speech("file_source", "Il semblerait que vous ne soyez pas connu de nos services. Voulez-vous que je vous transfère vers une secrétaire afin d'obtenirs plus d'informations ?")
             start_recognizing("/transfer_to_secretary", "transfer_unknown", play_source)
 
 
