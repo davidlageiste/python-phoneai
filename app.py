@@ -1272,8 +1272,26 @@ def build_single_date_phrase(creneau, index=0):
         date_str = date_obj.strftime("%d/%m")
         heure = slot["heureDebut"]
         if index == 0:
+            time_obj = datetime.strptime(heure, "%H:%M")
+            hours = time_obj.hour
+            minutes = time_obj.minute
+            
+            # Format as "8 heures" or "8 heures 15"
+            if minutes == 0:
+                heure = f"{hours} heures"
+            else:
+                heure = f"{hours} heures {minutes}"
             final_sentence = f"Je peux vous proposer le {date_str} à {heure}. Est-ce que cela vous convient ?"
         else:
+            time_obj = datetime.strptime(heure, "%H:%M")
+            hours = time_obj.hour
+            minutes = time_obj.minute
+            
+            # Format as "8 heures" or "8 heures 15"
+            if minutes == 0:
+                heure = f"{hours} heures"
+            else:
+                heure = f"{hours} heures {minutes}"
             final_sentence = f"Est-ce que vous préférez le {date_str} à {heure} ?"
 
     return final_sentence
@@ -1300,6 +1318,15 @@ def build_multiple_dates_phrase(creneaux, type=None):
             date_obj = datetime.fromisoformat(slot["datePrevue"]).date()
             date_str = date_obj.strftime("%d/%m")
             heure = slot["heurePrevue"]
+            time_obj = datetime.strptime(heure, "%H:%M")
+            hours = time_obj.hour
+            minutes = time_obj.minute
+            
+            # Format as "8 heures" or "8 heures 15"
+            if minutes == 0:
+                heure = f"{hours} heures"
+            else:
+                heure = f"{hours} heures {minutes}"
             phrases.append(f"{ordinals[idx]} est le {date_str} à {heure}")
 
         # Assemble final sentence
@@ -1319,6 +1346,15 @@ def build_multiple_dates_phrase(creneaux, type=None):
             date_obj = datetime.fromisoformat(slot["datePrevue"]).date()
             date_str = date_obj.strftime("%d/%m")
             heure = slot["heurePrevue"]
+            time_obj = datetime.strptime(heure, "%H:%M")
+            hours = time_obj.hour
+            minutes = time_obj.minute
+            
+            # Format as "8 heures" or "8 heures 15"
+            if minutes == 0:
+                heure = f"{hours} heures"
+            else:
+                heure = f"{hours} heures {minutes}"
             phrases.append(f"Celui du {date_str} à {heure}")
         
         # Assemble final sentence
@@ -1338,6 +1374,15 @@ def build_multiple_dates_phrase(creneaux, type=None):
             date_obj = datetime.fromisoformat(slot["date"]).date()
             date_str = date_obj.strftime("%d/%m")
             heure = slot["heureDebut"]
+            time_obj = datetime.strptime(heure, "%H:%M")
+            hours = time_obj.hour
+            minutes = time_obj.minute
+            
+            # Format as "8 heures" or "8 heures 15"
+            if minutes == 0:
+                heure = f"{hours} heures"
+            else:
+                heure = f"{hours} heures {minutes}"
             phrases.append(f"{ordinals[idx]} est le {date_str} à {heure}")
 
         # Assemble final sentence
