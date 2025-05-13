@@ -198,10 +198,19 @@ async def callback():
     global call_connection_id
     global intent
     global rdv_intent
+    global lastname
+    global firstname
+    global birthdate
+    global patient_email
 
     print(request.json[0].get("type"))
     data = request.json[0]
 
+    if request.json and request.json[0].get("type") == "Microsoft.Communication.CallDisconnected":
+        lastname = None
+        firstname = None
+        birthdate = None
+        patient_email = None
     if request.json and request.json[0].get("type") == "Microsoft.Communication.AnswerFailed":
         print(request.json[0])
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted":
