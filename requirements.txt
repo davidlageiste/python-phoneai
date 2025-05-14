@@ -10,3 +10,4 @@ pymongo==4.11.3
 elevenlabs
 python-dotenv
 azure-identity
+num2words
