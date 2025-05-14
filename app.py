@@ -1714,13 +1714,18 @@ async def find_patient():
             if(patient.get("externalID", None) is not None):
                 planned_rdv_external = getRDV(patient.get("externalID"))
                 planned_rdv = planned_rdv + planned_rdv_external
-            
-            if len(planned_rdv) == 0:
+            now = datetime.now()
+            print(now)
+            future_rdvs = [
+                rdv for rdv in planned_rdv
+                if datetime.strptime(f"{rdv['datePrevue'][:10]}T{rdv['heurePrevue']}", "%Y-%m-%dT%H:%M") >= now
+            ]
+            if len(future_rdvs) == 0:
                 speak("Il semblerait que vous n'ayez pas de rendez-vous prévus ces prochains jours.")
                 play_source = text_to_speech("file_source", "Puis-je faire autre chose pour vous ?")
                 start_recognizing("/handleResponse", "start_conversation", play_source)
 
-            elif len(planned_rdv) == 1:
+            elif len(future_rdvs) == 1:
                 speak("J'ai en effet trouvé un rendez-vous à votre nom.")
                 
                 cancel_creneau = planned_rdv[0]
@@ -1746,11 +1751,6 @@ async def find_patient():
                 play_source = text_to_speech("file_source", "Puis-je faire autre chose pour vous ?")
                 start_recognizing("/handleResponse", "start_conversation", play_source)
             else:
-                now = datetime.now()
-                future_rdvs = [
-                    rdv for rdv in planned_rdv
-                    if datetime.strptime(f"{rdv['datePrevue'][:10]}T{rdv['heurePrevue']}", "%Y-%m-%dT%H:%M") >= now
-                ]
                 if len(future_rdvs) > 0:
                     speak("En effet, j'ai bien trouvé plusieurs rendez-vous à votre nom.")
                     sorted_rdvs = sorted(
