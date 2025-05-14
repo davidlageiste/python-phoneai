@@ -9,4 +9,5 @@ aiohttp
 pymongo==4.11.3
 elevenlabs
 python-dotenv
-azure-identity
+azure-
+num2words

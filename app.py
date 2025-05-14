@@ -13,6 +13,7 @@ import unicodedata
 import re 
 from utils.tts import text_to_speech, generate_text_to_speech
 from utils.recorded_audio import recorded_audios_keys
+from num2words import num2words
 
 COGNITIVE_SERVICE_ENDPOINT = "https://lyraecognitivesservicesus.cognitiveservices.azure.com"
 SPEECH_KEY='CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U2XJ3w3AAAAACOGuWEK'
@@ -74,6 +75,26 @@ lastname = None
 firstname = None
 birthdate = None
 patient_email = None
+
+def convert_numbers_to_words_french(text):
+    def convert_time(match):
+        hours = int(match.group(1))
+        minutes = int(match.group(2))
+        if minutes == 0:
+            return f"{num2words(hours, lang='fr')} heures"
+        else:
+            return f"{num2words(hours, lang='fr')} heures {num2words(minutes, lang='fr')}"
+
+    text = re.sub(r'(\d{1,2})h(\d{2})', convert_time, text)
+
+    def convert_number(match):
+        number = int(match.group())
+        return num2words(number, lang='fr')
+
+    text = re.sub(r'\b\d+\b', convert_number, text)
+
+    return text
+
 
 french_months = {
     1: "janvier", 2: "février", 3: "mars", 4: "avril",
@@ -935,9 +956,7 @@ async def handleResponse():
     global caller
 
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "start_conversation":
-        speak("ok")
         user_response = request.json[0].get("data").get("speechResult").get("speech")
-        print(user_response)
         pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
         if re.search(pattern, user_response, re.IGNORECASE):
             hang_up("Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.")
@@ -1305,6 +1324,7 @@ def build_single_date_phrase(creneau, index=0):
                 heure = f"{hours} heures {minutes}"
             final_sentence = f"Est-ce que vous préférez le {date_str} à {heure} ?"
 
+    final_sentence = convert_numbers_to_words_french(final_sentence)
     return final_sentence
 
 def build_multiple_dates_phrase(creneaux, type=None):
@@ -1411,6 +1431,7 @@ def build_multiple_dates_phrase(creneaux, type=None):
 
         final_sentence = f"Je peux vous proposer {nb_slots} {plural}. Le {joined_phrases}. Lequel choisissez-vous ?"
 
+    final_sentence = convert_numbers_to_words_french(final_sentence)
     return final_sentence
 
 def continue_conversation(model_response):
