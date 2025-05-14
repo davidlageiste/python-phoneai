@@ -133,7 +133,7 @@ def date_vers_litteral(date_str):
     mois = french_months[date_obj.month]
     annee = date_obj.year
 
-    return f"Le {jour} {mois} {annee}"
+    return convert_numbers_to_words_french(f"Le {jour} {mois} {annee}")
 
 def strip_accents(text):
     return ''.join(
@@ -438,7 +438,7 @@ async def confirm_creneau():
             text = build_single_date_phrase(creneau=all_creneaux, index=current_creneau_proposition)
             play_source = text_to_speech("file_source", "Pardonnez moi, je n'ai pas compris." + text)
             start_recognizing("/confirm_creneau", "confirm_creneau", play_source)
-            
+
     return jsonify({"success": "success"})
 
 @app.route("/confirm_firstname", methods=["POST"])
@@ -1370,6 +1370,7 @@ def build_single_date_phrase(creneau, index=0):
             final_sentence = f"Est-ce que vous préférez le {date_str} à {heure} ?"
 
     final_sentence = convert_numbers_to_words_french(final_sentence)
+    print("final_sentence", final_sentence)
     return final_sentence
 
 def build_multiple_dates_phrase(creneaux, type=None):
