@@ -427,7 +427,10 @@ async def confirm_creneau():
                 play_source = text_to_speech("fixed_file_source", "ask_birthdate2")
                 start_recognizing("/get_birthdate", "get_birthdate", play_source)
         else:
-            speak("user said i don't know")
+            text = build_single_date_phrase(creneau=all_creneaux, index=current_creneau_proposition)
+            play_source = text_to_speech("file_source", "Pardonnez moi, je n'ai pas compris." + text)
+            start_recognizing("/confirm_creneau", "confirm_creneau", play_source)
+            
     return jsonify({"success": "success"})
 
 @app.route("/confirm_firstname", methods=["POST"])
