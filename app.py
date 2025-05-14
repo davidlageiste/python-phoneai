@@ -713,7 +713,7 @@ async def transfer_to_secretary():
 
 @app.route("/module_informatif", methods=["POST"])
 async def module_informatif():
-    if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "confirm_rdv":
+    if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "module_informatif":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         task = asyncio.create_task(get_model_response_async(user_response))
         model_response = await task
@@ -1278,7 +1278,9 @@ def build_single_date_phrase(creneau, index=0):
     else:
         slot = creneau[str(index + 1)]
         date_obj = datetime.fromisoformat(slot["date"]).date()
-        date_str = date_obj.strftime("%d/%m")
+        day = date_obj.day
+        month_name = french_months[date_obj.month]
+        date_str = f"{day} {month_name}"        
         heure = slot["heureDebut"]
         if index == 0:
             time_obj = datetime.strptime(heure, "%H:%M")
@@ -1325,7 +1327,9 @@ def build_multiple_dates_phrase(creneaux, type=None):
         for idx, key in enumerate(sorted_keys, start=1):
             slot = data[key]
             date_obj = datetime.fromisoformat(slot["datePrevue"]).date()
-            date_str = date_obj.strftime("%d/%m")
+            day = date_obj.day
+            month_name = french_months[date_obj.month]
+            date_str = f"{day} {month_name}" 
             heure = slot["heurePrevue"]
             time_obj = datetime.strptime(heure, "%H:%M")
             hours = time_obj.hour
