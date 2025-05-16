@@ -70,7 +70,7 @@ def text_to_speech(
             return FileSource(url=f"{STORAGE_URL_PATH}{text}-{language}.mp3")
 
         case "file_source":
-            file_name = f"{uuid.uuid4()}.mp3"
+            file_name = f"tmp-{uuid.uuid4()}.mp3"
             audio_stream = text_to_speech_stream(text)
             upload_stream_azure(audio_stream, file_name)
             delete_blob_azure_delay(file_name)
