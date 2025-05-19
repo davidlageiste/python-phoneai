@@ -417,7 +417,7 @@ async def confirm_creneau():
                 speak("Je vais vous chercher d'autres créneaux libres.")
 
                 await asyncio.sleep(1)
-                
+
                 creneaux = await task_creneaux
                 all_creneaux = creneaux
                 text = build_single_date_phrase(creneau=all_creneaux, index=current_creneau_proposition)
@@ -1205,7 +1205,7 @@ async def has_ordonnance():
     global ordonnance_error
     global exam_id
     global sous_type_id
-    
+    global all_creneaux
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "has_ordonnance":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         task_model_response = asyncio.create_task(get_positive_negative_async(user_response))
