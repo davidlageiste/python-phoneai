@@ -384,13 +384,10 @@ async def confirm_creneau():
     global current_creneau_proposition
     global chosen_creneau
 
-    if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted":
+    if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "confirm_creneau":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         task_model_response = asyncio.create_task(get_positive_negative_async(user_response))
-        speak("ok")
-        
-        await asyncio.sleep(1)
-        
+        speak("ok")        
         model_response = await task_model_response
         if model_response == "négative":
             current_creneau_proposition += 1
@@ -438,7 +435,77 @@ async def confirm_creneau():
             text = build_single_date_phrase(creneau=all_creneaux, index=current_creneau_proposition)
             play_source = text_to_speech("file_source", "Pardonnez moi, je n'ai pas compris." + text)
             start_recognizing("/confirm_creneau", "confirm_creneau", play_source)
+    elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "modification":
+        user_response = request.json[0].get("data").get("speechResult").get("speech")
+        task_model_response = asyncio.create_task(get_positive_negative_async(user_response))
+        speak("ok")        
+        model_response = await task_model_response
+        if model_response == "négative":
+            current_creneau_proposition += 1
+            if current_creneau_proposition < len(all_creneaux):
+                text = build_single_date_phrase(creneau=all_creneaux, index=current_creneau_proposition)
+                play_source = text_to_speech("file_source", text)
+                start_recognizing("/confirm_creneau", "modification", play_source)
+            else:
+                current_creneau_proposition = 0
+                last_key = sorted(all_creneaux.keys(), key=int)[-1]
+                last_entry = all_creneaux[last_key]
 
+                # Extract date and time
+                date_str = last_entry["date"][:10]
+                time_str = last_entry["heureDebut"]
+
+                # Combine into full ISO datetime string
+                datetime_str = f"{date_str}T{time_str}:00"
+                dt = datetime.fromisoformat(datetime_str)
+
+                # Add one day
+                dt_plus_one = dt + timedelta(days=1)
+
+                # Convert back to string if needed
+                new_datetime_str = dt_plus_one.isoformat()
+                task_creneaux = asyncio.create_task(get_creneaux_async(sous_type=sous_type_id, exam_type=exam_id, date_start=new_datetime_str))
+                speak("Je vais vous chercher d'autres créneaux libres.")
+
+                await asyncio.sleep(1)
+                
+                creneaux = await task_creneaux
+                all_creneaux = creneaux
+                text = build_single_date_phrase(creneau=all_creneaux, index=current_creneau_proposition)
+                play_source = text_to_speech("file_source", text)
+                start_recognizing("/confirm_creneau", "modification", play_source)
+        elif model_response == "positive":
+            chosen_creneau = all_creneaux[str(current_creneau_proposition + 1)]
+
+            dt = datetime.fromisoformat(chosen_creneau)
+
+            matched_creneau = None
+            for key, value in all_creneaux.items():
+                full_datetime_str = value['date'][:10] + 'T' + value['heureDebut'] + ':00'
+                current_dt = datetime.fromisoformat(full_datetime_str)
+                if current_dt == dt:
+                    matched_creneau = value
+                    break
+
+            if matched_creneau is not None:
+                # Création de la phrase
+
+                phrase = f"{dt.day} {french_months[dt.month]} à {dt.hour} heures {dt.minute:02d}"
+
+                creneauDate = phrase
+                chosen_creneau = matched_creneau
+
+                if rdv_intent == "prise de rendez-vous" or rdv_intent == "prise de rendez-vous.":
+                    play_source = text_to_speech("file_source", f"Vous avez choisi le {phrase}. Puis-je avoir votre date de naissance ?")
+                    start_recognizing("/get_birthdate", "get_birthdate", play_source)
+                    
+                elif rdv_intent == "modification de rendez-vous" or rdv_intent == "modification de rendez-vous":
+                    speak(f"Très bien, votre rendez-vous sera déplacé au {phrase}")
+                    editRDV()
+        else:
+            text = build_single_date_phrase(creneau=all_creneaux, index=current_creneau_proposition)
+            play_source = text_to_speech("file_source", "Pardonnez moi, je n'ai pas compris." + text)
+            start_recognizing("/confirm_creneau", "confirm_creneau", play_source)
     return jsonify({"success": "success"})
 
 @app.route("/confirm_firstname", methods=["POST"])
@@ -569,7 +636,7 @@ async def confirm_annulation():
             deletion = deleteRDV(cancel_creneau["idExamen"])
             if deletion is True :
                 play_source = text_to_speech("file_source", "Votre rendez-vous a bien été supprimé. Puis-je faire autre chose pour vous ?")
-                start_recognizing("/handleResponse", "start_conversation", play_source)
+                start_recognizing("/handleResponse", "end_conversation", play_source)
             else:
                 hang_up("J'ai eu un problème lors de la suppression de votre rendez-vous. Je vous transfère vers une secrétaire.")
         else:
@@ -776,7 +843,7 @@ async def module_informatif():
         speak(model_response)
 
         play_source = text_to_speech("file_source", "Puis-je faire autre chose pour vous ?")
-        start_recognizing("/handleResponse", "start_conversation", play_source)
+        start_recognizing("/handleResponse", "end_conversation", play_source)
 
     return jsonify({"success", "success"})
 
@@ -999,6 +1066,8 @@ async def handleResponse():
     global rdv_intent
     global call_connection_id
     global caller
+    global exam_id
+    global sous_type_id
 
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "start_conversation":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
@@ -1025,9 +1094,21 @@ async def handleResponse():
             continue_conversation("more")
             return jsonify({"success": "success"})
         elif intent.lower() == "prise de rendez-vous" or intent.lower() == "prise de rendez-vous.":
+            task_type = asyncio.create_task(get_exam_type_async(user_response=user_response))
             rdv_intent = intent.lower()
-            play_source = text_to_speech("file_source", "Vous voulez prendre rendez-vous, c'est bien ça ?")
-
+            # speak("ok")
+            exam_type = await task_type
+            if exam_type["type_examen"] is None:
+                play_source = text_to_speech("file_source", "Vous voulez prendre rendez-vous, c'est bien ça ?")
+            else:
+                exam_id = exam_type["type_examen_id"]
+                sous_type_id = exam_type["code_examen_id"]
+                if sous_type_id is None:
+                    hang_up("Désolé, je ne suis pas qualifiée pour vous donner un rendez-vous pour ce type d'examen. Je vous transfère vers une secrétaire.")
+                else :
+                    all_sous_type = get_sous_type_exam(exam_id)
+                    sous_type = next((item for item in all_sous_type if item["code"] == sous_type_id), None)
+                    play_source = text_to_speech("file_source", f"Vous voulez prendre rendez-vous pour un ou une {sous_type.get('libelle')}, c'est bien ça ?")
         elif intent.lower() == "modification de rendez-vous" or intent.lower() == "modification de rendez-vous.":
             rdv_intent = intent.lower()
             play_source = text_to_speech("file_source", "Vous voulez déplacer un rendez-vous, c'est bien ça ?")
@@ -1052,6 +1133,65 @@ async def handleResponse():
             return jsonify({"succes": "success"})
 
         start_recognizing("/confirm_call_intent", "confirm_call_intent", play_source)
+    if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "end_conversation":
+        user_response = request.json[0].get("data").get("speechResult").get("speech")
+        pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
+        if re.search(pattern, user_response, re.IGNORECASE):
+            hang_up("Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.")
+        task_intent = asyncio.create_task(get_intent_async(user_response=user_response))
+
+        intent = await task_intent
+        play_source = None
+        if intent.lower() == "renseignements" or intent.lower() == "renseignements.":
+            rdv_intent = intent.lower()
+            task_is_question = asyncio.create_task(is_question_async(user_response))
+            is_question = await task_is_question
+            if is_question is True:
+                task = asyncio.create_task(get_model_response_async(user_response))
+                model_response = await task
+                speak(model_response)
+            else:
+                play_source = text_to_speech("fixed_file_source", "question")
+                start_recognizing("/module_informatif", "module_informatif", play_source)
+
+            continue_conversation("more")
+            return jsonify({"success": "success"})
+        elif intent.lower() == "prise de rendez-vous" or intent.lower() == "prise de rendez-vous.":
+
+            rdv_intent = intent.lower()
+            play_source = text_to_speech("file_source", "Vous voulez prendre rendez-vous, c'est bien ça ?")
+
+        elif intent.lower() == "modification de rendez-vous" or intent.lower() == "modification de rendez-vous.":
+            rdv_intent = intent.lower()
+            play_source = text_to_speech("file_source", "Vous voulez déplacer un rendez-vous, c'est bien ça ?")
+        
+        elif intent.lower() == "annulation de rendez-vous" or intent.lower() == "annulation de rendez-vous.":
+            rdv_intent = intent.lower()
+            play_source = text_to_speech("file_source", "Vous voulez annuler un rendez-vous, c'est bien ça ?")
+
+        elif intent.lower() == "consultation de rendez-vous" or intent.lower() == "consultation de rendez-vous.":
+            rdv_intent = intent.lower()
+            play_source = text_to_speech("file_source", "Vous voulez consulter un rendez-vous, c'est bien ça ?")
+
+        elif intent.lower() == "autre" or intent.lower() == "autre.":
+            task_positive_negative = asyncio.create_task(get_positive_negative_async(user_response))
+            positive_negative = await task_positive_negative
+
+            if positive_negative == "positive":
+                play_source = text_to_speech("file_source", "Voulez-vous prendre, annuler, consulter ou modifier un rendez vous ? Vous pouvez aussi simplement me poser une question.")
+            elif positive_negative == "négative":
+                hang_up("Très bien, merci pour votre appel !")
+            
+            start_recognizing("/handleResponse", "start_conversation", play_source)
+
+        else:
+            play_source = text_to_speech("fixed_file_source", "misunderstand_intent2")
+            start_recognizing("/handleResponse", "start_conversation", play_source)
+
+
+            return jsonify({"succes": "success"})
+
+        start_recognizing("/confirm_call_intent", "confirm_call_intent", play_source)
 
     elif request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
         play_source = text_to_speech("fixed_file_source", "misunderstand_intent2")
@@ -1063,6 +1203,9 @@ async def handleResponse():
 @app.route("/has_ordonnance", methods=["POST"])
 async def has_ordonnance():
     global ordonnance_error
+    global exam_id
+    global sous_type_id
+    
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted" and request.json[0].get("data").get("operationContext") == "has_ordonnance":
         user_response = request.json[0].get("data").get("speechResult").get("speech")
         task_model_response = asyncio.create_task(get_positive_negative_async(user_response))
@@ -1072,8 +1215,24 @@ async def has_ordonnance():
         if model_response == "négative":
             hang_up("Désolé nous pouvons pas vous planifier un rendez-vous sans ordonnance prescrite de votre médecin. Pour passer un examen d'imagerie, il faut avoir la prescription d'un médecin. Sans ordonnance, ce n'est pas possible. Pour avoir une ordonnance, je vous conseille de consulter un médecin. Je vous souhaite une excellente journée et à bientôt.")
         elif model_response == "positive":
-            play_source = text_to_speech("file_source", "Très bien, quel examen voulez vous passer ?")
-            start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source)
+            if exam_id is not None and sous_type_id is not None:
+                task_creneaux = asyncio.create_task(get_creneaux_async(sous_type=sous_type_id, exam_type=exam_id))
+                speak("Je regarde les disponibilités, un instant...")
+
+                await asyncio.sleep(1)
+                
+                creneaux = await task_creneaux
+
+                print(creneaux)
+
+                all_creneaux = creneaux
+
+                text = build_single_date_phrase(creneau=creneaux)
+                play_source = text_to_speech("file_source", text)
+                start_recognizing("/confirm_creneau", "confirm_creneau", play_source)
+            else:
+                play_source = text_to_speech("file_source", "Très bien, quel examen voulez vous passer ?")
+                start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source)
         else:
             play_source = text_to_speech("file_source", "Désolé, je n'ai pas compris, Avez-vous une ordonnance ?")
             start_recognizing("/has_ordonnance", "has_ordonnance", play_source)
@@ -1225,7 +1384,6 @@ async def get_exam_type_async(user_response):
             async with session.post(url, headers=headers, json=payload) as response:
                 response.raise_for_status() 
                 data = await response.json()
-                print("EXAM TYPE", data)
                 return data
     except aiohttp.ClientError as e:
         print(f"Erreur lors de l'appel au modèle : {e}")
@@ -1486,7 +1644,7 @@ def continue_conversation(model_response):
     else:
         play_source = text_to_speech("file_source", model_response)
 
-    start_recognizing("/handleResponse", "start_conversation", play_source)
+    start_recognizing("/handleResponse", "end_conversation", play_source)
 
 def handle_prise_rdv():
     play_source = text_to_speech("file_source", "Avez-vous une ordonannce ?")
@@ -1781,6 +1939,7 @@ async def find_patient():
             if(patient.get("externalID", None) is not None):
                 planned_rdv_external = getRDV(patient.get("externalID"))
                 planned_rdv = planned_rdv + planned_rdv_external
+
             now = datetime.now()
             print(now)
             future_rdvs = [
@@ -1790,33 +1949,36 @@ async def find_patient():
             if len(future_rdvs) == 0:
                 speak("Il semblerait que vous n'ayez pas de rendez-vous prévus ces prochains jours.")
                 play_source = text_to_speech("file_source", "Puis-je faire autre chose pour vous ?")
-                start_recognizing("/handleResponse", "start_conversation", play_source)
+                start_recognizing("/handleResponse", "end_conversation", play_source)
 
             elif len(future_rdvs) == 1:
                 speak("J'ai en effet trouvé un rendez-vous à votre nom.")
                 
-                cancel_creneau = planned_rdv[0]
-
-                dt = datetime.fromisoformat(planned_rdv[0].get("datePrevue").split("T")[0] + "T" + planned_rdv[0].get("heurePrevue"))
+                cancel_creneau = future_rdvs[0]
+                print("FUTURE", future_rdvs[0])
+                dt = datetime.fromisoformat(future_rdvs[0].get("datePrevue").split("T")[0] + "T" + future_rdvs[0].get("heurePrevue"))
                 formatted_date = f"le {dt.day} {french_months[dt.month]} {dt.year}"
-                hours, minutes = planned_rdv[0].get("heurePrevue").split(":")
+                hours, minutes = future_rdvs[0].get("heurePrevue").split(":")
 
-                all_sous_type = get_sous_type_exam(planned_rdv[0].get("typeExamen"))
-                sous_type = next((item for item in all_sous_type if item["code"] == planned_rdv[0].get("codeExamen")), None)
+                all_sous_type = get_sous_type_exam(future_rdvs[0].get("typeExamen"))
+                sous_type = next((item for item in all_sous_type if item["code"] == future_rdvs[0].get("codeExamen")), None)
 
                 speak(f"Vous avez rendez-vous {formatted_date} à {int(hours)} heure {int(minutes)} pour un ou une {sous_type.get('libelle')}.")
 
                 if rdv_intent == "modification de rendez-vous" or rdv_intent.lower() == "modification de rendez-vous.":
-                    task_creneaux = asyncio.create_task(get_creneaux_async(sous_type=planned_rdv[0].get("codeExamen"), exam_type=planned_rdv[0].get("typeExamen")))
+                    task_creneaux = asyncio.create_task(get_creneaux_async(sous_type=future_rdvs[0].get("codeExamen"), exam_type=future_rdvs[0].get("typeExamen")))
                     speak("Je vais chercher des nouveaux créneaux disponibles pour votre examen.")
                     creneaux = await task_creneaux
                     all_creneaux = creneaux
-                    text = build_multiple_dates_phrase(creneaux=creneaux)
+                    text = build_single_date_phrase(creneau=all_creneaux, index=current_creneau_proposition)
                     play_source = text_to_speech("file_source", text)
-                    start_recognizing("/get_creneaux_choice", "modification", play_source)
+                    start_recognizing("/confirm_creneau", "modification", play_source)
+                    # text = build_multiple_dates_phrase(creneaux=creneaux)
+                    # play_source = text_to_speech("file_source", text)
+                    # start_recognizing("/get_creneaux_choice", "modification", play_source)
                     return ("ok")
                 play_source = text_to_speech("file_source", "Puis-je faire autre chose pour vous ?")
-                start_recognizing("/handleResponse", "start_conversation", play_source)
+                start_recognizing("/handleResponse", "end_conversation", play_source)
             else:
                 if len(future_rdvs) > 0:
                     speak("En effet, j'ai bien trouvé plusieurs rendez-vous à votre nom.")
