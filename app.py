@@ -27,7 +27,7 @@ db = client['neuracorp']
 patientCollection = db['patientsDB']
 rdvCollection = db["rdv"]
 
-call_automation_client = CallAutomationClient.from_connection_string("endpoint=https://lyraedemo.unitedstates.communication.azure.com/;accesskey=6NB6prS16bRw7UjKSRCObyUVQPyiwmffALNF5QiCnAxKRifFTIIbJQQJ99BEACULyCpuAreVAAAAAZCSuWZh")
+call_automation_client = CallAutomationClient.from_connection_string("endpoint=https://lyraetalktest.france.communication.azure.com/;accesskey=FiCCJ5GqwiG0esZK4BnK5VoCCiZi2h2nTHWM22KZGtaPfQ3vQuR2JQQJ99BDACULyCpuAreVAAAAAZCSM8VE")
 speech_config = speechsdk.SpeechConfig(subscription=SPEECH_KEY,region=SPEECH_REGION)
 
 global call_connection_id
