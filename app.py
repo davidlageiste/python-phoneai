@@ -1,3 +1,4 @@
+from tkinter import N
 from azure.communication.callautomation import CallAutomationClient, RecognizeInputType, PhoneNumberIdentifier
 from azure.storage.blob import BlobServiceClient
 import azure.cognitiveservices.speech as speechsdk
@@ -75,6 +76,8 @@ lastname = None
 firstname = None
 birthdate = None
 patient_email = None
+exam_id = None
+sous_type_id = None
 
 def convert_numbers_to_words_french(text):
     def convert_time(match):
