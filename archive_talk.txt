@@ -1,0 +1,204 @@
+***********
+33651506690 / 2025-05-27 14:23:57.097523 / intent: modification de rendez-vous
+
+CALLER INFO
+birthdate / lastname / firstname / email
+Erreur lors de la communication avec le modèle. / None / None / None
+
+TALK
+Lyrae: Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Comment puis-je vous aider aujourd’hui ?
+User: Je souhaite modifier mon rendez-vous.
+Lyrae: Vous voulez déplacer un rendez-vous, c'est bien ça ?
+User: Oui.
+Lyrae: Je prends note de cela.
+Lyrae: Pour vous identifier, pouvez-vous me donner votre date de naissance ?
+User: 
+Lyrae: Je n'ai pas compris, quelle est votre date de naissance ?
+
+
+***********
+33668827897 / 2025-05-27 14:23:57.074814 / intent: consultation de rendez-vous
+
+CALLER INFO
+birthdate / lastname / firstname / email
+1996-03-05 / DUBOIS / MELISSA / None
+
+TALK
+Lyrae: Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Comment puis-je vous aider aujourd’hui ?
+User: J'aimerais consulter mes rendez-vous.
+Lyrae: Vous voulez consulter un rendez-vous, c'est bien ça ?
+User: Oui.
+Lyrae: Très bien, un instant je vous prie.
+Lyrae: Pour vous identifier, pouvez-vous me donner votre date de naissance ?
+User: Le 5 mars 1996.
+Lyrae: Vous confirmez que vous êtes né Le cinq mars mille neuf cent quatre-vingt-seize ?
+User: Oui.
+Lyrae: Je prends note de cela.
+Lyrae: DUBOIS MELISSA né Le cinq mars mille neuf cent quatre-vingt-seize c'est bien vous ?
+User: Oui.
+Lyrae: Très bien, un instant je vous prie.
+Lyrae: Très bien, laissez moi un instant.
+Lyrae: Il semblerait que vous n'ayez pas de rendez-vous prévus ces prochains jours.
+Lyrae: Puis-je faire autre chose pour vous ?
+User: J'aimerais prendre rendez-vous.
+
+
+***********
+33651506690 / 2025-05-27 14:53:01.089134 / intent: prise de rendez-vous
+
+CALLER INFO
+birthdate / lastname / firstname / email
+1996-03-05 / DUBOIS / MELISSA / None
+
+TALK
+Lyrae: Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Comment puis-je vous aider aujourd’hui ?
+User: J'aimerais consulter mes rendez-vous.
+Lyrae: Vous voulez consulter un rendez-vous, c'est bien ça ?
+User: Oui.
+Lyrae: Entendu, un instant.
+Lyrae: Pour vous identifier, pouvez-vous me donner votre date de naissance ?
+User: Le 5 mars 1996.
+Lyrae: Vous confirmez que vous êtes né Le cinq mars mille neuf cent quatre-vingt-seize ?
+User: Oui.
+Lyrae: Entendu, un instant.
+Lyrae: DUBOIS MELISSA né Le cinq mars mille neuf cent quatre-vingt-seize c'est bien vous ?
+User: Oui.
+Lyrae: Je vois, je regarde cela.
+Lyrae: Très bien, laissez moi un instant.
+Lyrae: Il semblerait que vous n'ayez pas de rendez-vous prévus ces prochains jours.
+Lyrae: Puis-je faire autre chose pour vous ?
+User: J'aimerais prendre rendez-vous.
+Lyrae: Vous voulez prendre rendez-vous, c'est bien ça ?
+User: Oui.
+Lyrae: Je prends note de cela.
+Lyrae: Avez-vous une ordonannce ?
+User: Non ?
+Lyrae: Désolé nous pouvons pas vous planifier un rendez-vous sans ordonnance prescrite de votre médecin. Pour passer un examen d'imagerie, il faut avoir la prescription d'un médecin. Sans ordonnance, ce n'est pas possible. Pour avoir une ordonnance, je vous conseille de consulter un médecin. Je vous souhaite une excellente journée et à bientôt.
+
+
+***********
+33651506690 / 2025-05-27 14:57:41.515413 / intent: prise de rendez-vous
+
+CALLER INFO
+birthdate / lastname / firstname / email
+1996-03-05 / DUBOIS / MELISSA / None
+
+TALK
+Lyrae: Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Comment puis-je vous aider aujourd’hui ?
+User: Je souhaite modifier mon rendez-vous.
+Lyrae: Vous voulez déplacer un rendez-vous, c'est bien ça ?
+User: Oui.
+Lyrae: Merci pour cette précision.
+Lyrae: Pour vous identifier, pouvez-vous me donner votre date de naissance ?
+User: Non ?
+Lyrae: Je n'ai pas compris, quelle est votre date de naissance ?
+User: Le 5 mars 1996.
+Lyrae: Vous confirmez que vous êtes né Le cinq mars mille neuf cent quatre-vingt-seize ?
+User: Oui.
+Lyrae: D'accord, un instant.
+Lyrae: DUBOIS MELISSA né Le cinq mars mille neuf cent quatre-vingt-seize c'est bien vous ?
+User: Oui, oui.
+Lyrae: Merci pour cette précision.
+Lyrae: Très bien, laissez moi un instant.
+Lyrae: Il semblerait que vous n'ayez pas de rendez-vous prévus ces prochains jours.
+Lyrae: Puis-je faire autre chose pour vous ?
+User: Oui.
+Lyrae: Voulez-vous prendre, annuler, consulter ou modifier un rendez vous ? Vous pouvez aussi simplement me poser une question.
+User: Je souhaite prendre rendez-vous.
+Lyrae: Vous voulez prendre rendez-vous, c'est bien ça ?
+User: Je souhaite prendre rendez-vous.
+Lyrae: Très bien, un instant je vous prie.
+Lyrae: Avez-vous une ordonannce ?
+User: Oui.
+Lyrae: C’est enregistré, un instant je vous prie.
+Lyrae: Avez-vous une ordonannce ?
+User: Oui.
+Lyrae: Très bien, quel examen voulez vous passer ?
+User: Oui.
+Lyrae: Très bien, quel examen voulez vous passer ?
+User: IRM des genoux.
+Lyrae: Vous m'avez dit IRM du genou, c'est ça ?
+
+
+***********
+33651506690 / 2025-05-27 15:18:54.643011 / intent: prise de rendez-vous
+
+CALLER INFO
+birthdate / lastname / firstname / email
+1996-03-05 / DUBOIS / MELISSA / None
+
+TALK
+Lyrae: Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Comment puis-je vous aider aujourd’hui ?
+User: Je souhaite modifier mon rendez-vous.
+Lyrae: Vous voulez déplacer un rendez-vous, c'est bien ça ?
+User: Oui.
+Lyrae: C’est enregistré, un instant je vous prie.
+Lyrae: Pour vous identifier, pouvez-vous me donner votre date de naissance ?
+User: Non ?
+Lyrae: Je n'ai pas compris, quelle est votre date de naissance ?
+User: Le 5 mars 1996.
+Lyrae: Vous confirmez que vous êtes né Le cinq mars mille neuf cent quatre-vingt-seize ?
+User: Oui.
+Lyrae: C'est bien pris en compte, je regarde cela.
+Lyrae: DUBOIS MELISSA né Le cinq mars mille neuf cent quatre-vingt-seize c'est bien vous ?
+User: Oui, oui.
+Lyrae: Parfait, un instant je vous prie.
+Lyrae: Très bien, laissez moi un instant.
+Lyrae: Il semblerait que vous n'ayez pas de rendez-vous prévus ces prochains jours.
+Lyrae: Puis-je faire autre chose pour vous ?
+User: Oui.
+Lyrae: Voulez-vous prendre, annuler, consulter ou modifier un rendez vous ? Vous pouvez aussi simplement me poser une question.
+User: Je souhaite prendre rendez-vous.
+Lyrae: Vous voulez prendre rendez-vous, c'est bien ça ?
+User: Je souhaite prendre rendez-vous.
+Lyrae: Très bien, un instant je vous prie.
+Lyrae: Avez-vous une ordonannce ?
+User: Oui.
+Lyrae: Parfait, un instant je vous prie.
+Lyrae: Avez-vous une ordonannce ?
+User: Non ?
+Lyrae: Désolé nous pouvons pas vous planifier un rendez-vous sans ordonnance prescrite de votre médecin. Pour passer un examen d'imagerie, il faut avoir la prescription d'un médecin. Sans ordonnance, ce n'est pas possible. Pour avoir une ordonnance, je vous conseille de consulter un médecin. Je vous souhaite une excellente journée et à bientôt.
+User: Non ?
+Lyrae: Désolé nous pouvons pas vous planifier un rendez-vous sans ordonnance prescrite de votre médecin. Pour passer un examen d'imagerie, il faut avoir la prescription d'un médecin. Sans ordonnance, ce n'est pas possible. Pour avoir une ordonnance, je vous conseille de consulter un médecin. Je vous souhaite une excellente journée et à bientôt.
+
+
+***********
+33651506690 / 2025-05-27 16:21:26.827737 / intent: prise de rendez-vous
+
+CALLER INFO
+birthdate / lastname / firstname / email
+1996-03-05 / DUBOIS / MELISSA / None
+
+TALK
+Lyrae: Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Comment puis-je vous aider aujourd’hui ?
+User: Je souhaite modifier mon rendez-vous.
+Lyrae: Vous voulez déplacer un rendez-vous, c'est bien ça ?
+User: Oui.
+Lyrae: C’est enregistré, un instant je vous prie.
+Lyrae: Pour vous identifier, pouvez-vous me donner votre date de naissance ?
+User: Le 5 mars 1996.
+Lyrae: Vous confirmez que vous êtes né Le cinq mars mille neuf cent quatre-vingt-seize ?
+User: Oui.
+Lyrae: C'est noté, un instant.
+Lyrae: DUBOIS MELISSA né Le cinq mars mille neuf cent quatre-vingt-seize c'est bien vous ?
+User: Oui.
+Lyrae: Très bien, un instant je vous prie.
+Lyrae: Très bien, laissez moi un instant.
+Lyrae: Il semblerait que vous n'ayez pas de rendez-vous prévus ces prochains jours.
+Lyrae: Puis-je faire autre chose pour vous ?
+User: Oui.
+Lyrae: Voulez-vous prendre, annuler, consulter ou modifier un rendez vous ? Vous pouvez aussi simplement me poser une question.
+User: Je souhaite prendre rendez-vous.
+Lyrae: Vous voulez prendre rendez-vous, c'est bien ça ?
+User: Oui.
+Lyrae: Parfait, un instant je vous prie.
+Lyrae: Avez-vous une ordonannce ?
+User: Oui.
+Lyrae: Très bien, quel examen voulez vous passer ?
+User: Une radio du genou.
+Lyrae: Vous m'avez dit Radio du genou, c'est ça ?
+User: Oui.
+Lyrae: Je regarde les disponibilités, un instant...
+Lyrae: Je peux vous proposer le vingt-sept mai à dix-sept heures vingt-cinq. Est-ce que cela vous convient ?
+
+

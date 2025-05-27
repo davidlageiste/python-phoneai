@@ -2,9 +2,6 @@ audios = {
     "intro": {
         "fr": "Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Comment puis-je vous aider aujourd’hui ?",
     },
-    "intro": {
-        "fr": "Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Comment puis-je vous aider aujourd’hui ?"
-    },
     "repeat_firstname": {
         "fr": "Je n'ai pas compris, pouvez-vous répéter votre prénom ?"
     },

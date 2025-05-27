@@ -49,9 +49,7 @@ def text_to_speech_stream(text: str, language="fr") -> IO[bytes]:
 
 
 def text_to_speech(
-    process: str,
-    text: str,
-    language="fr",
+    process: str, text: str, call, language="fr"
 ) -> Union[FileSource | TextSource]:
     """
     Returns an audio source (FileSource ou TextSource) for Azure Communication Service based on a text
@@ -60,16 +58,24 @@ def text_to_speech(
         - "file_source":        returms a generated and temporarly uploaded audio FileSource
         - "text_source":        returns a TextSource for CallAutomation TTS use
     """
-    print("TTS", process, text)
+    print("----> Text to speech", process, text)
     match process:
         case "fixed_file_source":
+            print(audios[text])
             if isinstance(audios[text][language], list):
-                return FileSource(
-                    url=f"{STORAGE_URL_PATH}{text}-{language}-{random.randint(0, len(audios[text][language]) - 1)}.mp3"
-                )
-            return FileSource(url=f"{STORAGE_URL_PATH}{text}-{language}.mp3")
+                rand = random.randint(0, len(audios[text][language]) - 1)
+                if call:
+                    call.add_step(f"Lyrae: {audios[text][language][rand]}")
+                return FileSource(url=f"{STORAGE_URL_PATH}{text}-{language}-{rand}.mp3")
+            if call:
+                call.add_step(f"Lyrae: {audios[text][language]}")
+            test = FileSource(url=f"{STORAGE_URL_PATH}{text}-{language}.mp3")
+            print("+++++", test, f"{STORAGE_URL_PATH}{text}-{language}.mp3")
+            return test
 
         case "file_source":
+            if call:
+                call.add_step(f"Lyrae: {text}")
             file_name = f"{uuid.uuid4()}.mp3"
             audio_stream = text_to_speech_stream(text)
             upload_stream_azure(audio_stream, file_name)
