@@ -150,9 +150,9 @@ def full_date_vers_litteral(date_str):
     minute_label = "minute" if minute == 1 else "minutes"
 
     if minute == 0:
-        return f"Le {jour} {mois} à {heure} {heure_label}"
+        return convert_numbers_to_words_french(f"Le {jour} {mois} à {heure} {heure_label}")
     else:
-        return f"Le {jour} {mois} à {heure} {heure_label} et {minute} {minute_label}"
+        return convert_numbers_to_words_french(f"Le {jour} {mois} à {heure} {heure_label} et {minute} {minute_label}")
 
 
 def is_date_formatted(date):
