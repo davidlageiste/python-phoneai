@@ -2,6 +2,8 @@ from typing import List, Dict, Any
 from datetime import datetime
 import json
 
+from utils.azure_storage import upload_call_recap
+
 # step = {
 #     "intro": "Phrase d'intro / question",
 #     "required_info": ["firstname"],
@@ -98,17 +100,11 @@ TALK
 {"\n".join(self.steps)}\n\n
 """
 
-    #         data = {
-    #             "call": self.call,
-    #             "caller": self.caller,
-    #             "rdv": self.rdv,
-    #             "errors": self.errors,
-    #             "steps": self.steps,
-    #             "updated_at": self.updated_at.isoformat(),  # pour un format lisible
-    #         }
-    #         return json.dumps(data, indent=2, ensure_ascii=False)
-
-    # "discuss": "\n".join(self.steps),
+    def store_archive(self, caller):
+        content = self.to_string_archive(caller)
+        upload_call_recap(
+            f"{caller}-{str(self.updated_at).replace(" ", "-")}.txt", "calls", content
+        )
 
     def __str__(self):
         return self.to_string()

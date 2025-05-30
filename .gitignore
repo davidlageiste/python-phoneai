@@ -2,3 +2,7 @@
 ./old_old_app.py
 __pycache__
 .DS_Store
+audio-files
+audios.zip
+calls
+calls.zip

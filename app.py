@@ -29,7 +29,6 @@ COGNITIVE_SERVICE_ENDPOINT = (
 SPEECH_KEY = "CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U2XJ3w3AAAAACOGuWEK"
 SPEECH_REGION = "eastus"
 MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
-# APP_URL = "39b8-2a01-cb10-8c9-2e00-b56b-3466-5535-3d7.ngrok-free.app"
 APP_URL = "lyrae-demo.azurewebsites.net"
 
 app = Flask(__name__)
@@ -345,8 +344,9 @@ async def callback():
 
     if type == "Microsoft.Communication.CallDisconnected":
         print_calls()
-        with open("archive_talk.txt", "a", encoding="utf-8") as file:
-            file.write(calls[caller].to_string_archive(caller))
+        calls[caller].store_archive(caller)
+        # with open("archive_talk.txt", "a", encoding="utf-8") as file:
+        #     file.write(calls[caller].to_string_archive(caller))
         del calls[caller]
     if type == "Microsoft.Communication.AnswerFailed":
         print(request.json[0])
