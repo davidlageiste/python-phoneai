@@ -29,8 +29,8 @@ COGNITIVE_SERVICE_ENDPOINT = (
 SPEECH_KEY = "CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U2XJ3w3AAAAACOGuWEK"
 SPEECH_REGION = "eastus"
 MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
-APP_URL = "39b8-2a01-cb10-8c9-2e00-b56b-3466-5535-3d7.ngrok-free.app"
-# APP_URL='lyraeapi.azurewebsites.net'
+# APP_URL = "39b8-2a01-cb10-8c9-2e00-b56b-3466-5535-3d7.ngrok-free.app"
+APP_URL='lyrae-demo.azurewebsites.net'
 
 app = Flask(__name__)
 
@@ -40,7 +40,7 @@ patientCollection = db["patientsDB"]
 rdvCollection = db["rdv"]
 
 call_automation_client = CallAutomationClient.from_connection_string(
-    "endpoint=https://lyraetalkdentaire.france.communication.azure.com/;accesskey=Bnrta2zbbwgTqmOXafpMk127vJl1MpCN6EbDuvH8n9mBk4Wp5wpSJQQJ99BDACULyCpuAreVAAAAAZCS2i6t"
+    "endpoint=https://lyraedemo.unitedstates.communication.azure.com/;accesskey=6NB6prS16bRw7UjKSRCObyUVQPyiwmffALNF5QiCnAxKRifFTIIbJQQJ99BEACULyCpuAreVAAAAAZCSuWZh"
 )
 speech_config = speechsdk.SpeechConfig(subscription=SPEECH_KEY, region=SPEECH_REGION)
 
