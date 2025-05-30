@@ -13,7 +13,8 @@ from azure.communication.callautomation import (
 )
 from utils.recorded_audio import audios
 
-ELEVENLABS_API_KEY = "sk_3a505305430d3ca4d01e4391b85a87e5c8c4eb5a58ed6403"
+# ELEVENLABS_API_KEY = "sk_3a505305430d3ca4d01e4391b85a87e5c8c4eb5a58ed6403"
+ELEVENLABS_API_KEY = "sk_3dcbf172fb11066a796dd87667c6cb15e8d6fc71d2259c09"
 clientElevenLabs = ElevenLabs(
     api_key=ELEVENLABS_API_KEY,
 )
@@ -23,7 +24,8 @@ STORAGE_URL_PATH = "https://talkstoragetest.blob.core.windows.net/audio-files/"
 
 def text_to_speech_stream(text: str, language="fr") -> IO[bytes]:
     voices = {
-        "fr": "4BHBnkrJUkJYV4HMAnNd",
+        # "fr": "4BHBnkrJUkJYV4HMAnNd",
+        "fr": "IBCnh04O5oxx16BRFelZ",
     }
 
     response = clientElevenLabs.text_to_speech.convert(
@@ -32,11 +34,11 @@ def text_to_speech_stream(text: str, language="fr") -> IO[bytes]:
         text=text,
         model_id="eleven_turbo_v2_5",
         voice_settings=VoiceSettings(
-            stability=0.60,
-            similarity_boost=1,
+            stability=0.80,
+            similarity_boost=0.75,
             style=0.0,
             use_speaker_boost=True,
-            speed=1.0,
+            speed=1.05,
         ),
     )
 

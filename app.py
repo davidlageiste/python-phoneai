@@ -30,7 +30,7 @@ SPEECH_KEY = "CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U
 SPEECH_REGION = "eastus"
 MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
 # APP_URL = "39b8-2a01-cb10-8c9-2e00-b56b-3466-5535-3d7.ngrok-free.app"
-APP_URL='lyrae-demo.azurewebsites.net'
+APP_URL = "lyrae-demo.azurewebsites.net"
 
 app = Flask(__name__)
 
@@ -150,9 +150,13 @@ def full_date_vers_litteral(date_str):
     minute_label = "minute" if minute == 1 else "minutes"
 
     if minute == 0:
-        return convert_numbers_to_words_french(f"Le {jour} {mois} à {heure} {heure_label}")
+        return convert_numbers_to_words_french(
+            f"Le {jour} {mois} à {heure} {heure_label}"
+        )
     else:
-        return convert_numbers_to_words_french(f"Le {jour} {mois} à {heure} {heure_label} et {minute} {minute_label}")
+        return convert_numbers_to_words_french(
+            f"Le {jour} {mois} à {heure} {heure_label} et {minute} {minute_label}"
+        )
 
 
 def is_date_formatted(date):
@@ -281,6 +285,20 @@ def findPatientInDB(query):
 
 
 ########## ENTRY POINT ##########
+
+
+@app.route("/generate_audio_batch", methods=["POST"])
+def generate_audio_batch():
+    if request.json and request.json["item"]:
+        generate_text_to_speech(request.json["item"])
+    else:
+        generate_text_to_speech()
+
+    return jsonify({"status": "success"})
+
+    # if generate_text_to_speech():
+    #     return jsonify({"status": "success"})
+    # return jsonify({"status": "error"})
 
 
 @app.route("/incoming_call", methods=["POST"])
