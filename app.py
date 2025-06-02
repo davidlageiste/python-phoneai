@@ -848,13 +848,15 @@ async def confirm_firstname():
                     "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.",
                     caller,
                 )
-
-            play_source = text_to_speech(
-                "file_source",
-                "Désolé, pouvez-vous me répéter votre prénom ?",
-                calls[caller],
-            )
-            start_recognizing("/get_firstname", "get_firstname", play_source, caller)
+            else:
+                play_source = text_to_speech(
+                    "file_source",
+                    "Désolé, pouvez-vous me répéter votre prénom ?",
+                    calls[caller],
+                )
+                start_recognizing(
+                    "/get_firstname", "get_firstname", play_source, caller
+                )
 
         elif model_response == "positive":
             # speak("Très bien, merci")
@@ -1156,17 +1158,17 @@ async def confirm_birthdate():
                 "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.",
                 caller,
             )
+        else:
+            date_litterale = date_vers_litteral(calls[caller].caller["birthdate"])
 
-        date_litterale = date_vers_litteral(calls[caller].caller["birthdate"])
-
-        play_source = text_to_speech(
-            "file_source",
-            f"Je n'ai pas entendu, Vous confirmez que vous êtes né {date_litterale} ?",
-            calls[caller],
-        )
-        start_recognizing(
-            "/confirm_birthdate", "confirm_birthdate", play_source, caller
-        )
+            play_source = text_to_speech(
+                "file_source",
+                f"Je n'ai pas entendu, Vous confirmez que vous êtes né {date_litterale} ?",
+                calls[caller],
+            )
+            start_recognizing(
+                "/confirm_birthdate", "confirm_birthdate", play_source, caller
+            )
     return jsonify({"success": "success"})
 
 
@@ -1966,11 +1968,11 @@ async def handleResponse():
                     "Voulez-vous prendre, annuler, consulter ou modifier un rendez vous ? Vous pouvez aussi simplement me poser une question.",
                     calls[caller],
                 )
+                start_recognizing(
+                    "/handleResponse", "start_conversation", play_source, caller
+                )
             elif positive_negative == "négative":
                 hang_up("Très bien, merci pour votre appel !", caller)
-            start_recognizing(
-                "/handleResponse", "start_conversation", play_source, caller
-            )
             return jsonify({"succes": "success"})
 
         else:
@@ -2063,13 +2065,15 @@ async def has_ordonnance():
                     "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.",
                     caller,
                 )
-
-            play_source = text_to_speech(
-                "file_source",
-                "Désolé, je n'ai pas compris, Avez-vous une ordonnance ?",
-                calls[caller],
-            )
-            start_recognizing("/has_ordonnance", "has_ordonnance", play_source, caller)
+            else:
+                play_source = text_to_speech(
+                    "file_source",
+                    "Désolé, je n'ai pas compris, Avez-vous une ordonnance ?",
+                    calls[caller],
+                )
+                start_recognizing(
+                    "/has_ordonnance", "has_ordonnance", play_source, caller
+                )
 
     return jsonify({"status": "success"})
 
@@ -2734,7 +2738,7 @@ def editRDV(caller):
         return "Error occurred while creating RDV"
 
 
-def deleteRDV(rdvId, caller):
+def deleteRDV(caller):
     # global lastname
     # global firstname
     # global birthdate
