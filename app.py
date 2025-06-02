@@ -1,5 +1,5 @@
 from tkinter import N
-from azure.communication.callautomation import CallAutomationClient, RecognizeInputType, PhoneNumberIdentifier
+from azure.communication.callautomation import CallAutomationClient, RecognizeInputType, PhoneNumberIdentifier, CommunicationUserIdentifier, FileSource
 from azure.storage.blob import BlobServiceClient
 import azure.cognitiveservices.speech as speechsdk
 from flask import Flask, request, jsonify
@@ -212,10 +212,33 @@ def incoming_call():
 
     data = request.json[0]
     caller = data.get("data").get("from").get("phoneNumber").get("value")
+    raw_id = data.get("data").get("to").get("rawId")
+    if data.get("data").get("from").get("phoneNumber", None) is None:
+        caller = ""
+    else:
+        caller = data.get("data").get("from").get("phoneNumber").get("value")
+
     encodedContext = data.get("data").get("incomingCallContext")
 
-    call_automation_client.answer_call(incoming_call_context=encodedContext, callback_url=f"https://lyraeapi.azurewebsites.net/callback?caller={caller}", cognitive_services_endpoint=COGNITIVE_SERVICE_ENDPOINT)
+    if raw_id == "4:+33801150143":
+        call_automation_client.answer_call(incoming_call_context=encodedContext, callback_url=f"https://bc99-2a01-cb00-844-1d00-40b4-2224-456-364b.ngrok-free.app/callback?caller={caller}", cognitive_services_endpoint=COGNITIVE_SERVICE_ENDPOINT)
+    else:
+        call_automation_client.answer_call(incoming_call_context=encodedContext, callback_url=f"https://bc99-2a01-cb00-844-1d00-40b4-2224-456-364b.ngrok-free.app/callback_music?caller={caller}", cognitive_services_endpoint=COGNITIVE_SERVICE_ENDPOINT)
+
+
     return jsonify({"status": "success"})
+
+
+@app.route("/callback_music", methods=["POST"])
+async def callback_music():
+    data = request.json[0]
+    if request.json and request.json[0].get("type") == "Microsoft.Communication.CallConnected":
+        call_connection_id = data.get("data").get("callConnectionId")
+        play_source = FileSource(url="https://backsonore.blob.core.windows.net/media/bureau_1_100.mp3?sp=r&st=2025-05-30T12:54:53Z&se=2028-05-30T20:54:53Z&spr=https&sv=2024-11-04&sr=b&sig=HKIjMYOoyg7Bwg2YrIVdEZt5z2r41D%2FIppqoLhlnzwE%3D")
+        call_automation_client.get_call_connection(call_connection_id=call_connection_id).play_media_to_all(play_source=play_source, loop=True)
+    return jsonify({"success": "success"})
+
+
 
 @app.route("/callback", methods=["POST"])
 async def callback():
@@ -235,6 +258,7 @@ async def callback():
         firstname = None
         birthdate = None
         patient_email = None
+        call_automation_client.get_call_connection(call_connection_id).hang_up(is_for_everyone=True)
     if request.json and request.json[0].get("type") == "Microsoft.Communication.AnswerFailed":
         print(request.json[0])
     if request.json and request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted":
@@ -250,6 +274,10 @@ async def callback():
         call_connection_id = data.get("data").get("callConnectionId")
         server_call_id = data.get("data").get("serverCallId")
         caller = request.args.get('caller')
+
+        target_music = CommunicationUserIdentifier("8:acs:a252cbad-4333-414a-8cb1-af7fdc1f46cb_00000027-b1a4-ed3a-5b42-ad3a0d00d413")
+
+        call_automation_client.get_call_connection(call_connection_id=call_connection_id).add_participant(target_participant=target_music, source_caller_id_number=PhoneNumberIdentifier("+33801150143"))
 
         # target = PhoneNumberIdentifier("+33801150143")
 
