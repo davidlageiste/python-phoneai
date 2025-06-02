@@ -170,7 +170,7 @@ def date_vers_litteral(date_str):
     # Conversion en objet datetime
     date_obj = datetime.strptime(date_str, "%Y-%m-%d")
 
-    jour = date_obj.day
+    jour = date_obj.day if date_obj.day != 1 else "premier"
     mois = french_months[date_obj.month]
     annee = date_obj.year
 
@@ -311,7 +311,7 @@ def incoming_call():
     caller = data.get("data").get("from").get("phoneNumber").get("value")[1:]
     calls[caller] = Call()
     encodedContext = data.get("data").get("incomingCallContext")
-    print(calls)
+
     call_automation_client.answer_call(
         incoming_call_context=encodedContext,
         callback_url=f"https://{APP_URL}/callback?caller={caller}",
@@ -1269,6 +1269,7 @@ async def confirm_call_intent():
         play_source = text_to_speech(
             "file_source",
             f"Pardonnez moi, je n'ai pas entendu. Est-ce bien pour un ou une {rdv_intent} ?",
+            calls[caller],
         )
         start_recognizing(
             "/confirm_call_intent", "confirm_call_intent", play_source, caller
@@ -3032,7 +3033,7 @@ async def find_patient(caller):
                 formatted_date = f"le {dt.day} {french_months[dt.month]} {dt.year}"
                 hours, minutes = planned_rdv[0].get("heurePrevue").split(":")
 
-                call_info["cancel_creneau"] = planned_rdv[0]
+                rdv_info["cancel_creneau"] = planned_rdv[0]
                 all_sous_type = get_sous_type_exam(planned_rdv[0].get("typeExamen"))
                 sous_type = next(
                     (
