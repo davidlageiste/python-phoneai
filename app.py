@@ -2032,8 +2032,8 @@ async def has_ordonnance():
                     get_creneaux_async(
                         sous_type=rdv_info["sous_type_id"],
                         exam_type=rdv_info["exam_id"],
+                        caller=caller,
                     ),
-                    caller,
                 )
                 speak("Je regarde les disponibilités, un instant...", caller)
 
