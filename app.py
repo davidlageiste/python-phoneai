@@ -238,13 +238,8 @@ def increment_error(caller, type):
     return False
 
 
-def start_recognizing(callback_url, context, play_source, caller=None):
+def start_recognizing(callback_url, context, play_source, caller):
     global calls
-
-    if caller == None:
-        print("!!! CALLER NONE", callback_url, context)
-    else:
-        print("start_recognizing", calls[caller].call["call_connection_id"])
 
     call_automation_client.get_call_connection(
         calls[caller].call["call_connection_id"]
@@ -668,7 +663,9 @@ async def confirm_creneau():
                     index=rdv_info["current_creneau_proposition"],
                 )
                 play_source = text_to_speech("file_source", text, calls[caller])
-                start_recognizing("/confirm_creneau", "confirm_creneau", play_source)
+                start_recognizing(
+                    "/confirm_creneau", "confirm_creneau", play_source, caller
+                )
 
         elif model_response == "positive":
             rdv_info["chosen_creneau"] = rdv_info["all_creneaux"][
@@ -1426,7 +1423,7 @@ async def confirm_rdv():
             else:
                 play_source = text_to_speech("fixed_file_source", "repeat_exam_type")
                 start_recognizing(
-                    "/rdv_exam_type", "rdv_exam_type", play_source, calls[caller]
+                    "/rdv_exam_type", "rdv_exam_type", play_source, caller
                 )
         elif model_response == "positive":
             task_creneaux = asyncio.create_task(
@@ -1455,7 +1452,7 @@ async def confirm_rdv():
             play_source = text_to_speech(
                 "fixed_file_source", "misunderstand_exam_type", calls[caller]
             )
-            start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source)
+            start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source, caller)
 
     elif request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
         play_source = text_to_speech(
