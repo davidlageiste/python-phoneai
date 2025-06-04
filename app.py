@@ -2854,10 +2854,39 @@ async def find_patient(caller):
                 )
                 continue_conversation("Puis-je faire autre chose pour vous ?", caller)
             else:
-                hang_up(
-                    "Désolé, je n'ai pas pu valider votre rendez-vous. Je vais vous rediriger vers une secrétaire.",
-                    caller,
-                )
+                if increment_error(caller, "rdv"):
+                    hang_up(
+                        "Désolé, je n'ai pas pu valider votre rendez-vous. Je vais vous rediriger vers une secrétaire.",
+                        caller,
+                    )
+                else:
+                    speak(
+                        f"Il semblerait qu'il y ait un problème avec ce créneau. Je vais vous en proposer un nouveau.",
+                        caller,
+                    )
+                    task_creneaux = asyncio.create_task(
+                        get_creneaux_async(
+                            sous_type=rdv_info["sous_type_id"],
+                            exam_type=rdv_info["exam_id"],
+                            caller=caller,
+                        ),
+                    )
+                    speak("Je regarde les disponibilités, un instant...", caller)
+
+                    creneaux = await task_creneaux
+
+                    rdv_info["all_creneaux"] = creneaux
+                    rdv_info["creneauDate"] = None
+                    rdv_info["chosen_creneau"] = None
+                    rdv_info["cancel_creneau"] = None
+                    rdv_info["current_creneau_proposition"] = 0
+
+                    text = build_single_date_phrase(creneau=creneaux)
+                    play_source = text_to_speech("file_source", text, calls[caller])
+                    start_recognizing(
+                        "/confirm_creneau", "confirm_creneau", play_source, caller
+                    )
+
         elif (
             call_info["intent"] == "modification de rendez-vous"
             or call_info["intent"] == "consultation de rendez-vous"

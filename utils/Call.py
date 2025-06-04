@@ -68,6 +68,7 @@ class Call:
             "birthdate": 0,
             "intent": 0,
             "type_exam": 0,
+            "rdv": 0,
         }
 
         # Steps
