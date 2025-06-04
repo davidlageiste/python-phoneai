@@ -136,3 +136,18 @@ audios = {
 
 
 recorded_audios_keys = list(audios.keys())
+
+keyboard_sounds = {
+    "https://backsonore.blob.core.windows.net/media/segment_0001.mp3?sp=r&st=2025-06-04T08:41:27Z&se=2028-06-04T16:41:27Z&spr=https&sv=2024-11-04&sr=b&sig=D9WuOY485DYmy6YGM%2BRhsGjh3rb4SWjDKft24oHpODc%3D",
+    "https://backsonore.blob.core.windows.net/media/segment_0002.mp3?sp=r&st=2025-06-04T08:41:42Z&se=2028-06-04T16:41:42Z&spr=https&sv=2024-11-04&sr=b&sig=cgaSZcJq0QlSV6L3f64BMzciXsSAxR%2BPrknX9Q9SeMU%3D",
+    "https://backsonore.blob.core.windows.net/media/segment_0003.mp3?sp=r&st=2025-06-04T08:41:58Z&se=2028-06-04T16:41:58Z&spr=https&sv=2024-11-04&sr=b&sig=QF6tO40xgYl8ZbiBqFnnwKu83Qn0SChhVRUi9b3RPBw%3D",
+    "https://backsonore.blob.core.windows.net/media/segment_0004.mp3?sp=r&st=2025-06-04T08:42:11Z&se=2028-06-04T16:42:11Z&spr=https&sv=2024-11-04&sr=b&sig=R93O1bpvsgYrUJRqsCSb70n5vcNZ8l2paSLjLcCaeOI%3D",
+    "https://backsonore.blob.core.windows.net/media/segment_0005.mp3?sp=r&st=2025-06-04T08:42:22Z&se=2028-06-04T16:42:22Z&spr=https&sv=2024-11-04&sr=b&sig=77wAVK47tZp%2BbCu7geNJVEsP0zh%2FH3N585ntSLjsoP0%3D",
+    "https://backsonore.blob.core.windows.net/media/segment_0006.mp3?sp=r&st=2025-06-04T08:42:33Z&se=2028-06-04T16:42:33Z&spr=https&sv=2024-11-04&sr=b&sig=dtypB4yk3q0%2BUPuSyhUjd7F%2Bt7Vc8iiDrAVZeLgETHA%3D",
+    "https://backsonore.blob.core.windows.net/media/segment_0007.mp3?sp=r&st=2025-06-04T08:42:43Z&se=2028-06-04T16:42:43Z&spr=https&sv=2024-11-04&sr=b&sig=EddVQmEHu05tzUmRGNyWMbJyLWOQbbXhNGzEcpQ5EKE%3D",
+    "https://backsonore.blob.core.windows.net/media/segment_0008.mp3?sp=r&st=2025-06-04T08:42:53Z&se=2028-06-04T16:42:53Z&spr=https&sv=2024-11-04&sr=b&sig=vmq4JLEUGKSIgRSfG4d%2BOyKAtuuxueKu1r3%2Bz8S1Ui8%3D",
+    "https://backsonore.blob.core.windows.net/media/segment_0009.mp3?sp=r&st=2025-06-04T08:43:02Z&se=2028-06-04T16:43:02Z&spr=https&sv=2024-11-04&sr=b&sig=AO8DWqR0RVL%2Bw9q%2BL5DJu8sd2cWkVPDYyPpFSpSfj18%3D",
+    "https://backsonore.blob.core.windows.net/media/segment_0010.mp3?sp=r&st=2025-06-04T08:43:12Z&se=2028-06-04T16:43:12Z&spr=https&sv=2024-11-04&sr=b&sig=PuUBHkjiGoCNzY2xbt7kT8ecYdOATwm5qs5RwNskqmo%3D",
+    "https://backsonore.blob.core.windows.net/media/segment_0011.mp3?sp=r&st=2025-06-04T08:43:21Z&se=2028-06-04T16:43:21Z&spr=https&sv=2024-11-04&sr=b&sig=YEQuFtPuEkzXTwPmmwU%2BUVfVMEG2NB4emDNP%2F%2F4ax5o%3D",
+}
+
