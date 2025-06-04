@@ -2,6 +2,7 @@ from azure.communication.callautomation import (
     CallAutomationClient,
     RecognizeInputType,
     PhoneNumberIdentifier,
+    FileSource
 )
 from azure.storage.blob import BlobServiceClient
 import azure.cognitiveservices.speech as speechsdk
@@ -18,9 +19,10 @@ import re
 from typing import Dict
 from num2words import num2words
 import json
+import random
 
 from utils.tts import text_to_speech, generate_text_to_speech
-from utils.recorded_audio import recorded_audios_keys
+from utils.recorded_audio import recorded_audios_keys, keyboard_sounds
 from utils.Call import Call
 
 COGNITIVE_SERVICE_ENDPOINT = (
@@ -256,6 +258,13 @@ def start_recognizing(callback_url, context, play_source, caller):
         operation_callback_url=f"https://{APP_URL}{callback_url}",
     )
 
+    play_source = FileSource(url=random.choice(list(keyboard_sounds)))
+    
+    call_automation_client.get_call_connection(
+        calls[caller].call["call_connection_id"]
+    ).play_media_to_all(
+        play_source=play_source
+    )
 
 def hang_up(text, caller):
     print("HANG UP", caller, text)
@@ -1076,7 +1085,6 @@ async def confirm_birthdate():
         task_model_response = asyncio.create_task(
             get_positive_negative_async(user_response)
         )
-        speak("ok", caller)
 
         await asyncio.sleep(1)
 
@@ -1127,7 +1135,7 @@ async def confirm_birthdate():
                 date_litterale = date_vers_litteral(calls[caller].caller["birthdate"])
                 play_source = text_to_speech(
                     "file_source",
-                    f"{patient.get('nom')} {patient.get('prenom')} né {date_litterale} c'est bien vous ?",
+                    f"{patient.get('nom').lower()} {patient.get('prenom').lower()} né {date_litterale} c'est bien vous ?",
                     calls[caller],
                 )
                 calls[caller].caller["lastname"] = patient.get("nom")
