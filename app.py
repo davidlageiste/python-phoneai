@@ -32,8 +32,8 @@ COGNITIVE_SERVICE_ENDPOINT = (
 SPEECH_KEY = "CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U2XJ3w3AAAAACOGuWEK"
 SPEECH_REGION = "eastus"
 MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
-# APP_URL = "lyrae-demo.azurewebsites.net"
-APP_URL = "47e2-2a01-e0a-e04-1310-38be-e7db-542c-b09d.ngrok-free.app"
+APP_URL = "talkpreprodapi.azurewebsites.net"
+
 
 app = Flask(__name__)
 
@@ -43,8 +43,7 @@ patientCollection = db["patientsDB"]
 rdvCollection = db["rdv"]
 
 call_automation_client = CallAutomationClient.from_connection_string(
-    "endpoint=https://lyraetalkdentaire.france.communication.azure.com/;accesskey=Bnrta2zbbwgTqmOXafpMk127vJl1MpCN6EbDuvH8n9mBk4Wp5wpSJQQJ99BDACULyCpuAreVAAAAAZCS2i6t"
-    # "endpoint=https://lyraedemo.unitedstates.communication.azure.com/;accesskey=6NB6prS16bRw7UjKSRCObyUVQPyiwmffALNF5QiCnAxKRifFTIIbJQQJ99BEACULyCpuAreVAAAAAZCSuWZh"
+    "https://lyraepreprod.unitedstates.communication.azure.com/;accesskey=1TsDRImMKFvO8AThS7PUAwww6YBxELviBkGsqFHHmiXErS2PRcAzJQQJ99BFACULyCpuAreVAAAAAZCS3Ids"
 )
 speech_config = speechsdk.SpeechConfig(subscription=SPEECH_KEY, region=SPEECH_REGION)
 
@@ -1424,7 +1423,7 @@ async def confirm_rdv():
         # speak("ok")
 
         model_response = await task_model_response
-        print("---------------> confirm_rdv", model_response)
+
         if model_response == "négative":
             calls[caller].rdv["exam_id"] = None
             calls[caller].rdv["sous_type_id"] = None
