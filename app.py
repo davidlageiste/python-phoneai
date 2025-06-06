@@ -1524,7 +1524,7 @@ async def rdv_exam_type():
             )
             if not is_performed:
                 hang_up(
-                    f"Vous avez demandé {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["type_examen"]}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
+                    f"Vous avez demandé {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["code_examen"]}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
                     caller,
                 )
             else:
@@ -1875,7 +1875,7 @@ async def handleResponse():
                     )
                     if not is_performed:
                         hang_up(
-                            f"Vous avez demandé {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["type_examen"]}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
+                            f"Vous avez demandé {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["code_examen"]}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
                             caller,
                         )
                     else:
@@ -1883,7 +1883,7 @@ async def handleResponse():
                         rdv_info["sous_type_id"] = actual_sous_type_id
                         play_source = text_to_speech(
                             "file_source",
-                            f"Vous m'avez dit vouloir prendre rendez-vous pour {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type['code_examen']}, c'est ça ?",
+                            f"Vous m'avez dit vouloir prendre rendez-vous pour {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["code_examen"]}, c'est ça ?",
                             calls[caller],
                         )
                         start_recognizing(
