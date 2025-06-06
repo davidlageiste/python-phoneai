@@ -34,7 +34,6 @@ SPEECH_REGION = "eastus"
 MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
 APP_URL = "talkpreprodapi.azurewebsites.net"
 
-
 app = Flask(__name__)
 
 client = MongoClient(MONGO_URL)
@@ -43,7 +42,7 @@ patientCollection = db["patientsDB"]
 rdvCollection = db["rdv"]
 
 call_automation_client = CallAutomationClient.from_connection_string(
-    "endpoint=https://lyraepreprod.unitedstates.communication.azure.com/;accesskey=1TsDRImMKFvO8AThS7PUAwww6YBxELviBkGsqFHHmiXErS2PRcAzJQQJ99BFACULyCpuAreVAAAAAZCS3Ids"
+    "https://lyraepreprod.unitedstates.communication.azure.com/;accesskey=1TsDRImMKFvO8AThS7PUAwww6YBxELviBkGsqFHHmiXErS2PRcAzJQQJ99BFACULyCpuAreVAAAAAZCS3Ids"
 )
 speech_config = speechsdk.SpeechConfig(subscription=SPEECH_KEY, region=SPEECH_REGION)
 
@@ -1525,7 +1524,7 @@ async def rdv_exam_type():
             )
             if not is_performed:
                 hang_up(
-                    f"Vous avez demandé {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["type_examen"]}, mais ous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
+                    f"Vous avez demandé {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["type_examen"]}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
                     caller,
                 )
             else:
@@ -1856,7 +1855,7 @@ async def handleResponse():
             call_info["intent"] = intent.lower()
             # speak("ok")
             exam_type = await task_type
-            if exam_type["type_examen"] is None:
+            if exam_type["type_examen_id"] is None:
                 play_source = text_to_speech(
                     "file_source",
                     "Vous voulez prendre rendez-vous, c'est bien ça ?",
@@ -1876,7 +1875,7 @@ async def handleResponse():
                     )
                     if not is_performed:
                         hang_up(
-                            "Nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
+                            f"Vous avez demandé {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["type_examen"]}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
                             caller,
                         )
                     else:
@@ -1898,37 +1897,20 @@ async def handleResponse():
                     rdv_info["exam_id"] = exam_type["type_examen"]
                     play_source = text_to_speech(
                         "file_source",
-                        f"Vous souhaitez prendre rendez-vous pour {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["type_examen"]}. C'est bien ça?",
+                        f"Vous souhaitez prendre rendez-vous pour {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["type_examen"]}. Pouvez-vous, s'il vous plaît, préciser la zone anatomique concernée?",
                         calls[caller],
                     )
+                    start_recognizing(
+                        "/rdv_exam_type", "rdv_exam_type", play_source, caller
+                    )
+                    return jsonify({"success": "success"})
                 else:
                     play_source = text_to_speech(
                         "file_source",
                         "Vous voulez prendre rendez-vous, c'est bien ça ?",
                         calls[caller],
                     )
-                # rdv_info["exam_id"] = exam_type["type_examen_id"]
-                # rdv_info["sous_type_id"] = exam_type["code_examen_id"]
-                # if rdv_info["sous_type_id"] is None:
-                #     hang_up(
-                #         "Désolé, je ne suis pas qualifiée pour vous donner un rendez-vous pour ce type d'examen. Je vous transfère vers une secrétaire.",
-                #         caller,
-                #     )
-                # else:
-                #     all_sous_type = get_sous_type_exam(rdv_info["exam_id"])
-                #     sous_type = next(
-                #         (
-                #             item
-                #             for item in all_sous_type
-                #             if item["code"] == rdv_info["sous_type_id"]
-                #         ),
-                #         None,
-                #     )
-                #     play_source = text_to_speech(
-                #         "file_source",
-                #         f"Vous voulez prendre rendez-vous pour un ou une {sous_type.get('libelle')}, c'est bien ça ?",
-                #         calls[caller],
-                #     )
+
         elif intent.lower() == "modification de rendez-vous":
             call_info["intent"] = intent.lower()
             play_source = text_to_speech(

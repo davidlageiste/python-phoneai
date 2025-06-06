@@ -3,7 +3,7 @@ audios = {
         "fr": "Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Comment puis-je vous aider aujourd’hui ?",
     },
     "intro_preprod": {
-        "fr": "Bonjour, je suis Lyraé en pré-production.",
+        "fr": "Bonjour, je suis Lyraé en pré-production. Que puis-je faire pour vous ?",
     },
     "repeat_firstname": {
         "fr": "Je n'ai pas compris, pouvez-vous répéter votre prénom ?"
