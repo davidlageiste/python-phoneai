@@ -2,6 +2,9 @@ audios = {
     "intro": {
         "fr": "Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Comment puis-je vous aider aujourd’hui ?",
     },
+    "intro_preprod": {
+        "fr": "Bonjour, je suis Lyraé en pré-production.",
+    },
     "repeat_firstname": {
         "fr": "Je n'ai pas compris, pouvez-vous répéter votre prénom ?"
     },
@@ -150,4 +153,3 @@ keyboard_sounds = {
     "https://backsonore.blob.core.windows.net/media/segment_0010.mp3?sp=r&st=2025-06-04T08:43:12Z&se=2028-06-04T16:43:12Z&spr=https&sv=2024-11-04&sr=b&sig=PuUBHkjiGoCNzY2xbt7kT8ecYdOATwm5qs5RwNskqmo%3D",
     "https://backsonore.blob.core.windows.net/media/segment_0011.mp3?sp=r&st=2025-06-04T08:43:21Z&se=2028-06-04T16:43:21Z&spr=https&sv=2024-11-04&sr=b&sig=YEQuFtPuEkzXTwPmmwU%2BUVfVMEG2NB4emDNP%2F%2F4ax5o%3D",
 }
-
