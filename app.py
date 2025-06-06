@@ -2863,6 +2863,17 @@ async def find_patient(caller):
         }
     )
 
+    print({
+            "dateNaissance": {"$regex": f"^{caller_info["birthdate"] + 'T00:00:00'}$"},
+            "nom": {
+                "$regex": f"^{caller_info["lastname"]}$",
+                "$options": "i",
+            },  # Case-insensitive
+            "prenom": {
+                "$regex": f"^{strip_accents(caller_info["firstname"])}$",
+                "$options": "i",  # Case-insensitive
+            },
+        })
     if patient:
         if call_info["intent"] == "prise de rendez-vous":
             speak(
