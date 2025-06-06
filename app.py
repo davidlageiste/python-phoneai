@@ -32,7 +32,7 @@ SPEECH_KEY = "CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U
 SPEECH_REGION = "eastus"
 # MONGO_URL = "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
 MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
-APP_URL = "bd6e-2a01-cb00-844-1d00-34e5-5f15-d2b0-ae8e.ngrok-free.app"
+APP_URL = "lyrae-demo.azurewebsites.net"
 API_URL = "sparkso-universite.com:8080"
 
 app = Flask(__name__)
@@ -43,7 +43,7 @@ patientCollection = db["patientsDB"]
 rdvCollection = db["rdv"]
 
 call_automation_client = CallAutomationClient.from_connection_string(
-    "endpoint=https://lyraetalk.france.communication.azure.com/;accesskey=9UN73P1bujRMwYm6rR9oaQx3slKfLHlTTEN5YeMkqXdhZ7WBmJ95JQQJ99ALACULyCpuAreVAAAAAZCS5f71"
+    "endpoint=https://lyraedemo.unitedstates.communication.azure.com/;accesskey=6NB6prS16bRw7UjKSRCObyUVQPyiwmffALNF5QiCnAxKRifFTIIbJQQJ99BEACULyCpuAreVAAAAAZCSuWZh"
 )
 speech_config = speechsdk.SpeechConfig(subscription=SPEECH_KEY, region=SPEECH_REGION)
 
