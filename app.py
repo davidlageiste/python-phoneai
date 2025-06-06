@@ -981,6 +981,7 @@ async def confirm_lastname():
                         },
                     }
                 )
+                calls[caller].patient = patient
                 date_litterale = date_vers_litteral(calls[caller].caller["birthdate"])
                 play_source = text_to_speech(
                     "file_source",
@@ -1326,6 +1327,7 @@ async def confirm_identity():
         model_response = await task_model_response
 
         if model_response == "négative":
+            calls[caller].patient = None
             hang_up(
                 "Désolé, je ne peux pas donner de rendez-vous à un patient qui n'est pas déjà connu du cabinet. Vous êtes un nouveau patient : Je vous propose de vous transférer à la secrétaire",
                 caller,
@@ -2848,20 +2850,23 @@ async def find_patient(caller):
     call_info = calls[caller].call
     caller_info = calls[caller].caller
     rdv_info = calls[caller].rdv
-    print("**** FIND PATIENT")
-    patient = patientCollection.find_one(
-        {
-            "dateNaissance": {"$regex": f"^{caller_info["birthdate"] + 'T00:00:00'}$"},
-            "nom": {
-                "$regex": f"^{caller_info["lastname"]}$",
-                "$options": "i",
-            },  # Case-insensitive
-            "prenom": {
-                "$regex": f"^{strip_accents(caller_info["firstname"])}$",
-                "$options": "i",  # Case-insensitive
-            },
-        }
-    )
+    patient = None
+    if calls[caller].patient is None:
+        patient = patientCollection.find_one(
+            {
+                "dateNaissance": {"$regex": f"^{caller_info["birthdate"] + 'T00:00:00'}$"},
+                "nom": {
+                    "$regex": f"^{caller_info["lastname"]}$",
+                    "$options": "i",
+                },  # Case-insensitive
+                "prenom": {
+                    "$regex": f"^{strip_accents(caller_info["firstname"])}$",
+                    "$options": "i",  # Case-insensitive
+                },
+            }
+        )
+    else:
+        patient = calls[caller].patient
 
     print({
             "dateNaissance": {"$regex": f"^{caller_info["birthdate"] + 'T00:00:00'}$"},
