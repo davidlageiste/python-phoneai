@@ -2,7 +2,7 @@ from azure.communication.callautomation import (
     CallAutomationClient,
     RecognizeInputType,
     PhoneNumberIdentifier,
-    FileSource
+    FileSource,
 )
 from azure.storage.blob import BlobServiceClient
 import azure.cognitiveservices.speech as speechsdk
@@ -22,6 +22,7 @@ import json
 import random
 
 from utils.tts import text_to_speech, generate_text_to_speech
+from utils.exam import get_client_exam_code
 from utils.recorded_audio import recorded_audios_keys, keyboard_sounds
 from utils.Call import Call
 
@@ -31,7 +32,8 @@ COGNITIVE_SERVICE_ENDPOINT = (
 SPEECH_KEY = "CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U2XJ3w3AAAAACOGuWEK"
 SPEECH_REGION = "eastus"
 MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
-APP_URL = "lyrae-demo.azurewebsites.net"
+# APP_URL = "lyrae-demo.azurewebsites.net"
+APP_URL = "47e2-2a01-e0a-e04-1310-38be-e7db-542c-b09d.ngrok-free.app"
 
 app = Flask(__name__)
 
@@ -41,7 +43,8 @@ patientCollection = db["patientsDB"]
 rdvCollection = db["rdv"]
 
 call_automation_client = CallAutomationClient.from_connection_string(
-    "endpoint=https://lyraedemo.unitedstates.communication.azure.com/;accesskey=6NB6prS16bRw7UjKSRCObyUVQPyiwmffALNF5QiCnAxKRifFTIIbJQQJ99BEACULyCpuAreVAAAAAZCSuWZh"
+    "endpoint=https://lyraetalkdentaire.france.communication.azure.com/;accesskey=Bnrta2zbbwgTqmOXafpMk127vJl1MpCN6EbDuvH8n9mBk4Wp5wpSJQQJ99BDACULyCpuAreVAAAAAZCS2i6t"
+    # "endpoint=https://lyraedemo.unitedstates.communication.azure.com/;accesskey=6NB6prS16bRw7UjKSRCObyUVQPyiwmffALNF5QiCnAxKRifFTIIbJQQJ99BEACULyCpuAreVAAAAAZCSuWZh"
 )
 speech_config = speechsdk.SpeechConfig(subscription=SPEECH_KEY, region=SPEECH_REGION)
 
@@ -259,12 +262,11 @@ def start_recognizing(callback_url, context, play_source, caller):
     )
 
     play_source = FileSource(url=random.choice(list(keyboard_sounds)))
-    
+
     call_automation_client.get_call_connection(
         calls[caller].call["call_connection_id"]
-    ).play_media_to_all(
-        play_source=play_source
-    )
+    ).play_media_to_all(play_source=play_source)
+
 
 def hang_up(text, caller):
     print("HANG UP", caller, text)
@@ -318,7 +320,8 @@ def incoming_call():
     global calls
     data = request.json[0]
     caller = data.get("data").get("from").get("phoneNumber").get("value")[1:]
-    calls[caller] = Call()
+    called = data.get("data").get("to").get("phoneNumber").get("value")[1:]
+    calls[caller] = Call(called)
     encodedContext = data.get("data").get("incomingCallContext")
 
     call_automation_client.answer_call(
@@ -1276,7 +1279,7 @@ async def confirm_call_intent():
 
         play_source = text_to_speech(
             "file_source",
-            f"Pardonnez moi, je n'ai pas entendu. Est-ce bien pour un ou une {rdv_intent} ?",
+            f"Pardonnez moi, je n'ai pas entendu. Est-ce bien pour une {rdv_intent} ?",
             calls[caller],
         )
         start_recognizing(
@@ -1412,9 +1415,8 @@ async def confirm_rdv():
 
     caller, operation_context, type, user_response = get_request_infos(request)
 
-    if (
-        type == "Microsoft.Communication.RecognizeCompleted"
-        and operation_context == "confirm_rdv"
+    if type == "Microsoft.Communication.RecognizeCompleted" and (
+        operation_context == "confirm_rdv" or operation_context == "confirm_rdv_intro"
     ):
         task_model_response = asyncio.create_task(
             get_positive_negative_async(user_response)
@@ -1422,17 +1424,26 @@ async def confirm_rdv():
         # speak("ok")
 
         model_response = await task_model_response
-
+        print("---------------> confirm_rdv", model_response)
         if model_response == "négative":
             calls[caller].rdv["exam_id"] = None
             calls[caller].rdv["sous_type_id"] = None
+            if operation_context == "confirm_rdv_intro":
+                play_source = text_to_speech(
+                    "file_source", "Que puis-je faire pour vous ?", calls[caller]
+                )
+                start_recognizing(
+                    "/handleResponse", "start_conversation", play_source, caller
+                )
             if increment_error(caller, "type_exam"):
                 hang_up(
                     "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.",
                     caller,
                 )
             else:
-                play_source = text_to_speech("fixed_file_source", "repeat_exam_type")
+                play_source = text_to_speech(
+                    "fixed_file_source", "repeat_exam_type", calls[caller]
+                )
                 start_recognizing(
                     "/rdv_exam_type", "rdv_exam_type", play_source, caller
                 )
@@ -1483,11 +1494,14 @@ async def rdv_exam_type():
         return jsonify({"success": "success"})
 
     caller, operation_context, type, user_response = get_request_infos(request)
+    rdv_info = calls[caller].rdv
 
     if (
         type == "Microsoft.Communication.RecognizeCompleted"
         and operation_context == "rdv_exam_type"
     ):
+        if rdv_info["exam_id"] is not None:
+            user_response = f"C'est pour un {rdv_info["exam_id"]} {user_response}"
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
         pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
         if re.search(pattern, user_response, re.IGNORECASE):
@@ -1498,31 +1512,50 @@ async def rdv_exam_type():
         task_type = asyncio.create_task(
             get_exam_type_async(user_response=user_response)
         )
-        # speak("ok")
-        exam_type = await task_type
-        print("0000000000000", exam_type)
-        if exam_type["type_examen"] is not None and exam_type["code_examen_id"] is None:
-            hang_up(
-                "Désolé, il semblerait qu'il y ait un problème sur ce type d'examen. Je vais vous rediriger vers une secrétaire.",
-                caller,
-            )
-        elif exam_type["type_examen"] == None or exam_type["code_examen"] == None:
-            print("CAS NONE")
-            play_source = text_to_speech(
-                "fixed_file_source", "repeat_exam_type3", calls[caller]
-            )
-            print("PLAY SOURCE", play_source)
-            start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source, caller)
-        else:
-            calls[caller].rdv["exam_id"] = exam_type["type_examen_id"]
-            calls[caller].rdv["sous_type_id"] = exam_type["code_examen_id"]
 
+        exam_type = await task_type
+        print("#######", user_response, exam_type)
+        if (
+            exam_type["type_examen"] is not None
+            and exam_type["code_examen_id"] is not None
+        ):
+            actual_exam_id, actual_sous_type_id, is_performed = get_client_exam_code(
+                calls[caller].call["called"],
+                exam_type["type_examen_id"],
+                exam_type["code_examen_id"],
+            )
+            if not is_performed:
+                hang_up(
+                    f"Vous avez demandé {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["type_examen"]}, mais ous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
+                    caller,
+                )
+            else:
+                rdv_info["exam_id"] = actual_exam_id
+                rdv_info["sous_type_id"] = actual_sous_type_id
+                play_source = text_to_speech(
+                    "file_source",
+                    f"Vous m'avez dit {exam_type['code_examen']}, c'est ça ?",
+                    calls[caller],
+                )
+                start_recognizing("/confirm_rdv", "confirm_rdv", play_source, caller)
+
+        elif (
+            exam_type["type_examen"] is not None and exam_type["code_examen_id"] is None
+        ):
+            rdv_info["exam_id"] = exam_type["type_examen"]
             play_source = text_to_speech(
                 "file_source",
-                f"Vous m'avez dit {exam_type['code_examen']}, c'est ça ?",
+                f"Vous m'avez dit {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["type_examen"]}. Pouvez-vous, s'il vous plaît, préciser la zone anatomique concernée?",
                 calls[caller],
             )
-            start_recognizing("/confirm_rdv", "confirm_rdv", play_source, caller)
+            start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source, caller)
+        else:
+            play_source = text_to_speech(
+                "fixed_file_source",
+                "repeat_exam_type",
+                calls[caller],
+            )
+            start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source, caller)
 
     return jsonify({"status": "success"})
 
@@ -1734,7 +1767,7 @@ async def get_creneaux_choice():
                 time_str = matched_creneau["heurePrevue"]
 
                 play_source = text_to_speech(
-                    "file_soure",
+                    "file_source",
                     f"Vous confirmez que vous voulez annuler votre rendez-vous du {date_str} à {time_str}",
                     calls[caller],
                 )
@@ -1743,7 +1776,7 @@ async def get_creneaux_choice():
                 )
             else:
                 play_source = text_to_speech(
-                    "file_soure",
+                    "file_source",
                     f"Je n'ai pas compris le rendez-vous que vous souhaitez annuler. {rdv_info["annulation_phrase"]}",
                     calls[caller],
                 )
@@ -1831,28 +1864,72 @@ async def handleResponse():
                     calls[caller],
                 )
             else:
-                rdv_info["exam_id"] = exam_type["type_examen_id"]
-                rdv_info["sous_type_id"] = exam_type["code_examen_id"]
-                if rdv_info["sous_type_id"] is None:
-                    hang_up(
-                        "Désolé, je ne suis pas qualifiée pour vous donner un rendez-vous pour ce type d'examen. Je vous transfère vers une secrétaire.",
-                        caller,
+                if (
+                    exam_type["type_examen_id"] is not None
+                    and exam_type["code_examen_id"] is not None
+                ):
+                    actual_exam_id, actual_sous_type_id, is_performed = (
+                        get_client_exam_code(
+                            calls[caller].call["called"],
+                            exam_type["type_examen_id"],
+                            exam_type["code_examen_id"],
+                        )
                     )
-                else:
-                    all_sous_type = get_sous_type_exam(rdv_info["exam_id"])
-                    sous_type = next(
-                        (
-                            item
-                            for item in all_sous_type
-                            if item["code"] == rdv_info["sous_type_id"]
-                        ),
-                        None,
-                    )
+                    if not is_performed:
+                        hang_up(
+                            "Nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
+                            caller,
+                        )
+                    else:
+                        rdv_info["exam_id"] = actual_exam_id
+                        rdv_info["sous_type_id"] = actual_sous_type_id
+                        play_source = text_to_speech(
+                            "file_source",
+                            f"Vous m'avez dit vouloir prendre rendez-vous pour {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type['code_examen']}, c'est ça ?",
+                            calls[caller],
+                        )
+                        start_recognizing(
+                            "/confirm_rdv", "confirm_rdv_intro", play_source, caller
+                        )
+                    return jsonify({"success": "success"})
+                elif (
+                    exam_type["type_examen_id"] is not None
+                    and exam_type["code_examen_id"] is None
+                ):
+                    rdv_info["exam_id"] = exam_type["type_examen"]
                     play_source = text_to_speech(
                         "file_source",
-                        f"Vous voulez prendre rendez-vous pour un ou une {sous_type.get('libelle')}, c'est bien ça ?",
+                        f"Vous souhaitez prendre rendez-vous pour {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["type_examen"]}. C'est bien ça?",
                         calls[caller],
                     )
+                else:
+                    play_source = text_to_speech(
+                        "file_source",
+                        "Vous voulez prendre rendez-vous, c'est bien ça ?",
+                        calls[caller],
+                    )
+                # rdv_info["exam_id"] = exam_type["type_examen_id"]
+                # rdv_info["sous_type_id"] = exam_type["code_examen_id"]
+                # if rdv_info["sous_type_id"] is None:
+                #     hang_up(
+                #         "Désolé, je ne suis pas qualifiée pour vous donner un rendez-vous pour ce type d'examen. Je vous transfère vers une secrétaire.",
+                #         caller,
+                #     )
+                # else:
+                #     all_sous_type = get_sous_type_exam(rdv_info["exam_id"])
+                #     sous_type = next(
+                #         (
+                #             item
+                #             for item in all_sous_type
+                #             if item["code"] == rdv_info["sous_type_id"]
+                #         ),
+                #         None,
+                #     )
+                #     play_source = text_to_speech(
+                #         "file_source",
+                #         f"Vous voulez prendre rendez-vous pour un ou une {sous_type.get('libelle')}, c'est bien ça ?",
+                #         calls[caller],
+                #     )
         elif intent.lower() == "modification de rendez-vous":
             call_info["intent"] = intent.lower()
             play_source = text_to_speech(
@@ -2083,6 +2160,14 @@ async def has_ordonnance():
                 start_recognizing(
                     "/has_ordonnance", "has_ordonnance", play_source, caller
                 )
+
+    if type == "Microsoft.Communication.RecognizeFailed":
+        play_source = text_to_speech(
+            "file_source",
+            "Désolé, je n'ai pas compris, Avez-vous une ordonnance ?",
+            calls[caller],
+        )
+        start_recognizing("/has_ordonnance", "has_ordonnance", play_source, caller)
 
     return jsonify({"status": "success"})
 

@@ -63,7 +63,6 @@ def text_to_speech(
     print("----> Text to speech", process, text)
     match process:
         case "fixed_file_source":
-            print(audios[text])
             if isinstance(audios[text][language], list):
                 rand = random.randint(0, len(audios[text][language]) - 1)
                 if call:
@@ -72,7 +71,6 @@ def text_to_speech(
             if call:
                 call.add_step(f"Lyrae: {audios[text][language]}")
             test = FileSource(url=f"{STORAGE_URL_PATH}{text}-{language}.mp3")
-            print("+++++", test, f"{STORAGE_URL_PATH}{text}-{language}.mp3")
             return test
 
         case "file_source":

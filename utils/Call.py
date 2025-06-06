@@ -30,11 +30,12 @@ from utils.azure_storage import upload_call_recap
 
 
 class Call:
-    def __init__(self):
+    def __init__(self, called):
         # Call
         self.call: Dict[str, str] = {
             "call_connection_id": None,
             "caller": None,
+            "called": called,
             "intent": None,
         }
 
