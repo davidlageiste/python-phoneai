@@ -118,3 +118,39 @@ def generate_text_to_speech(item=None, language="fr") -> bool:
         return True
     except:
         return False
+
+
+def spell_word(word: str, language="fr") -> str:
+    eq = {
+        "A": "à",
+        "B": "baie",
+        "C": "ces",
+        "D": "des",
+        "E": "eux",
+        "F": "èf",
+        "G": "j'ai",
+        "H": "hache",
+        "I": "I",
+        "J": "j'y",
+        "K": "ka",
+        "L": "elle",
+        "M": "aime",
+        "N": "haine",
+        "O": "au",
+        "P": "paix",
+        "Q": "ku",
+        "R": "ère",
+        "S": "aisse",
+        "T": "té",
+        "U": "u",
+        "V": "vé",
+        "W": "double vé",
+        "X": "iks",
+        "Y": "hi grec",
+        "Z": "zèd",
+        "-": "tiret",
+        "'": "apostrophe",
+        " ": "espace",
+    }
+
+    return " ".join(eq[x.upper()] if x.upper() in eq.keys() else x for x in list(word))

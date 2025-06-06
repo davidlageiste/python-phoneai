@@ -21,7 +21,7 @@ from num2words import num2words
 import json
 import random
 
-from utils.tts import text_to_speech, generate_text_to_speech
+from utils.tts import text_to_speech, generate_text_to_speech, spell_word
 from utils.exam import get_client_exam_code
 from utils.recorded_audio import recorded_audios_keys, keyboard_sounds, click_sounds
 from utils.Call import Call
@@ -465,7 +465,7 @@ async def get_firstname():
             else:
                 play_source = text_to_speech(
                     "file_source",
-                    f"{clean_firstname.strip()}, c'est bien ça ?",
+                    f"{clean_firstname.strip()}, {spell_word(clean_firstname.strip())}, c'est bien ça ?",
                     calls[caller],
                 )
                 start_recognizing(
@@ -536,7 +536,7 @@ async def get_lastname():
             calls[caller].caller["lastname"] = clean_name
             play_source = text_to_speech(
                 "file_source",
-                f"{calls[caller].caller["lastname"]}, c'est bien ça ?",
+                f"{clean_name}, {spell_word(clean_name)}, c'est bien ça ?",
                 calls[caller],
             )
             start_recognizing(
@@ -903,7 +903,7 @@ async def confirm_firstname():
             else:
                 play_source = text_to_speech(
                     "file_source",
-                    "Désolé, pouvez-vous me répéter votre prénom ?",
+                    "Pouvez-vous s'il vous plaît répéter votre prénom en l'épelant?",
                     calls[caller],
                 )
                 start_recognizing(
@@ -918,7 +918,7 @@ async def confirm_firstname():
         else:
             play_source = text_to_speech(
                 "file_source",
-                f"Je n'ai pas compris, {calls[caller].caller["firstname"]}, c'est bien ça ?",
+                f"Je n'ai pas compris, {calls[caller].caller["firstname"]}, {spell_word(calls[caller].caller["firstname"])}, c'est bien ça ?",
                 calls[caller],
             )
             start_recognizing(
@@ -932,7 +932,7 @@ async def confirm_firstname():
     if request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
         play_source = text_to_speech(
             "file_source",
-            f"Je n'ai pas compris, {calls[caller].caller["firstname"]}, c'est bien ça ?",
+            f"Je n'ai pas compris, {calls[caller].caller["firstname"]}, {spell_word(calls[caller].caller["firstname"])}, c'est bien ça ?",
             calls[caller],
         )
         start_recognizing(
@@ -979,6 +979,7 @@ async def confirm_lastname():
                 ).play_media_to_all(
                     play_source=play_source, operation_context="hang_up"
                 )
+                return jsonify({"status": "success"})
 
             play_source = text_to_speech(
                 "fixed_file_source", "spell_lastname2", calls[caller]
@@ -1049,7 +1050,7 @@ async def confirm_lastname():
         else:
             play_source = text_to_speech(
                 "file_source",
-                f"Je n'ai pas compris, {calls[caller].caller["lastname"]}, c'est bien ça ?",
+                f"Je n'ai pas compris, {calls[caller].caller["lastname"]}, {spell_word(calls[caller].caller["lastname"])}, c'est bien ça ?",
                 calls[caller],
             )
             start_recognizing(
@@ -1216,7 +1217,7 @@ async def confirm_birthdate():
             # Formatage en version littérale
             play_source = text_to_speech(
                 "file_source",
-                f"Vous confirmez que vous êtes né {date_litterale} ?",
+                f"Je n'ai pas compris, Vous confirmez que vous êtes né {date_litterale} ?",
                 calls[caller],
             )
             start_recognizing(
