@@ -153,3 +153,9 @@ keyboard_sounds = {
     "https://backsonore.blob.core.windows.net/media/segment_0010.mp3?sp=r&st=2025-06-04T08:43:12Z&se=2028-06-04T16:43:12Z&spr=https&sv=2024-11-04&sr=b&sig=PuUBHkjiGoCNzY2xbt7kT8ecYdOATwm5qs5RwNskqmo%3D",
     "https://backsonore.blob.core.windows.net/media/segment_0011.mp3?sp=r&st=2025-06-04T08:43:21Z&se=2028-06-04T16:43:21Z&spr=https&sv=2024-11-04&sr=b&sig=YEQuFtPuEkzXTwPmmwU%2BUVfVMEG2NB4emDNP%2F%2F4ax5o%3D",
 }
+
+click_sounds = {
+    "https://backsonore.blob.core.windows.net/media/souris_1.mp3?sp=r&st=2025-06-04T10:17:38Z&se=2028-06-04T18:17:38Z&spr=https&sv=2024-11-04&sr=b&sig=pgEfpnyQeN9bLdag7e9QFqWQqBTPO81WtySZuc43Ghk%3D",
+    "https://backsonore.blob.core.windows.net/media/souris_2.mp3?sp=r&st=2025-06-04T10:17:56Z&se=2028-06-04T18:17:56Z&spr=https&sv=2024-11-04&sr=b&sig=7bOlCoSgpUa67FTz5GctLgSygl4uidnl4hGhiF7YVGY%3D",
+    "https://backsonore.blob.core.windows.net/media/souris_3.mp3?sp=r&st=2025-06-04T10:18:07Z&se=2028-06-04T18:18:07Z&spr=https&sv=2024-11-04&sr=b&sig=5XLWX%2BEeF4sUjebKae8PfYNfW2z%2BhJ3s0ppKsFIXBVE%3D",
+}

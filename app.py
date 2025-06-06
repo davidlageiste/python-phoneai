@@ -23,7 +23,7 @@ import random
 
 from utils.tts import text_to_speech, generate_text_to_speech
 from utils.exam import get_client_exam_code
-from utils.recorded_audio import recorded_audios_keys, keyboard_sounds
+from utils.recorded_audio import recorded_audios_keys, keyboard_sounds, click_sounds
 from utils.Call import Call
 
 COGNITIVE_SERVICE_ENDPOINT = (
@@ -31,8 +31,10 @@ COGNITIVE_SERVICE_ENDPOINT = (
 )
 SPEECH_KEY = "CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U2XJ3w3AAAAACOGuWEK"
 SPEECH_REGION = "eastus"
+# MONGO_URL = "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
 MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
 APP_URL = "talkpreprodapi.azurewebsites.net"
+API_URL = "sparkso-universite.com:8080"
 
 app = Flask(__name__)
 
@@ -241,7 +243,9 @@ def increment_error(caller, type):
     return False
 
 
-def start_recognizing(callback_url, context, play_source, caller):
+def start_recognizing(
+    callback_url, context, play_source, caller, background_noise="keyboard"
+):
     global calls
 
     call_automation_client.get_call_connection(
@@ -259,8 +263,10 @@ def start_recognizing(callback_url, context, play_source, caller):
         operation_callback_url=f"https://{APP_URL}{callback_url}",
     )
 
-    play_source = FileSource(url=random.choice(list(keyboard_sounds)))
-
+    if background_noise == "keyboard":
+        play_source = FileSource(url=random.choice(list(keyboard_sounds)))
+    else:
+        play_source = FileSource(url=random.choice(list(click_sounds)))
     call_automation_client.get_call_connection(
         calls[caller].call["call_connection_id"]
     ).play_media_to_all(play_source=play_source)
@@ -463,7 +469,11 @@ async def get_firstname():
                     calls[caller],
                 )
                 start_recognizing(
-                    "/confirm_firstname", "confirm_firstname", play_source, caller
+                    "/confirm_firstname",
+                    "confirm_firstname",
+                    play_source,
+                    caller,
+                    background_noise="click",
                 )
 
     elif type == "Microsoft.Communication.RecognizeFailed":
@@ -530,7 +540,11 @@ async def get_lastname():
                 calls[caller],
             )
             start_recognizing(
-                "/confirm_lastname", "confirm_lastname", play_source, caller
+                "/confirm_lastname",
+                "confirm_lastname",
+                play_source,
+                caller,
+                background_noise="click",
             )
 
     elif (
@@ -585,7 +599,11 @@ async def get_birthdate():
                 calls[caller],
             )
             start_recognizing(
-                "/confirm_birthdate", "confirm_birthdate", play_source, caller
+                "/confirm_birthdate",
+                "confirm_birthdate",
+                play_source,
+                caller,
+                background_noise="click",
             )
 
     elif request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
@@ -634,7 +652,11 @@ async def confirm_creneau():
                 )
                 play_source = text_to_speech("file_source", text, calls[caller])
                 start_recognizing(
-                    "/confirm_creneau", "confirm_creneau", play_source, caller
+                    "/confirm_creneau",
+                    "confirm_creneau",
+                    play_source,
+                    caller,
+                    background_noise="click",
                 )
             else:
                 rdv_info["current_creneau_proposition"] = 0
@@ -674,7 +696,11 @@ async def confirm_creneau():
                 )
                 play_source = text_to_speech("file_source", text, calls[caller])
                 start_recognizing(
-                    "/confirm_creneau", "confirm_creneau", play_source, caller
+                    "/confirm_creneau",
+                    "confirm_creneau",
+                    play_source,
+                    caller,
+                    background_noise="click",
                 )
 
         elif model_response == "positive":
@@ -705,7 +731,11 @@ async def confirm_creneau():
                 calls[caller],
             )
             start_recognizing(
-                "/confirm_creneau", "confirm_creneau", play_source, caller
+                "/confirm_creneau",
+                "confirm_creneau",
+                play_source,
+                caller,
+                background_noise="click",
             )
     elif (
         type == "Microsoft.Communication.RecognizeCompleted"
@@ -726,7 +756,11 @@ async def confirm_creneau():
                 )
                 play_source = text_to_speech("file_source", text, calls[caller])
                 start_recognizing(
-                    "/confirm_creneau", "modification", play_source, caller
+                    "/confirm_creneau",
+                    "modification",
+                    play_source,
+                    caller,
+                    background_noise="click",
                 )
             else:
                 rdv_info["current_creneau_proposition"] = 0
@@ -766,7 +800,11 @@ async def confirm_creneau():
                 )
                 play_source = text_to_speech("file_source", text, calls[caller])
                 start_recognizing(
-                    "/confirm_creneau", "modification", play_source, caller
+                    "/confirm_creneau",
+                    "modification",
+                    play_source,
+                    caller,
+                    background_noise="click",
                 )
         elif model_response == "positive":
             rdv_info["chosen_creneau"] = rdv_info["all_creneaux"][
@@ -819,7 +857,11 @@ async def confirm_creneau():
                 calls[caller],
             )
             start_recognizing(
-                "/confirm_creneau", "confirm_creneau", play_source, caller
+                "/confirm_creneau",
+                "confirm_creneau",
+                play_source,
+                caller,
+                background_noise="click",
             )
 
     return jsonify({"success": "success"})
@@ -880,7 +922,11 @@ async def confirm_firstname():
                 calls[caller],
             )
             start_recognizing(
-                "/confirm_firstname", "confirm_firstname", play_source, caller
+                "/confirm_firstname",
+                "confirm_firstname",
+                play_source,
+                caller,
+                background_noise="click",
             )
 
     if request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
@@ -890,7 +936,11 @@ async def confirm_firstname():
             calls[caller],
         )
         start_recognizing(
-            "/confirm_firstname", "confirm_firstname", play_source, caller
+            "/confirm_firstname",
+            "confirm_firstname",
+            play_source,
+            caller,
+            background_noise="click",
         )
 
     return jsonify({"success": "success"})
@@ -948,6 +998,17 @@ async def confirm_lastname():
                 }
             )
 
+            print(
+                {
+                    "dateNaissance": {
+                        "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
+                    },
+                    "nom": {
+                        "$regex": f"^{calls[caller].caller["lastname"]}$",
+                        "$options": "i",  # Case-insensitive
+                    },
+                }
+            )
             if count > 1 or count == 0:
                 play_source = text_to_speech(
                     "fixed_file_source", "ask_firstname", calls[caller]
@@ -969,6 +1030,7 @@ async def confirm_lastname():
                         },
                     }
                 )
+                calls[caller].patient = patient
                 date_litterale = date_vers_litteral(calls[caller].caller["birthdate"])
                 play_source = text_to_speech(
                     "file_source",
@@ -1158,7 +1220,11 @@ async def confirm_birthdate():
                 calls[caller],
             )
             start_recognizing(
-                "/confirm_birthdate", "confirm_birthdate", play_source, caller
+                "/confirm_birthdate",
+                "confirm_birthdate",
+                play_source,
+                caller,
+                background_noise="click",
             )
 
     elif type == "Microsoft.Communication.RecognizeFailed":
@@ -1176,7 +1242,11 @@ async def confirm_birthdate():
                 calls[caller],
             )
             start_recognizing(
-                "/confirm_birthdate", "confirm_birthdate", play_source, caller
+                "/confirm_birthdate",
+                "confirm_birthdate",
+                play_source,
+                caller,
+                background_noise="click",
             )
     return jsonify({"success": "success"})
 
@@ -1216,7 +1286,7 @@ async def confirm_call_intent():
 
         elif model_response == "positive":
             if rdv_intent == "prise de rendez-vous":
-                handle_prise_rdv(caller)
+                await handle_prise_rdv(caller)
             elif rdv_intent == "modification de rendez-vous":
                 if (
                     caller_info["lastname"] is not None
@@ -1264,7 +1334,11 @@ async def confirm_call_intent():
 
             play_source = text_to_speech("file_source", text, calls[caller])
             start_recognizing(
-                "/confirm_call_intent", "confirm_call_intent", play_source, caller
+                "/confirm_call_intent",
+                "confirm_call_intent",
+                play_source,
+                caller,
+                background_noise="click",
             )
 
     if type == "Microsoft.Communication.RecognizeFailed":
@@ -1281,7 +1355,11 @@ async def confirm_call_intent():
             calls[caller],
         )
         start_recognizing(
-            "/confirm_call_intent", "confirm_call_intent", play_source, caller
+            "/confirm_call_intent",
+            "confirm_call_intent",
+            play_source,
+            caller,
+            background_noise="click",
         )
 
     return jsonify({"success": "success"})
@@ -1314,6 +1392,7 @@ async def confirm_identity():
         model_response = await task_model_response
 
         if model_response == "négative":
+            calls[caller].patient = None
             hang_up(
                 "Désolé, je ne peux pas donner de rendez-vous à un patient qui n'est pas déjà connu du cabinet. Vous êtes un nouveau patient : Je vous propose de vous transférer à la secrétaire",
                 caller,
@@ -1336,6 +1415,7 @@ async def confirm_identity():
                 "confirm_identity",
                 play_source=play_source,
                 caller=caller,
+                background_noise="click",
             )
     return jsonify({"success": "success"})
 
@@ -1466,7 +1546,11 @@ async def confirm_rdv():
             text = build_single_date_phrase(creneau=creneaux)
             play_source = text_to_speech("file_source", text, calls[caller])
             start_recognizing(
-                "/confirm_creneau", "confirm_creneau", play_source, caller
+                "/confirm_creneau",
+                "confirm_creneau",
+                play_source,
+                caller,
+                background_noise="click",
             )
         else:
             play_source = text_to_speech(
@@ -1553,7 +1637,13 @@ async def rdv_exam_type():
                 "repeat_exam_type",
                 calls[caller],
             )
-            start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source, caller)
+            start_recognizing(
+                "/rdv_exam_type",
+                "rdv_exam_type",
+                play_source,
+                caller,
+                background_noise="click",
+            )
 
     return jsonify({"status": "success"})
 
@@ -1770,7 +1860,11 @@ async def get_creneaux_choice():
                     calls[caller],
                 )
                 start_recognizing(
-                    "/confirm_annulation", "annulation", play_source, caller
+                    "/confirm_annulation",
+                    "annulation",
+                    play_source,
+                    caller,
+                    background_noise="click",
                 )
             else:
                 play_source = text_to_speech(
@@ -1844,7 +1938,7 @@ async def handleResponse():
                 start_recognizing(
                     "/module_informatif", "module_informatif", play_source, caller
                 )
-
+                return jsonify({"success": "success"})
             continue_conversation("more", caller)
             return jsonify({"success": "success"})
         elif intent == "prise de rendez-vous":
@@ -1956,7 +2050,11 @@ async def handleResponse():
             return jsonify({"succes": "success"})
 
         start_recognizing(
-            "/confirm_call_intent", "confirm_call_intent", play_source, caller
+            "/confirm_call_intent",
+            "confirm_call_intent",
+            play_source,
+            caller,
+            background_noise="click",
         )
     if (
         type == "Microsoft.Communication.RecognizeCompleted"
@@ -2053,7 +2151,11 @@ async def handleResponse():
             return jsonify({"succes": "success"})
 
         start_recognizing(
-            "/confirm_call_intent", "confirm_call_intent", play_source, caller
+            "/confirm_call_intent",
+            "confirm_call_intent",
+            play_source,
+            caller,
+            background_noise="click",
         )
 
     elif type == "Microsoft.Communication.RecognizeFailed":
@@ -2114,7 +2216,11 @@ async def has_ordonnance():
                 text = build_single_date_phrase(creneau=creneaux)
                 play_source = text_to_speech("file_source", text, calls[caller])
                 start_recognizing(
-                    "/confirm_creneau", "confirm_creneau", play_source, caller
+                    "/confirm_creneau",
+                    "confirm_creneau",
+                    play_source,
+                    caller,
+                    background_noise="click",
                 )
             else:
                 play_source = text_to_speech(
@@ -2234,7 +2340,7 @@ async def extract_creneau_async(user_response):
 async def get_creneaux_async(sous_type, exam_type, caller, date_start=None):
     global calls
 
-    url = "https://sparkso-universite.com:8080/api/getCreneaux"
+    url = f"https://{API_URL}/api/getCreneaux"
     headers = {"Content-Type": "application/json"}
 
     if exam_type == "ECHOGRAPHIE":
@@ -2552,7 +2658,7 @@ def build_multiple_dates_phrase(creneaux, type=None):
                 heure = f"{hours} heures"
             else:
                 heure = f"{hours} heures {minutes}"
-            phrases.append(f"{ordinals[idx]} est le {date_str} à {heure}")
+            phrases.append(f"le {ordinals[idx]} est le {date_str} à {heure}")
 
         # Assemble final sentence
         if nb_slots == 0:
@@ -2640,11 +2746,48 @@ def continue_conversation(model_response, caller):
     start_recognizing("/handleResponse", "end_conversation", play_source, caller)
 
 
-def handle_prise_rdv(caller):
-    play_source = text_to_speech(
-        "file_source", "Avez-vous une ordonannce ?", calls[caller]
-    )
-    start_recognizing("/has_ordonnance", "has_ordonnance", play_source, caller)
+async def handle_prise_rdv(caller):
+    global calls
+    rdv_info = calls[caller].rdv
+
+    # play_source = text_to_speech(
+    #     "file_source", "Avez-vous une ordonannce ?", calls[caller]
+    # )
+    # start_recognizing("/has_ordonnance", "has_ordonnance", play_source, caller)
+    if rdv_info["exam_id"] is not None and rdv_info["sous_type_id"] is not None:
+        task_creneaux = asyncio.create_task(
+            get_creneaux_async(
+                sous_type=rdv_info["sous_type_id"],
+                exam_type=rdv_info["exam_id"],
+                caller=caller,
+            ),
+        )
+        speak("Je regarde les disponibilités, un instant...", caller)
+
+        await asyncio.sleep(1)
+
+        creneaux = await task_creneaux
+
+        print(creneaux)
+
+        rdv_info["all_creneaux"] = creneaux
+
+        text = build_single_date_phrase(creneau=creneaux)
+        play_source = text_to_speech("file_source", text, calls[caller])
+        start_recognizing(
+            "/confirm_creneau",
+            "confirm_creneau",
+            play_source,
+            caller,
+            background_noise="click",
+        )
+    else:
+        play_source = text_to_speech(
+            "file_source",
+            "Très bien, quel examen voulez vous passer ?",
+            calls[caller],
+        )
+        start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source, caller)
 
 
 def handle_modification(caller):
@@ -2724,18 +2867,7 @@ def createRDV(caller, externalNumber=None):
     rdv_info = calls[caller].rdv
     caller_info = calls[caller].caller
 
-    url = "https://sparkso-universite.com:8080/api/createRDV"
-
-    print(
-        "CREATING RDV WITH:",
-        {
-            "email": caller_info["email"],
-            "firstName": caller_info["firstname"],
-            "lastName": caller_info["lastname"],
-            "birthDate": caller_info["birthdate"],
-            "creneau": rdv_info["chosen_creneau"],
-        },
-    )
+    url = f"https://{API_URL}/api/createRDV"
 
     payload = {
         "email": caller_info["email"],
@@ -2743,6 +2875,7 @@ def createRDV(caller, externalNumber=None):
         "lastName": caller_info["lastname"],
         "birthDate": caller_info["birthdate"],
         "creneau": rdv_info["chosen_creneau"],
+        "db": "sandbox",
     }
 
     if externalNumber is not None:
@@ -2762,7 +2895,7 @@ def createRDV(caller, externalNumber=None):
 
 
 def getRDV(patientId):
-    url = "https://sparkso-universite.com:8080/api/getRDV"
+    url = f"https://{API_URL}/api/getRDV"
 
     # results = list(rdvCollection.find({
     #     "idPatient": patientId
@@ -2796,7 +2929,7 @@ def editRDV(caller):
     rdv_info = calls[caller].rdv
     caller_info = calls[caller].caller
 
-    url = "https://sparkso-universite.com:8080/api/editRDV"
+    url = f"https://{API_URL}/api/editRDV"
 
     payload = {
         "rdvId": rdv_info["cancel_creneau"].get("idExamen"),
@@ -2825,7 +2958,7 @@ def deleteRDV(caller):
     caller_info = calls[caller].caller
     rdv_info = calls[caller].rdv
 
-    url = "https://sparkso-universite.com:8080/api/deleteRDV"
+    url = f"https://{API_URL}/api/deleteRDV"
     payload = {
         "rdvId": rdv_info["cancel_creneau"]["idExamen"],
         "externalUserNumber": "NEURACORP",
@@ -2880,8 +3013,27 @@ async def find_patient(caller):
     call_info = calls[caller].call
     caller_info = calls[caller].caller
     rdv_info = calls[caller].rdv
-    print("**** FIND PATIENT")
-    patient = patientCollection.find_one(
+    patient = None
+    if calls[caller].patient is None:
+        patient = patientCollection.find_one(
+            {
+                "dateNaissance": {
+                    "$regex": f"^{caller_info["birthdate"] + 'T00:00:00'}$"
+                },
+                "nom": {
+                    "$regex": f"^{caller_info["lastname"]}$",
+                    "$options": "i",
+                },  # Case-insensitive
+                "prenom": {
+                    "$regex": f"^{strip_accents(caller_info["firstname"])}$",
+                    "$options": "i",  # Case-insensitive
+                },
+            }
+        )
+    else:
+        patient = calls[caller].patient
+
+    print(
         {
             "dateNaissance": {"$regex": f"^{caller_info["birthdate"] + 'T00:00:00'}$"},
             "nom": {
@@ -2894,9 +3046,6 @@ async def find_patient(caller):
             },
         }
     )
-
-    print(patient)
-
     if patient:
         if call_info["intent"] == "prise de rendez-vous":
             speak(
@@ -3050,7 +3199,11 @@ async def find_patient(caller):
                     )
                     play_source = text_to_speech("file_source", text, calls[caller])
                     start_recognizing(
-                        "/confirm_creneau", "modification", play_source, caller
+                        "/confirm_creneau",
+                        "modification",
+                        play_source,
+                        caller,
+                        background_noise="click",
                     )
                     # text = build_multiple_dates_phrase(creneaux=creneaux)
                     # play_source = text_to_speech("file_source", text)
@@ -3161,7 +3314,11 @@ async def find_patient(caller):
                     calls[caller],
                 )
                 start_recognizing(
-                    "/confirm_annulation", "confirm_annulation", play_source, caller
+                    "/confirm_annulation",
+                    "confirm_annulation",
+                    play_source,
+                    caller,
+                    background_noise="click",
                 )
             else:
                 sorted_rdvs = sorted(

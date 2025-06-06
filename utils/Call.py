@@ -47,6 +47,8 @@ class Call:
             "email": None,
         }
 
+        self.patient: any | None = None
+
         # Rdv
         self.rdv: Dict[str, str | int | Any] = {
             "rdv_intent": None,
