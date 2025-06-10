@@ -533,10 +533,9 @@ async def get_lastname():
             start_recognizing("/get_lastname", "get_lastname", play_source, caller)
 
         else:
-            calls[caller].caller["lastname"] = clean_name
             play_source = text_to_speech(
                 "file_source",
-                f"{clean_name}, {spell_word(clean_name)}, c'est bien ça ?",
+                f"{calls[caller].caller["lastname"]} {calls[caller].caller["lastname"]}, c'est bien ça ?",
                 calls[caller],
             )
             start_recognizing(
