@@ -535,7 +535,7 @@ async def get_lastname():
         else:
             play_source = text_to_speech(
                 "file_source",
-                f"{calls[caller].caller["lastname"]} {calls[caller].caller["lastname"]}, c'est bien ça ?",
+                f"{calls[caller].caller["lastname"]} {spell_word(calls[caller].caller["lastname"])}, c'est bien ça ?",
                 calls[caller],
             )
             start_recognizing(
