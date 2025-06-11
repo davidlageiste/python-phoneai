@@ -1513,7 +1513,7 @@ async def confirm_rdv():
                 start_recognizing(
                     "/handleResponse", "start_conversation", play_source, caller
                 )
-            if increment_error(caller, "type_exam"):
+            elif increment_error(caller, "type_exam"):
                 hang_up(
                     "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.",
                     caller,
@@ -1608,7 +1608,7 @@ async def rdv_exam_type():
             )
             if not is_performed:
                 hang_up(
-                    f"Vous avez demandé {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["code_examen"]}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
+                    f"Vous avez demandé {"un" if exam_type["type_examen_id"] == "CT" else "une"} {exam_type["code_examen"]}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
                     caller,
                 )
             else:
@@ -1627,7 +1627,7 @@ async def rdv_exam_type():
             rdv_info["exam_id"] = exam_type["type_examen"]
             play_source = text_to_speech(
                 "file_source",
-                f"Vous m'avez dit {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["type_examen"]}. Pouvez-vous, s'il vous plaît, préciser la zone anatomique concernée?",
+                f"Vous m'avez dit {"un" if exam_type["type_examen_id"] == "CT" else "une"} {exam_type["type_examen"]}. Pouvez-vous, s'il vous plaît, préciser la zone anatomique concernée?",
                 calls[caller],
             )
             start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source, caller)
@@ -1969,7 +1969,7 @@ async def handleResponse():
                     )
                     if not is_performed:
                         hang_up(
-                            f"Vous avez demandé {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["code_examen"]}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
+                            f"Vous avez demandé {"un" if exam_type["type_examen_id"] == "CT" else "une"} {exam_type["code_examen"]}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
                             caller,
                         )
                     else:
@@ -1977,7 +1977,7 @@ async def handleResponse():
                         rdv_info["sous_type_id"] = actual_sous_type_id
                         play_source = text_to_speech(
                             "file_source",
-                            f"Vous m'avez dit vouloir prendre rendez-vous pour {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["code_examen"]}, c'est ça ?",
+                            f"Vous m'avez dit vouloir prendre rendez-vous pour {"un" if exam_type["type_examen_id"] == "CT" else "une"} {exam_type["code_examen"]}, c'est ça ?",
                             calls[caller],
                         )
                         start_recognizing(
@@ -1991,7 +1991,7 @@ async def handleResponse():
                     rdv_info["exam_id"] = exam_type["type_examen"]
                     play_source = text_to_speech(
                         "file_source",
-                        f"Vous souhaitez prendre rendez-vous pour {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["type_examen"]}. Pouvez-vous, s'il vous plaît, préciser la zone anatomique concernée?",
+                        f"Vous souhaitez prendre rendez-vous pour {"un" if exam_type["type_examen_id"] == "CT" else "une"} {exam_type["type_examen"]}. Pouvez-vous, s'il vous plaît, préciser la zone anatomique concernée?",
                         calls[caller],
                     )
                     start_recognizing(
