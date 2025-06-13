@@ -81,6 +81,13 @@ class Call:
         # Timestamp
         self.updated_at: datetime = datetime.now()
 
+        # Last play_source
+        self.last_text_to_speech: Dict[str, str, any] = {
+            "endpoint": None,
+            "operation_context": None,
+            "play_source": None
+        }
+
     def to_string(self) -> str:
         data = {
             "call": self.call,

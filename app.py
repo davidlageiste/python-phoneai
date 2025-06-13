@@ -248,6 +248,10 @@ def start_recognizing(
 ):
     global calls
 
+    calls[caller].last_text_to_speech["endpoint"] = callback_url
+    calls[caller].last_text_to_speech["operation_context"] = context
+    calls[caller].last_text_to_speech["play_source"] = play_source
+
     call_automation_client.get_call_connection(
         calls[caller].call["call_connection_id"]
     ).start_recognizing_media(
@@ -436,7 +440,7 @@ async def get_firstname():
             task_get_firstname = asyncio.create_task(
                 get_firstname_async(user_response=clean_firstname)
             )
-            task_human_orientation = asyncio.create_task(get_human_orientation(user_response=user_response))
+            task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
             speak("Très bien", caller)
             human_orientation = await task_human_orientation
             if human_orientation is True:
@@ -515,7 +519,7 @@ async def get_lastname():
     ):
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
         # Remove every "." that comes from the AI response
-        task_human_orientation = asyncio.create_task(get_human_orientation(user_response=user_response))
+        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
         speak("Merci", caller)
         human_orientation = await task_human_orientation
         if human_orientation is True:
@@ -587,7 +591,7 @@ async def get_birthdate():
         and operation_context == "get_birthdate"
     ):
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        task_human_orientation = asyncio.create_task(get_human_orientation(user_response=user_response))
+        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
@@ -658,7 +662,7 @@ async def confirm_creneau():
         and operation_context == "confirm_creneau"
     ):
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        task_human_orientation = asyncio.create_task(get_human_orientation(user_response=user_response))
+        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
@@ -917,7 +921,7 @@ async def confirm_firstname():
         task_model_response = asyncio.create_task(
             get_positive_negative_async(user_response)
         )
-        task_human_orientation = asyncio.create_task(get_human_orientation(user_response=user_response))
+        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
         speak("ok", caller)
         human_orientation = await task_human_orientation
         if human_orientation is True:
@@ -999,7 +1003,7 @@ async def confirm_lastname():
         task_model_response = asyncio.create_task(
             get_positive_negative_async(user_response)
         )
-        task_human_orientation = asyncio.create_task(get_human_orientation(user_response=user_response))
+        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
         speak("ok", caller)
         human_orientation = await task_human_orientation
         if human_orientation is True:
@@ -1108,7 +1112,7 @@ async def confirm_annulation():
         task_model_response = asyncio.create_task(
             get_positive_negative_async(user_response)
         )
-        task_human_orientation = asyncio.create_task(get_human_orientation(user_response=user_response))
+        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
         speak("ok", caller)
         human_orientation = await task_human_orientation
         if human_orientation is True:
@@ -1186,7 +1190,7 @@ async def confirm_birthdate():
         and operation_context == "confirm_birthdate"
     ):
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        task_human_orientation = asyncio.create_task(get_human_orientation(user_response=user_response))
+        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
@@ -1316,7 +1320,7 @@ async def confirm_call_intent():
         and operation_context == "confirm_call_intent"
     ):
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        task_human_orientation = asyncio.create_task(get_human_orientation(user_response=user_response))
+        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
@@ -1439,7 +1443,7 @@ async def confirm_identity():
         and operation_context == "confirm_identity"
     ):
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        task_human_orientation = asyncio.create_task(get_human_orientation(user_response=user_response))
+        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
@@ -1533,7 +1537,7 @@ async def module_informatif():
         and operation_context == "module_informatif"
     ):
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        task_human_orientation = asyncio.create_task(get_human_orientation(user_response=user_response))
+        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
@@ -1543,10 +1547,9 @@ async def module_informatif():
             return jsonify({"success": "success"})
         task = asyncio.create_task(get_model_response_async(user_response))
         model_response = await task
-        speak(model_response, caller)
 
         play_source = text_to_speech(
-            "file_source", "Puis-je faire autre chose pour vous ?", calls[caller]
+            "file_source", f"{model_response}. Puis-je faire autre chose pour vous ?", calls[caller]
         )
         start_recognizing("/handleResponse", "end_conversation", play_source, caller)
 
@@ -1569,7 +1572,7 @@ async def confirm_rdv():
     if type == "Microsoft.Communication.RecognizeCompleted" and (
         operation_context == "confirm_rdv" or operation_context == "confirm_rdv_intro"
     ):
-        task_human_orientation = asyncio.create_task(get_human_orientation(user_response=user_response))
+        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
         task_model_response = asyncio.create_task(
             get_positive_negative_async(user_response)
         )
@@ -1671,7 +1674,7 @@ async def rdv_exam_type():
                 "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
                 caller,
             )
-        task_human_orientation = asyncio.create_task(get_human_orientation(user_response=user_response))
+        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
@@ -1767,7 +1770,7 @@ async def get_creneaux_choice():
         task_creneau_choice = asyncio.create_task(
             extract_creneau_async(user_response=user_response)
         )
-        task_human_orientation = asyncio.create_task(get_human_orientation(user_response=user_response))
+        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
@@ -1996,21 +1999,22 @@ async def handleResponse():
     caller, operation_context, type, user_response = get_request_infos(request)
     call_info = calls[caller].call
     rdv_info = calls[caller].rdv
-    print(
-        "--> handleResponse",
-        caller,
-        operation_context,
-        json.dumps(request.json[0], indent=2, ensure_ascii=False),
-    )
+    # print(
+    #     "--> handleResponse",
+    #     caller,
+    #     operation_context,
+    #     json.dumps(request.json[0], indent=2, ensure_ascii=False),
+    # )
 
     if (
         type == "Microsoft.Communication.RecognizeCompleted"
         and operation_context == "start_conversation"
     ):
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        print(user_response)
+        # print(user_response)
         
-        task_human_orientation = asyncio.create_task(get_human_orientation(user_response=user_response))
+        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
+        task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
 
         pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
         if re.search(pattern, user_response, re.IGNORECASE):
@@ -2026,6 +2030,16 @@ async def handleResponse():
             hang_up(
                 "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                 caller
+            )
+            return jsonify({"success": "success"})
+        get_repeat = await task_get_repeat
+        if get_repeat is True:
+            start_recognizing(
+                calls[caller].last_text_to_speech["endpoint"],
+                calls[caller].last_text_to_speech["operation_context"],
+                calls[caller].last_text_to_speech["play_source"],
+                caller,
+                "keyboard"
             )
             return jsonify({"success": "success"})
         intent = (await task_intent).lower().replace(".", "")
@@ -2176,7 +2190,7 @@ async def handleResponse():
                 "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
                 caller,
             )
-        task_human_orientation = asyncio.create_task(get_human_orientation(user_response=user_response))
+        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
         task_intent = asyncio.create_task(get_intent_async(user_response=user_response))
         human_orientation = await task_human_orientation
         if human_orientation is True:
@@ -2339,96 +2353,96 @@ async def handleResponse():
     return jsonify({"success": "success"})
 
 
-@app.route("/has_ordonnance", methods=["POST"])
-async def has_ordonnance():
-    global calls
+# @app.route("/has_ordonnance", methods=["POST"])
+# async def has_ordonnance():
+#     global calls
 
-    if not request.json:
-        return jsonify({"success": "success"})
+#     if not request.json:
+#         return jsonify({"success": "success"})
 
-    caller, operation_context, type, user_response = get_request_infos(request)
-    rdv_info = calls[caller].rdv
+#     caller, operation_context, type, user_response = get_request_infos(request)
+#     rdv_info = calls[caller].rdv
 
-    if (
-        type == "Microsoft.Communication.RecognizeCompleted"
-        and operation_context == "has_ordonnance"
-    ):
-        # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        task_model_response = asyncio.create_task(
-            get_positive_negative_async(user_response)
-        )
-        # speak("ok")
-        model_response = await task_model_response
+#     if (
+#         type == "Microsoft.Communication.RecognizeCompleted"
+#         and operation_context == "has_ordonnance"
+#     ):
+#         # user_response = request.json[0].get("data").get("speechResult").get("speech")
+#         task_model_response = asyncio.create_task(
+#             get_positive_negative_async(user_response)
+#         )
+#         # speak("ok")
+#         model_response = await task_model_response
 
-        if model_response == "négative":
-            hang_up(
-                "Désolé nous pouvons pas vous planifier un rendez-vous sans ordonnance prescrite de votre médecin. Pour passer un examen d'imagerie, il faut avoir la prescription d'un médecin. Sans ordonnance, ce n'est pas possible. Pour avoir une ordonnance, je vous conseille de consulter un médecin. Je vous souhaite une excellente journée et à bientôt.",
-                caller,
-            )
-        elif model_response == "positive":
+#         if model_response == "négative":
+#             hang_up(
+#                 "Désolé nous pouvons pas vous planifier un rendez-vous sans ordonnance prescrite de votre médecin. Pour passer un examen d'imagerie, il faut avoir la prescription d'un médecin. Sans ordonnance, ce n'est pas possible. Pour avoir une ordonnance, je vous conseille de consulter un médecin. Je vous souhaite une excellente journée et à bientôt.",
+#                 caller,
+#             )
+#         elif model_response == "positive":
 
-            if rdv_info["exam_id"] is not None and rdv_info["sous_type_id"] is not None:
-                task_creneaux = asyncio.create_task(
-                    get_creneaux_async(
-                        sous_type=rdv_info["sous_type_id"],
-                        exam_type=rdv_info["exam_id"],
-                        caller=caller,
-                    ),
-                )
-                speak("Je regarde les disponibilités, un instant...", caller)
+#             if rdv_info["exam_id"] is not None and rdv_info["sous_type_id"] is not None:
+#                 task_creneaux = asyncio.create_task(
+#                     get_creneaux_async(
+#                         sous_type=rdv_info["sous_type_id"],
+#                         exam_type=rdv_info["exam_id"],
+#                         caller=caller,
+#                     ),
+#                 )
+#                 speak("Je regarde les disponibilités, un instant...", caller)
 
-                await asyncio.sleep(1)
+#                 await asyncio.sleep(1)
 
-                creneaux = await task_creneaux
+#                 creneaux = await task_creneaux
 
-                print(creneaux)
+#                 print(creneaux)
 
-                rdv_info["all_creneaux"] = creneaux
+#                 rdv_info["all_creneaux"] = creneaux
 
-                text = build_single_date_phrase(creneau=creneaux)
-                play_source = text_to_speech("file_source", text, calls[caller])
-                start_recognizing(
-                    "/confirm_creneau",
-                    "confirm_creneau",
-                    play_source,
-                    caller,
-                    background_noise="click",
-                )
-            else:
-                play_source = text_to_speech(
-                    "file_source",
-                    "Très bien, quel examen voulez vous passer ?",
-                    calls[caller],
-                )
-                start_recognizing(
-                    "/rdv_exam_type", "rdv_exam_type", play_source, caller
-                )
+#                 text = build_single_date_phrase(creneau=creneaux)
+#                 play_source = text_to_speech("file_source", text, calls[caller])
+#                 start_recognizing(
+#                     "/confirm_creneau",
+#                     "confirm_creneau",
+#                     play_source,
+#                     caller,
+#                     background_noise="click",
+#                 )
+#             else:
+#                 play_source = text_to_speech(
+#                     "file_source",
+#                     "Très bien, quel examen voulez vous passer ?",
+#                     calls[caller],
+#                 )
+#                 start_recognizing(
+#                     "/rdv_exam_type", "rdv_exam_type", play_source, caller
+#                 )
 
-        else:
-            if increment_error(caller, "ordonnance"):
-                hang_up(
-                    "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.",
-                    caller,
-                )
-            else:
-                play_source = text_to_speech(
-                    "file_source",
-                    "Désolé, je n'ai pas compris, Avez-vous une ordonnance ?",
-                    calls[caller],
-                )
-                start_recognizing(
-                    "/has_ordonnance", "has_ordonnance", play_source, caller
-                )
+#         else:
+#             if increment_error(caller, "ordonnance"):
+#                 hang_up(
+#                     "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.",
+#                     caller,
+#                 )
+#             else:
+#                 play_source = text_to_speech(
+#                     "file_source",
+#                     "Désolé, je n'ai pas compris, Avez-vous une ordonnance ?",
+#                     calls[caller],
+#                 )
+#                 start_recognizing(
+#                     "/has_ordonnance", "has_ordonnance", play_source, caller
+#                 )
 
-    if type == "Microsoft.Communication.RecognizeFailed":
-        play_source = text_to_speech(
-            "file_source",
-            "Désolé, je n'ai pas compris, Avez-vous une ordonnance ?",
-            calls[caller],
-        )
-        start_recognizing("/has_ordonnance", "has_ordonnance", play_source, caller)
+#     if type == "Microsoft.Communication.RecognizeFailed":
+#         play_source = text_to_speech(
+#             "file_source",
+#             "Désolé, je n'ai pas compris, Avez-vous une ordonnance ?",
+#             calls[caller],
+#         )
+#         start_recognizing("/has_ordonnance", "has_ordonnance", play_source, caller)
 
-    return jsonify({"status": "success"})
+#     return jsonify({"status": "success"})
 
 
 ########## ASYNC ##########
@@ -2566,7 +2580,7 @@ async def get_exam_type_async(user_response):
         return "Erreur lors de la communication avec le modèle."
 
 
-async def get_human_orientation(user_response):
+async def get_human_orientation_async(user_response):
     url = "https://lyrae-talk-functions.azurewebsites.net/api/detect_human_assistant_orientation?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
     headers = {"Content-Type": "application/json"}
     payload = {"text": user_response}
@@ -2582,7 +2596,24 @@ async def get_human_orientation(user_response):
         print(f"Erreur lors de l'appel au modèle : {e}")
         return "Erreur lors de la communication avec le modèle."
 
-  
+
+async def get_repeat_async(user_response):
+    url = "https://lyrae-talk-functions.azurewebsites.net/api/detect_repetition?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
+    headers = {"Content-Type": "application/json"}
+    payload = {"text": user_response}
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, json=payload) as response:
+                response.raise_for_status()
+                data = await response.json()
+                print("get repeat", data)
+                return data.get("response", "Pas de réponse trouvée.")
+    except aiohttp.ClientError as e:
+        print(f"Erreur lors de l'appel au modèle : {e}")
+        return "Erreur lors de la communication avec le modèle."
+
+
 async def get_intent_async(user_response):
     url = "https://lyrae-talk-functions.azurewebsites.net/api/detect_intention?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
     headers = {"Content-Type": "application/json"}
@@ -3222,11 +3253,7 @@ async def find_patient(caller):
                     + ":00"
                 )
 
-                speak(
-                    f"Parfait, vous avez donc rendez-vous {phrase_creneau} au nom de {caller_info["lastname"]}.",
-                    caller,
-                )
-                continue_conversation("Puis-je faire autre chose pour vous ?", caller)
+                continue_conversation(f"Parfait, vous avez donc rendez-vous {phrase_creneau} au nom de {caller_info["lastname"]}. Puis-je faire autre chose pour vous ?", caller)
             else:
                 if increment_error(caller, "rdv"):
                     hang_up(
@@ -3281,13 +3308,9 @@ async def find_patient(caller):
                 >= now
             ]
             if len(future_rdvs) == 0:
-                speak(
-                    "Il semblerait que vous n'ayez pas de rendez-vous prévus ces prochains jours.",
-                    caller,
-                )
                 play_source = text_to_speech(
                     "file_source",
-                    "Puis-je faire autre chose pour vous ?",
+                    "Il semblerait que vous n'ayez pas de rendez-vous prévus ces prochains jours. Puis-je faire autre chose pour vous ?",
                     calls[caller],
                 )
                 start_recognizing(
@@ -3320,10 +3343,7 @@ async def find_patient(caller):
                     None,
                 )
 
-                speak(
-                    f"Vous avez rendez-vous {formatted_date} à {int(hours)} heure {int(minutes)} pour un ou une {sous_type.get('libelle')}.",
-                    caller,
-                )
+                text = f"Vous avez rendez-vous {formatted_date} à {int(hours)} heure {int(minutes)} pour un ou une {sous_type.get('libelle')}."
 
                 if call_info["intent"] == "modification de rendez-vous":
                     task_creneaux = asyncio.create_task(
@@ -3357,7 +3377,7 @@ async def find_patient(caller):
                     return "ok"
                 play_source = text_to_speech(
                     "file_source",
-                    "Puis-je faire autre chose pour vous ?",
+                    f"{text}. Puis-je faire autre chose pour vous ?",
                     calls[caller],
                 )
                 start_recognizing(
@@ -3376,18 +3396,13 @@ async def find_patient(caller):
                     text = build_multiple_dates_phrase(
                         {i + 1: item for i, item in enumerate(sorted_rdvs)}, "rdv"
                     )
-                    speak(text, caller)
                     continue_conversation(
-                        "Puis-je faire autre chose pour vous ?", caller
+                        f"{text}. Puis-je faire autre chose pour vous ?", caller
                     )
                 else:
-                    speak(
-                        "Il semblerait que vous n'ayez pas de rendez-vous prévu dans le futur.",
-                        caller,
-                    )
                     play_source = text_to_speech(
                         "file_source",
-                        "Voulez-vous que je vous transfère vers une secrétaire pour avoir plus de détails ?",
+                        "Il semblerait que vous n'ayez pas de rendez-vous prévu dans le futur. Voulez-vous que je vous transfère vers une secrétaire pour avoir plus de détails ?",
                         calls[caller],
                     )
                     start_recognizing(
@@ -3450,13 +3465,9 @@ async def find_patient(caller):
                     ),
                     None,
                 )
-                speak(
-                    f"Vous avez rendez-vous {formatted_date} à {int(hours)} heure {int(minutes)} pour un ou une {sous_type.get('libelle')}.",
-                    caller,
-                )
                 play_source = text_to_speech(
                     "file_source",
-                    "Est-ce bien celui-là que vous voulez annuler ?",
+                    f"Vous avez rendez-vous {formatted_date} à {int(hours)} heure {int(minutes)} pour un ou une {sous_type.get('libelle')}. Est-ce bien celui-là que vous voulez annuler ?",
                     calls[caller],
                 )
                 start_recognizing(
