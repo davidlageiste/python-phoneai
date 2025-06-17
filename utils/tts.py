@@ -22,7 +22,7 @@ clientElevenLabs = ElevenLabs(
 STORAGE_URL_PATH = "https://talkstoragetest.blob.core.windows.net/audio-files/"
 
 
-def text_to_speech_stream(text: str, language="fr") -> IO[bytes]:
+def text_to_speech_stream(text: str, language="fr", speed=1.05) -> IO[bytes]:
     voices = {
         # "fr": "4BHBnkrJUkJYV4HMAnNd",
         "fr": "IBCnh04O5oxx16BRFelZ",
@@ -38,7 +38,7 @@ def text_to_speech_stream(text: str, language="fr") -> IO[bytes]:
             similarity_boost=0.75,
             style=0.0,
             use_speaker_boost=True,
-            speed=1.05,
+            speed=speed,
         ),
     )
 
@@ -51,7 +51,7 @@ def text_to_speech_stream(text: str, language="fr") -> IO[bytes]:
 
 
 def text_to_speech(
-    process: str, text: str, call, language="fr"
+    process: str, text: str, call, language="fr", speed=1.05
 ) -> Union[FileSource | TextSource]:
     """
     Returns an audio source (FileSource ou TextSource) for Azure Communication Service based on a text
@@ -77,7 +77,7 @@ def text_to_speech(
             if call:
                 call.add_step(f"Lyrae: {text}")
             file_name = f"{uuid.uuid4()}.mp3"
-            audio_stream = text_to_speech_stream(text)
+            audio_stream = text_to_speech_stream(text, language, speed)
             upload_stream_azure(audio_stream, file_name)
             delete_blob_azure_delay(file_name)
             return FileSource(url=f"{STORAGE_URL_PATH}{file_name}")
@@ -90,7 +90,7 @@ def text_to_speech(
             )
 
 
-def generate_text_to_speech(item=None, language="fr") -> bool:
+def generate_text_to_speech(item=None, language="fr", speed=1.05) -> bool:
     """
     Generates and uploads an or all audio file for a language
     """
@@ -98,22 +98,24 @@ def generate_text_to_speech(item=None, language="fr") -> bool:
         if item is not None:
             if isinstance(audios[item][language], list):
                 for i, text in enumerate(audios[item][language]):
-                    audio_stream = text_to_speech_stream(text, language)
+                    audio_stream = text_to_speech_stream(text, language, speed)
                     upload_stream_azure(audio_stream, f"{item}-{language}-{i}.mp3")
             else:
-                audio_stream = text_to_speech_stream(audios[item][language], language)
+                audio_stream = text_to_speech_stream(
+                    audios[item][language], language, speed
+                )
                 upload_stream_azure(audio_stream, f"{item}-{language}.mp3")
         else:
             for file_name, pack in audios.items():
                 texts = pack[language]
                 if isinstance(texts, list):
                     for i, text in enumerate(texts):
-                        audio_stream = text_to_speech_stream(text, language)
+                        audio_stream = text_to_speech_stream(text, language, speed)
                         upload_stream_azure(
                             audio_stream, f"{file_name}-{language}-{i}.mp3"
                         )
                 else:
-                    audio_stream = text_to_speech_stream(texts, language)
+                    audio_stream = text_to_speech_stream(texts, language, speed)
                     upload_stream_azure(audio_stream, f"{file_name}-{language}.mp3")
         return True
     except:
