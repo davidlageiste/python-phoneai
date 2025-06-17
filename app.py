@@ -424,6 +424,17 @@ async def get_firstname():
             "keyboard"
         )
         return jsonify({"success": "success"})
+    task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
+    get_repeat = await task_get_repeat
+    if get_repeat is True:
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            calls[caller].last_text_to_speech["play_source"],
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     if (
         type == "Microsoft.Communication.RecognizeCompleted"
         and operation_context == "get_firstname"
@@ -535,6 +546,17 @@ async def get_lastname():
             "keyboard"
         )
         return jsonify({"success": "success"})
+    task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
+    get_repeat = await task_get_repeat
+    if get_repeat is True:
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            calls[caller].last_text_to_speech["play_source"],
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     if (
         type == "Microsoft.Communication.RecognizeCompleted"
         and operation_context == "get_lastname"
@@ -548,17 +570,6 @@ async def get_lastname():
             hang_up(
                 "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                 caller
-            )
-            return jsonify({"success": "success"})
-        task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
-        get_repeat = await task_get_repeat
-        if get_repeat is True:
-            start_recognizing(
-                calls[caller].last_text_to_speech["endpoint"],
-                calls[caller].last_text_to_speech["operation_context"],
-                calls[caller].last_text_to_speech["play_source"],
-                caller,
-                "keyboard"
             )
             return jsonify({"success": "success"})
         clean_name = user_response.replace(".", "")
@@ -1027,6 +1038,17 @@ async def confirm_firstname():
             "keyboard"
         )
         return jsonify({"success": "success"})
+    task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
+    get_repeat = await task_get_repeat
+    if get_repeat is True:
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            calls[caller].last_text_to_speech["play_source"],
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     if (
         type == "Microsoft.Communication.RecognizeCompleted"
         and operation_context == "confirm_firstname"
@@ -1042,17 +1064,6 @@ async def confirm_firstname():
             hang_up(
                     "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                         caller
-            )
-            return jsonify({"success": "success"})
-        task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
-        get_repeat = await task_get_repeat
-        if get_repeat is True:
-            start_recognizing(
-                calls[caller].last_text_to_speech["endpoint"],
-                calls[caller].last_text_to_speech["operation_context"],
-                calls[caller].last_text_to_speech["play_source"],
-                caller,
-                "keyboard"
             )
             return jsonify({"success": "success"})
         await asyncio.sleep(1)
@@ -1127,6 +1138,17 @@ async def confirm_lastname():
             "keyboard"
         )
         return jsonify({"success": "success"})
+    task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
+    get_repeat = await task_get_repeat
+    if get_repeat is True:
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            calls[caller].last_text_to_speech["play_source"],
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     if type == "Microsoft.Communication.RecognizeCompleted":
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
         task_model_response = asyncio.create_task(
@@ -1139,17 +1161,6 @@ async def confirm_lastname():
             hang_up(
                 "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                 caller
-            )
-            return jsonify({"success": "success"})
-        task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
-        get_repeat = await task_get_repeat
-        if get_repeat is True:
-            start_recognizing(
-                calls[caller].last_text_to_speech["endpoint"],
-                calls[caller].last_text_to_speech["operation_context"],
-                calls[caller].last_text_to_speech["play_source"],
-                caller,
-                "keyboard"
             )
             return jsonify({"success": "success"})
         await asyncio.sleep(1)
@@ -1232,7 +1243,7 @@ async def confirm_lastname():
             start_recognizing(
                 "/confirm_lastname", "confirm_lastname", play_source, caller
             )
-    
+            return jsonify({"success": "success"})
     elif type == "Microsoft.Communication.RecognizeFailed":
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
