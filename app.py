@@ -33,7 +33,7 @@ SPEECH_KEY = "CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U
 SPEECH_REGION = "eastus"
 # MONGO_URL = "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
 MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
-APP_URL = "talkpreprodapi.azurewebsites.net"
+APP_URL = "lyrae-demo.azurewebsites.net"
 API_URL = "sparkso-universite.com:8080"
 
 app = Flask(__name__)
@@ -44,8 +44,9 @@ patientCollection = db["patientsDB"]
 rdvCollection = db["rdv"]
 
 call_automation_client = CallAutomationClient.from_connection_string(
-    "endpoint=https://lyraepreprod.unitedstates.communication.azure.com/;accesskey=1TsDRImMKFvO8AThS7PUAwww6YBxELviBkGsqFHHmiXErS2PRcAzJQQJ99BFACULyCpuAreVAAAAAZCS3Ids"
+    "endpoint=https://lyraedemo.unitedstates.communication.azure.com/;accesskey=6NB6prS16bRw7UjKSRCObyUVQPyiwmffALNF5QiCnAxKRifFTIIbJQQJ99BEACULyCpuAreVAAAAAZCSuWZh"
 )
+
 speech_config = speechsdk.SpeechConfig(subscription=SPEECH_KEY, region=SPEECH_REGION)
 
 calls: Dict[str, Call] = {}
