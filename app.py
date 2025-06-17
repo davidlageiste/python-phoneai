@@ -506,18 +506,14 @@ async def get_firstname():
                 )
 
     elif type == "Microsoft.Communication.RecognizeFailed":
-        if increment_error(caller, "firstname"):
-            hang_up(
-                "Il semblerait que nous n'arrivons pas à nous comprendre. Je vous transfère vers une secrétaire.",
-                caller,
-            )
-
-        play_source = text_to_speech(
-            "file_source",
-            "Je n'ai pas compris, pouvez-vous répéter votre prénom ?",
-            calls[caller],
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
         )
-        start_recognizing("/get_firstname", "get_firstname", play_source, caller)
+        return jsonify({"success": "success"})
 
     return jsonify({"success": "success"})
 
@@ -601,15 +597,16 @@ async def get_lastname():
                 background_noise="click",
             )
 
-    elif (
-        type == "Microsoft.Communication.RecognizeFailed"
-        and operation_context == "get_lastname"
-    ):
-        play_source = text_to_speech(
-            "fixed_file_source", "repeat_lastname", calls[caller]
+    elif type == "Microsoft.Communication.RecognizeFailed":
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
         )
-        start_recognizing("/get_lastname", "get_lastname", play_source, caller)
-
+        return jsonify({"success": "success"})
+    
     return jsonify({"success": "success"})
 
 
@@ -687,11 +684,15 @@ async def get_birthdate():
                 background_noise="click",
             )
 
-    elif request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
-        play_source = text_to_speech(
-            "fixed_file_source", "repeat_birthdate", calls[caller]
+    elif type == "Microsoft.Communication.RecognizeFailed":
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
         )
-        start_recognizing("/get_birthdate", "get_birthdate", play_source, caller)
+        return jsonify({"success": "success"})
 
     return jsonify({"success": "success"})
 
@@ -992,6 +993,16 @@ async def confirm_creneau():
                 background_noise="click",
             )
 
+    elif type == "Microsoft.Communication.RecognizeFailed":
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
+    
     return jsonify({"success": "success"})
 
 
@@ -1083,19 +1094,15 @@ async def confirm_firstname():
                 background_noise="click",
             )
 
-    if request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
-        play_source = text_to_speech(
-            "file_source",
-            f"Je n'ai pas compris, {calls[caller].caller["firstname"]}, {spell_word(calls[caller].caller["firstname"])}, c'est bien ça ?",
-            calls[caller],
-        )
+    elif type == "Microsoft.Communication.RecognizeFailed":
         start_recognizing(
-            "/confirm_firstname",
-            "confirm_firstname",
-            play_source,
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
             caller,
-            background_noise="click",
+            "keyboard"
         )
+        return jsonify({"success": "success"})
 
     return jsonify({"success": "success"})
 
@@ -1225,6 +1232,17 @@ async def confirm_lastname():
             start_recognizing(
                 "/confirm_lastname", "confirm_lastname", play_source, caller
             )
+    
+    elif type == "Microsoft.Communication.RecognizeFailed":
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
+    
     return jsonify({"success": "success"})
 
 
@@ -1312,15 +1330,14 @@ async def confirm_annulation():
             )
             start_recognizing("/confirm_annulation", "annulation", play_source, caller)
     elif type == "Microsoft.Communication.RecognizeFailed":
-        date_str = calls[caller].rdv["cancel_creneau"]["datePrevue"][:10]
-        time_str = calls[caller].rdv["cancel_creneau"]["heurePrevue"]
-
-        play_source = text_to_speech(
-            "file_source",
-            f"Je n'ai pas compris, voulez-vous annuler le rendez-vous du {date_str} à {time_str} ?",
-            calls[caller],
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
         )
-        start_recognizing("/confirm_annulation", "annulation", play_source, caller)
+        return jsonify({"success": "success"})
     return jsonify({"success": "success"})
 
 
@@ -1451,26 +1468,14 @@ async def confirm_birthdate():
             )
 
     elif type == "Microsoft.Communication.RecognizeFailed":
-        if increment_error(caller, "birthdate"):
-            hang_up(
-                "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.",
-                caller,
-            )
-        else:
-            date_litterale = date_vers_litteral(calls[caller].caller["birthdate"])
-
-            play_source = text_to_speech(
-                "file_source",
-                f"Je n'ai pas entendu, Vous confirmez que vous êtes né {date_litterale} ?",
-                calls[caller],
-            )
-            start_recognizing(
-                "/confirm_birthdate",
-                "confirm_birthdate",
-                play_source,
-                caller,
-                background_noise="click",
-            )
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     return jsonify({"success": "success"})
 
 
@@ -1613,6 +1618,16 @@ async def confirm_call_intent():
             background_noise="click",
         )
 
+    elif type == "Microsoft.Communication.RecognizeFailed":
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
+
     return jsonify({"success": "success"})
 
 
@@ -1695,6 +1710,17 @@ async def confirm_identity():
                 caller=caller,
                 background_noise="click",
             )
+    
+    elif type == "Microsoft.Communication.RecognizeFailed":
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
+    
     return jsonify({"success": "success"})
 
 
@@ -1735,6 +1761,15 @@ async def transfer_to_secretary():
             start_recognizing(
                 "/transfer_to_secretary", "transfer_to_secretary", play_source, caller
             )
+    elif type == "Microsoft.Communication.RecognizeFailed":
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     return jsonify({"success": "success"})
 
 
@@ -1778,6 +1813,15 @@ async def module_informatif():
         )
         start_recognizing("/handleResponse", "end_conversation", play_source, caller)
 
+    elif type == "Microsoft.Communication.RecognizeFailed":
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     return jsonify({"success": "success"})
 
 
@@ -1885,11 +1929,15 @@ async def confirm_rdv():
             )
             start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source, caller)
 
-    elif request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
-        play_source = text_to_speech(
-            "fixed_file_source", "repeat_exam_type2", calls[caller]
+    elif type == "Microsoft.Communication.RecognizeFailed":
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
         )
-        start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source, caller)
+        return jsonify({"success": "success"})
     return jsonify({"status": "success"})
 
 
@@ -2002,6 +2050,15 @@ async def rdv_exam_type():
                 background_noise="click",
             )
 
+    elif type == "Microsoft.Communication.RecognizeFailed":
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     return jsonify({"status": "success"})
 
 
