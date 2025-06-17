@@ -416,7 +416,6 @@ async def get_firstname():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -532,7 +531,6 @@ async def get_lastname():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -625,7 +623,6 @@ async def get_birthdate():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -714,7 +711,6 @@ async def confirm_creneau():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -1012,7 +1008,6 @@ async def confirm_firstname():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -1117,7 +1112,6 @@ async def confirm_lastname():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -1245,7 +1239,6 @@ async def confirm_annulation():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -1343,7 +1336,6 @@ async def confirm_birthdate():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -1491,7 +1483,6 @@ async def confirm_call_intent():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -1637,7 +1628,6 @@ async def confirm_identity():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -1717,7 +1707,6 @@ async def transfer_to_secretary():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -1760,7 +1749,6 @@ async def module_informatif():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -1806,7 +1794,6 @@ async def confirm_rdv():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -1917,7 +1904,6 @@ async def rdv_exam_type():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -2037,7 +2023,6 @@ async def get_creneaux_choice():
     caller, operation_context, type, user_response = get_request_infos(request)
     
     if user_response == "":
-        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -2277,14 +2262,14 @@ async def get_creneaux_choice():
                 )
 
     elif type == "Microsoft.Communication.RecognizeFailed":
-        play_source = text_to_speech(
-            "file_source",
-            f"Je n'ai pas compris le créneau que vous avez choisi. {text}",
-            calls[caller],
-        )
         start_recognizing(
-            "/get_creneaux_choice", "get_creneaux_choice", play_source, caller
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
         )
+        return jsonify({"success": "success"})
 
     return jsonify({"status": "success"})
 
