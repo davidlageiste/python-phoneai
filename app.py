@@ -415,7 +415,16 @@ async def get_firstname():
         return jsonify({"success": "success"})
 
     caller, operation_context, type, user_response = get_request_infos(request)
-
+    if user_response == "":
+        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     if (
         type == "Microsoft.Communication.RecognizeCompleted"
         and operation_context == "get_firstname"
@@ -522,7 +531,16 @@ async def get_lastname():
         return jsonify({"success": "success"})
 
     caller, operation_context, type, user_response = get_request_infos(request)
-
+    if user_response == "":
+        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     if (
         type == "Microsoft.Communication.RecognizeCompleted"
         and operation_context == "get_lastname"
@@ -606,7 +624,16 @@ async def get_birthdate():
         return jsonify({"success": "success"})
 
     caller, operation_context, type, user_response = get_request_infos(request)
-
+    if user_response == "":
+        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     if (
         type == "Microsoft.Communication.RecognizeCompleted"
         and operation_context == "get_birthdate"
@@ -686,6 +713,16 @@ async def confirm_creneau():
         return jsonify({"success": "success"})
 
     caller, operation_context, type, user_response = get_request_infos(request)
+    if user_response == "":
+        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     caller_info = calls[caller].caller
     call_info = calls[caller].call
     rdv_info = calls[caller].rdv
@@ -974,7 +1011,16 @@ async def confirm_firstname():
         return jsonify({"success": "success"})
 
     caller, operation_context, type, user_response = get_request_infos(request)
-
+    if user_response == "":
+        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     if (
         type == "Microsoft.Communication.RecognizeCompleted"
         and operation_context == "confirm_firstname"
@@ -1070,7 +1116,16 @@ async def confirm_lastname():
         return jsonify({"success": "success"})
 
     caller, operation_context, type, user_response = get_request_infos(request)
-
+    if user_response == "":
+        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     if type == "Microsoft.Communication.RecognizeCompleted":
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
         task_model_response = asyncio.create_task(
@@ -1189,7 +1244,16 @@ async def confirm_annulation():
         return jsonify({"success": "success"})
 
     caller, operation_context, type, user_response = get_request_infos(request)
-
+    if user_response == "":
+        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     if type == "Microsoft.Communication.RecognizeCompleted":
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
         task_model_response = asyncio.create_task(
@@ -1278,7 +1342,16 @@ async def confirm_birthdate():
         return jsonify({"success": "success"})
 
     caller, operation_context, type, user_response = get_request_infos(request)
-
+    if user_response == "":
+        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     if (
         type == "Microsoft.Communication.RecognizeCompleted"
         and operation_context == "confirm_birthdate"
@@ -1417,6 +1490,16 @@ async def confirm_call_intent():
         return jsonify({"success": "success"})
 
     caller, operation_context, type, user_response = get_request_infos(request)
+    if user_response == "":
+        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     caller_info = calls[caller].caller
     rdv_intent = calls[caller].call["intent"]
 
@@ -1553,7 +1636,16 @@ async def confirm_identity():
         return jsonify({"success": "success"})
 
     caller, operation_context, type, user_response = get_request_infos(request)
-
+    if user_response == "":
+        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     if (
         type == "Microsoft.Communication.RecognizeCompleted"
         and operation_context == "confirm_identity"
@@ -1624,7 +1716,16 @@ async def transfer_to_secretary():
         return jsonify({"success": "success"})
 
     caller, operation_context, type, user_response = get_request_infos(request)
-
+    if user_response == "":
+        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     if type == "Microsoft.Communication.RecognizeCompleted":
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
         task_model_response = asyncio.create_task(
@@ -1658,7 +1759,16 @@ async def module_informatif():
         return jsonify({"success": "success"})
 
     caller, operation_context, type, user_response = get_request_infos(request)
-
+    if user_response == "":
+        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     if (
         request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted"
         and operation_context == "module_informatif"
@@ -1695,7 +1805,16 @@ async def confirm_rdv():
         return jsonify({"success": "success"})
 
     caller, operation_context, type, user_response = get_request_infos(request)
-
+    if user_response == "":
+        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     if type == "Microsoft.Communication.RecognizeCompleted" and (
         operation_context == "confirm_rdv" or operation_context == "confirm_rdv_intro"
     ):
@@ -1797,6 +1916,16 @@ async def rdv_exam_type():
         return jsonify({"success": "success"})
 
     caller, operation_context, type, user_response = get_request_infos(request)
+    if user_response == "":
+        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     rdv_info = calls[caller].rdv
 
     if (
@@ -1906,6 +2035,17 @@ async def get_creneaux_choice():
         return jsonify({"success": "success"})
 
     caller, operation_context, type, user_response = get_request_infos(request)
+    
+    if user_response == "":
+        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard"
+        )
+        return jsonify({"success": "success"})
     call_info = calls[caller].call
     caller_info = calls[caller].caller
     rdv_info = calls[caller].rdv
@@ -2157,6 +2297,10 @@ async def handleResponse():
         return jsonify({"success": "success"})
 
     caller, operation_context, type, user_response = get_request_infos(request)
+    if user_response == "":
+        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
+        start_recognizing("/handleResponse", "start_conversation", play_source, calls[caller], "click")
+        return jsonify({"success": "success"})
     call_info = calls[caller].call
     rdv_info = calls[caller].rdv
     # print(
