@@ -136,7 +136,7 @@ audios = {
         "fr": "Je vous ai trouvé. Ne quittez pas le temps que je confirme votre rendez-vous."
     },
     "alphabet": {
-        "fr": "Accent égu, Accent grave, accent circonflexe, tréma, tiret, apostrophe, espace, A, A comme Alice, B, B comme Bastien, C, C comme Céline, D, D comme Damien, Eux, Eux comme Élise, F, F comme Florent, G, G comme Gabriel, H, H comme Hugo, I, I comme Inès, Ji, Ji comme Jules, K, K comme Kévin, L, L comme Léa, M, M comme Mathieu, N, N comme Nina, O, O comme Olivier, P, P comme Pauline, Q, Q comme Quentin, R, R comme Romain, S, S comme Sophie, T, T comme Thomas, U, U comme Ulysse, V, V comme Valérie, double V, double V comme Wendy, X, X comme Xavier, igrec, igrec comme Yannis, Zèd, Zèd comme Zoé"
+        "fr": "C cédille, Accent égu, Accent grave, accent circonflexe, tréma, tiret, apostrophe, espace, A, A comme Alice, B, B comme Bastien, C, C comme Céline, D, D comme Damien, Eux, Eux comme Élise, F, F comme Florent, G, G comme Gabriel, H, H comme Hugo, I, I comme Inès, Ji, Ji comme Jules, K, K comme Kévin, L, L comme Léa, M, M comme Mathieu, N, N comme Nina, O, O comme Olivier, P, P comme Pauline, Q, Q comme Quentin, R, R comme Romain, S, S comme Sophie, T, T comme Thomas, U, U comme Ulysse, V, V comme Valérie, double V, double V comme Wendy, X, X comme Xavier, igrec, igrec comme Yannis, Zèd, Zèd comme Zoé"
         # "fr": "hi grec comme Yanis"
     },
 }
