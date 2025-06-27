@@ -21,7 +21,11 @@ from num2words import num2words
 import json
 import random
 
-from utils.tts import text_to_speech, generate_text_to_speech, spell_word
+from utils.tts import (
+    text_to_speech,
+    generate_text_to_speech,
+    text_to_speech_spell_confirm,
+)
 from utils.exam import get_client_exam_code
 from utils.recorded_audio import recorded_audios_keys, keyboard_sounds, click_sounds
 from utils.Call import Call
@@ -33,7 +37,6 @@ SPEECH_KEY = "CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U
 SPEECH_REGION = "eastus"
 # MONGO_URL = "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
 MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
-# APP_URL = "0bc3-2a01-e0a-e04-1310-9cc4-897f-beef-f898.ngrok-free.app"
 APP_URL = "talkpreprodapi.azurewebsites.net"
 API_URL = "sparkso-universite.com:8080"
 
@@ -45,9 +48,10 @@ patientCollection = db["patientsDB"]
 rdvCollection = db["rdv"]
 
 call_automation_client = CallAutomationClient.from_connection_string(
-    # "endpoint=https://lyraetalkdentaire.france.communication.azure.com/;accesskey=Bnrta2zbbwgTqmOXafpMk127vJl1MpCN6EbDuvH8n9mBk4Wp5wpSJQQJ99BDACULyCpuAreVAAAAAZCS2i6t"
     "endpoint=https://lyraepreprod.unitedstates.communication.azure.com/;accesskey=1TsDRImMKFvO8AThS7PUAwww6YBxELviBkGsqFHHmiXErS2PRcAzJQQJ99BFACULyCpuAreVAAAAAZCS3Ids"
 )
+
+
 speech_config = speechsdk.SpeechConfig(subscription=SPEECH_KEY, region=SPEECH_REGION)
 
 calls: Dict[str, Call] = {}
@@ -316,10 +320,6 @@ def generate_audio_batch():
 
     return jsonify({"status": "success"})
 
-    # if generate_text_to_speech():
-    #     return jsonify({"status": "success"})
-    # return jsonify({"status": "error"})
-
 
 @app.route("/incoming_call", methods=["POST"])
 def incoming_call():
@@ -366,10 +366,11 @@ async def callback():
 
     if type == "Microsoft.Communication.CallDisconnected":
         print_calls()
-        calls[caller].store_archive(caller)
-        # with open("archive_talk.txt", "a", encoding="utf-8") as file:
-        #     file.write(calls[caller].to_string_archive(caller))
-        del calls[caller]
+        if caller in calls.keys():
+            calls[caller].store_archive(caller)
+            # with open("archive_talk.txt", "a", encoding="utf-8") as file:
+            #     file.write(calls[caller].to_string_archive(caller))
+            del calls[caller]
     if type == "Microsoft.Communication.AnswerFailed":
         print(request.json[0])
     if type == "Microsoft.Communication.RecognizeCompleted":
@@ -516,13 +517,12 @@ async def get_firstname():
 
             else:
                 speak(
-                    f"{clean_firstname.strip()}, {spell_word(clean_firstname.strip())}",
+                    f"{clean_firstname.strip()}",
                     caller,
                     speed=0.82,
                 )
-                play_source = text_to_speech(
-                    "file_source",
-                    "C'est bien ça ?",
+                play_source = text_to_speech_spell_confirm(
+                    clean_firstname.strip(),
                     calls[caller],
                 )
                 start_recognizing(
@@ -615,13 +615,12 @@ async def get_lastname():
 
         else:
             speak(
-                f"{calls[caller].caller["lastname"]} {spell_word(calls[caller].caller["lastname"])}",
+                f"{calls[caller].caller["lastname"]}",
                 caller,
                 speed=0.82,
             )
-            play_source = text_to_speech(
-                "file_source",
-                "C'est bien ça ?",
+            play_source = text_to_speech_spell_confirm(
+                calls[caller].caller["lastname"],
                 calls[caller],
             )
             start_recognizing(
@@ -1131,17 +1130,12 @@ async def confirm_firstname():
 
         else:
             speak(
-                "Je n'ai pas compris",
-                caller,
-            )
-            speak(
-                f"{calls[caller].caller["firstname"]}, {spell_word(calls[caller].caller["firstname"])}",
+                f"Je n'ai pas compris, {calls[caller].caller["firstname"]}",
                 caller,
                 speed=0.82,
             )
-            play_source = text_to_speech(
-                "file_source",
-                "C'est bien ça ?",
+            play_source = text_to_speech_spell_confirm(
+                calls[caller].caller["firstname"],
                 calls[caller],
             )
             start_recognizing(
@@ -1289,13 +1283,12 @@ async def confirm_lastname():
                 caller,
             )
             speak(
-                f"{calls[caller].caller["lastname"]}, {spell_word(calls[caller].caller["lastname"])}",
+                f"Je n'ai pas compris {calls[caller].caller["lastname"]}",
                 caller,
                 speed=0.82,
             )
-            play_source = text_to_speech(
-                "file_source",
-                "C'est bien ça ?",
+            play_source = text_to_speech_spell_confirm(
+                calls[caller].caller["lastname"],
                 calls[caller],
             )
             start_recognizing(
@@ -3067,6 +3060,8 @@ async def get_exam_type_async(user_response):
 
 
 async def get_human_orientation_async(user_response):
+    if user_response == None:
+        return False
     url = "https://lyrae-talk-functions.azurewebsites.net/api/detect_human_assistant_orientation?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
     headers = {"Content-Type": "application/json"}
     payload = {"text": user_response}
@@ -3084,6 +3079,8 @@ async def get_human_orientation_async(user_response):
 
 
 async def get_repeat_async(user_response):
+    if user_response == None:
+        return False
     url = "https://lyrae-talk-functions.azurewebsites.net/api/detect_repetition?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
     headers = {"Content-Type": "application/json"}
     payload = {"text": user_response}
