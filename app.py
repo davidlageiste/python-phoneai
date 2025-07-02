@@ -37,7 +37,12 @@ SPEECH_KEY = "CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U
 SPEECH_REGION = "eastus"
 # MONGO_URL = "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
 MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
+<<<<<<< Updated upstream
 APP_URL = "talkpreprodapi.azurewebsites.net"
+=======
+APP_URL = "d2cc-2a01-cb00-844-1d00-d39c-6cc3-4b40-e3de.ngrok-free.app"
+# APP_URL = "talkpreprodapi.azurewebsites.net"
+>>>>>>> Stashed changes
 API_URL = "sparkso-universite.com:8080"
 
 app = Flask(__name__)
@@ -48,7 +53,12 @@ patientCollection = db["patientsDB"]
 rdvCollection = db["rdv"]
 
 call_automation_client = CallAutomationClient.from_connection_string(
+<<<<<<< Updated upstream
     "endpoint=https://lyraepreprod.unitedstates.communication.azure.com/;accesskey=1TsDRImMKFvO8AThS7PUAwww6YBxELviBkGsqFHHmiXErS2PRcAzJQQJ99BFACULyCpuAreVAAAAAZCS3Ids"
+=======
+    # "endpoint=https://lyraetalkdentaire.france.communication.azure.com/;accesskey=Bnrta2zbbwgTqmOXafpMk127vJl1MpCN6EbDuvH8n9mBk4Wp5wpSJQQJ99BDACULyCpuAreVAAAAAZCS2i6t"
+    "endpoint=https://lyraetalk.france.communication.azure.com/;accesskey=9UN73P1bujRMwYm6rR9oaQx3slKfLHlTTEN5YeMkqXdhZ7WBmJ95JQQJ99ALACULyCpuAreVAAAAAZCS5f71"
+>>>>>>> Stashed changes
 )
 
 
@@ -1859,6 +1869,81 @@ async def transfer_to_secretary():
 
 ########## PRISE DE RENDEZ-VOUS ##########
 
+async def examination_exam_type(caller):
+    global calls
+
+    print(calls[caller].rdv["sous_type_id"])
+
+    task_get_examination = asyncio.create_task(
+        get_examination(exam_type=calls[caller].rdv["sous_type_id"])
+    )
+
+    examination = await task_get_examination
+    if len(examination) > 0: 
+        calls[caller].rdv["interrogatoire"] = examination
+        play_source = text_to_speech("file_source", examination[0], calls[caller])
+        start_recognizing("/examination_response?question=1", "examination_response", play_source, caller)
+    
+    return "ok"
+
+@app.route("/examination_response", methods=["POST"])
+async def examination_response():
+    global calls
+    if not request.json:
+        return jsonify({"success": "success"})
+    caller, operation_context, type, user_response = get_request_infos(request)
+    if user_response == "":
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            caller,
+            "keyboard",
+        )
+        return jsonify({"success": "success"})
+    if (
+        request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted"
+        and operation_context == "examination_response"
+    ):
+        task_human_orientation = asyncio.create_task(
+            get_human_orientation_async(user_response=user_response)
+        )
+        human_orientation = await task_human_orientation
+        if human_orientation is True:
+            hang_up(
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+                caller,
+            )
+            return jsonify({"success": "success"})
+        task_get_repeat = asyncio.create_task(
+            get_repeat_async(user_response=user_response)
+        )
+        get_repeat = await task_get_repeat
+        if get_repeat is True:
+            start_recognizing(
+                calls[caller].last_text_to_speech["endpoint"],
+                calls[caller].last_text_to_speech["operation_context"],
+                calls[caller].last_text_to_speech["play_source"],
+                caller,
+                "keyboard",
+            )
+            return jsonify({"success": "success"})
+        question = request.args.get("question")
+        if int(question) < len(calls[caller].rdv["interrogatoire"]):
+            play_source = text_to_speech("file_source", calls[caller].rdv["interrogatoire"][int(question)], calls[caller])
+            print("AHAHAHAH", calls[caller].rdv["interrogatoire"])
+            print("AHAHAHAH", calls[caller].rdv["interrogatoire"][int(question)])
+            start_recognizing(f"/examination_response?question={str(int(question) + 1)}", "examination_response", play_source, caller)
+            return jsonify({"success": "success"})
+        else:
+            play_source = text_to_speech("file_source", "Très bien, merci beaucoup pour ces précisions, j'ai fini. Puis-je faire autre chose pour vous ?", calls[caller])
+            start_recognizing("/handleResponse", "end_conversation", play_source, caller)
+            return jsonify({"success": "success"})
+    if (
+        request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed"
+    ):
+        speak("Je n'ai pas entendu", calls[caller])
+    return jsonify({"success": "success"})
 
 @app.route("/module_informatif", methods=["POST"])
 async def module_informatif():
@@ -1989,6 +2074,9 @@ async def confirm_rdv():
                     "/rdv_exam_type", "rdv_exam_type", play_source, caller
                 )
         elif model_response == "positive":
+            # play_source = text_to_speech("file_source", "Pouvez-vous me lire le motif de l'examen présent sur votre ordonnance ?", calls[caller])
+            # start_recognizing("/get_motif", "get_motif", play_source, caller)
+
             task_creneaux = asyncio.create_task(
                 get_creneaux_async(
                     sous_type=calls[caller].rdv["sous_type_id"],
@@ -1996,6 +2084,7 @@ async def confirm_rdv():
                     caller=caller,
                 )
             )
+
             speak("Je regarde les disponibilités, un instant...", caller)
 
             await asyncio.sleep(1)
@@ -2926,6 +3015,23 @@ async def handleResponse():
 
 ########## ASYNC ##########
 
+async def get_examination(exam_type):
+    url = "https://lyrae-talk-functions.azurewebsites.net/api/interrogatoire?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
+
+    headers = {"Content-Type": "application/json"}
+
+    payload = {"code_exam": exam_type}
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, json=payload) as response:
+                response.raise_for_status()
+                data = await response.json()
+                print("get_examination", data)
+                return data.get("response", "Pas de réponse trouvée.")
+    except aiohttp.ClientError as e:
+        print(f"Erreur lors de l'appel au modèle : {e}")
+        return "Erreur lors de la communication avec le modèle."
 
 async def get_firstname_async(user_response):
     url = "https://lyrae-talk-functions.azurewebsites.net/api/get_prenom?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
@@ -3737,10 +3843,13 @@ async def find_patient(caller):
                     + ":00"
                 )
 
-                continue_conversation(
-                    f"Parfait, vous avez donc rendez-vous {phrase_creneau} au nom de {caller_info["lastname"]}. Puis-je faire autre chose pour vous ?",
+                speak(
+                    f"Parfait, vous avez donc rendez-vous {phrase_creneau} au nom de {caller_info["lastname"]}. Avant de raccorcher, je vais vous poser quelques questions qui nous serons utile lors de votre accueil.",
                     caller,
                 )
+
+                await examination_exam_type(caller)
+                return
             else:
                 if increment_error(caller, "rdv"):
                     hang_up(
