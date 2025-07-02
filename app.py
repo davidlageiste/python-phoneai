@@ -37,12 +37,7 @@ SPEECH_KEY = "CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U
 SPEECH_REGION = "eastus"
 # MONGO_URL = "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
 MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
-<<<<<<< Updated upstream
 APP_URL = "talkpreprodapi.azurewebsites.net"
-=======
-APP_URL = "d2cc-2a01-cb00-844-1d00-d39c-6cc3-4b40-e3de.ngrok-free.app"
-# APP_URL = "talkpreprodapi.azurewebsites.net"
->>>>>>> Stashed changes
 API_URL = "sparkso-universite.com:8080"
 
 app = Flask(__name__)
@@ -53,12 +48,7 @@ patientCollection = db["patientsDB"]
 rdvCollection = db["rdv"]
 
 call_automation_client = CallAutomationClient.from_connection_string(
-<<<<<<< Updated upstream
     "endpoint=https://lyraepreprod.unitedstates.communication.azure.com/;accesskey=1TsDRImMKFvO8AThS7PUAwww6YBxELviBkGsqFHHmiXErS2PRcAzJQQJ99BFACULyCpuAreVAAAAAZCS3Ids"
-=======
-    # "endpoint=https://lyraetalkdentaire.france.communication.azure.com/;accesskey=Bnrta2zbbwgTqmOXafpMk127vJl1MpCN6EbDuvH8n9mBk4Wp5wpSJQQJ99BDACULyCpuAreVAAAAAZCS2i6t"
-    "endpoint=https://lyraetalk.france.communication.azure.com/;accesskey=9UN73P1bujRMwYm6rR9oaQx3slKfLHlTTEN5YeMkqXdhZ7WBmJ95JQQJ99ALACULyCpuAreVAAAAAZCS5f71"
->>>>>>> Stashed changes
 )
 
 
@@ -1931,8 +1921,10 @@ async def examination_response():
         question = request.args.get("question")
         if int(question) < len(calls[caller].rdv["interrogatoire"]):
             play_source = text_to_speech("file_source", calls[caller].rdv["interrogatoire"][int(question)], calls[caller])
-            print("AHAHAHAH", calls[caller].rdv["interrogatoire"])
-            print("AHAHAHAH", calls[caller].rdv["interrogatoire"][int(question)])
+            if len(calls[caller].rdv["reponses_interrogatoire"]) == 0:
+                calls[caller].rdv["reponses_interrogatoire"] = user_response
+            else:
+                calls[caller].rdv["reponses_interrogatoire"].append(user_response)
             start_recognizing(f"/examination_response?question={str(int(question) + 1)}", "examination_response", play_source, caller)
             return jsonify({"success": "success"})
         else:
