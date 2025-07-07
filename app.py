@@ -1921,8 +1921,8 @@ async def examination_response():
         question = request.args.get("question")
         if int(question) < len(calls[caller].rdv["interrogatoire"]):
             play_source = text_to_speech("file_source", calls[caller].rdv["interrogatoire"][int(question)], calls[caller])
-            if len(calls[caller].rdv["reponses_interrogatoire"]) == 0:
-                calls[caller].rdv["reponses_interrogatoire"] = user_response
+            if calls[caller].rdv["reponses_interrogatoire"] is None or len(calls[caller].rdv["reponses_interrogatoire"]) == 0:
+                calls[caller].rdv["reponses_interrogatoire"] = [user_response]
             else:
                 calls[caller].rdv["reponses_interrogatoire"].append(user_response)
             start_recognizing(f"/examination_response?question={str(int(question) + 1)}", "examination_response", play_source, caller)
@@ -3886,7 +3886,7 @@ async def find_patient(caller):
                 )
 
                 speak(
-                    f"Parfait, vous avez donc rendez-vous {phrase_creneau} au nom de {caller_info["lastname"]}. Avant de raccorcher, je vais vous poser quelques questions qui nous serons utile lors de votre accueil.",
+                    f"Parfait, vous avez donc rendez-vous {phrase_creneau} au nom de {caller_info["lastname"]}. Avant de raccrocher, je vais vous poser quelques questions qui nous serons utile lors de votre accueil.",
                     caller,
                 )
 
