@@ -2142,12 +2142,23 @@ async def rdv_exam_type():
         if rdv_info["exam_id"] is not None:
             user_response = f"C'est pour un {rdv_info["exam_id"]} {user_response}"
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
-        if re.search(pattern, user_response, re.IGNORECASE):
+        task_urgence = asyncio.create_task(
+            get_urgence_async(user_response)
+        )
+        urgence = await task_urgence
+        if urgence is True:
             hang_up(
                 "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
                 caller,
             )
+            return jsonify({"success": "success"})
+        
+        # pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
+        # if re.search(pattern, user_response, re.IGNORECASE):
+        #     hang_up(
+        #         "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
+        #         caller,
+        #     )
         task_human_orientation = asyncio.create_task(
             get_human_orientation_async(user_response=user_response)
         )
@@ -2553,13 +2564,23 @@ async def handleResponse():
             get_repeat_async(user_response=user_response)
         )
 
-        pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
-        if re.search(pattern, user_response, re.IGNORECASE):
+        task_urgence = asyncio.create_task(
+            get_urgence_async(user_response)
+        )
+        urgence = await task_urgence
+        if urgence is True:
             hang_up(
                 "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
                 caller,
             )
             return jsonify({"success": "success"})
+        # pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
+        # if re.search(pattern, user_response, re.IGNORECASE):
+        #     hang_up(
+        #         "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
+        #         caller,
+        #     )
+        #     return jsonify({"success": "success"})
 
         task_intent = asyncio.create_task(get_intent_async(user_response=user_response))
         human_orientation = await task_human_orientation
@@ -2729,12 +2750,22 @@ async def handleResponse():
         and operation_context == "end_conversation"
     ):
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
-        if re.search(pattern, user_response, re.IGNORECASE):
+        task_urgence = asyncio.create_task(
+            get_urgence_async(user_response)
+        )
+        urgence = await task_urgence
+        if urgence is True:
             hang_up(
                 "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
                 caller,
             )
+            return jsonify({"success": "success"})
+        # pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
+        # if re.search(pattern, user_response, re.IGNORECASE):
+        #     hang_up(
+        #         "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
+        #         caller,
+        #     )
         task_human_orientation = asyncio.create_task(
             get_human_orientation_async(user_response=user_response)
         )
@@ -3156,6 +3187,25 @@ async def get_exam_type_async(user_response):
         print(f"Erreur lors de l'appel au modèle : {e}")
         return "Erreur lors de la communication avec le modèle."
 
+
+async def get_urgence_async(user_response):
+    if user_response == None:
+        return False
+    url = "https://lyrae-talk-functions.azurewebsites.net/api/detection_urgence?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
+    headers = {"Content-Type": "application/json"}
+    payload = {"text": user_response}
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, json=payload) as response:
+                response.raise_for_status()
+                data = await response.json()
+                print("get_urgence", data)
+                return data.get("response", "Pas de réponse trouvée.")
+    except aiohttp.ClientError as e:
+        print(f"Erreur lors de l'appel au modèle : {e}")
+        return "Erreur lors de la communication avec le modèle."
+    
 
 async def get_human_orientation_async(user_response):
     if user_response == None:
