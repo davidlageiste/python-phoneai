@@ -1242,7 +1242,7 @@ async def confirm_lastname():
 
             if count > 1 or count == 0:
                 play_source = text_to_speech(
-                    "fixed_file_source", "ask_firstname", calls[caller]
+                    "fixed_file_source", "ask_firstname_spell", calls[caller]
                 )
                 start_recognizing(
                     "/get_firstname", "get_firstname", play_source, caller
@@ -1859,6 +1859,7 @@ async def transfer_to_secretary():
 
 ########## PRISE DE RENDEZ-VOUS ##########
 
+
 async def examination_exam_type(caller):
     global calls
 
@@ -1869,12 +1870,18 @@ async def examination_exam_type(caller):
     )
 
     examination = await task_get_examination
-    if len(examination) > 0: 
+    if len(examination) > 0:
         calls[caller].rdv["interrogatoire"] = examination
         play_source = text_to_speech("file_source", examination[0], calls[caller])
-        start_recognizing("/examination_response?question=1", "examination_response", play_source, caller)
-    
+        start_recognizing(
+            "/examination_response?question=1",
+            "examination_response",
+            play_source,
+            caller,
+        )
+
     return "ok"
+
 
 @app.route("/examination_response", methods=["POST"])
 async def examination_response():
@@ -1920,22 +1927,36 @@ async def examination_response():
             return jsonify({"success": "success"})
         question = request.args.get("question")
         if int(question) < len(calls[caller].rdv["interrogatoire"]):
-            play_source = text_to_speech("file_source", calls[caller].rdv["interrogatoire"][int(question)], calls[caller])
+            play_source = text_to_speech(
+                "file_source",
+                calls[caller].rdv["interrogatoire"][int(question)],
+                calls[caller],
+            )
             if len(calls[caller].rdv["reponses_interrogatoire"]) == 0:
                 calls[caller].rdv["reponses_interrogatoire"] = user_response
             else:
                 calls[caller].rdv["reponses_interrogatoire"].append(user_response)
-            start_recognizing(f"/examination_response?question={str(int(question) + 1)}", "examination_response", play_source, caller)
+            start_recognizing(
+                f"/examination_response?question={str(int(question) + 1)}",
+                "examination_response",
+                play_source,
+                caller,
+            )
             return jsonify({"success": "success"})
         else:
-            play_source = text_to_speech("file_source", "Très bien, merci beaucoup pour ces précisions, j'ai fini. Puis-je faire autre chose pour vous ?", calls[caller])
-            start_recognizing("/handleResponse", "end_conversation", play_source, caller)
+            play_source = text_to_speech(
+                "file_source",
+                "Très bien, merci beaucoup pour ces précisions, j'ai fini. Puis-je faire autre chose pour vous ?",
+                calls[caller],
+            )
+            start_recognizing(
+                "/handleResponse", "end_conversation", play_source, caller
+            )
             return jsonify({"success": "success"})
-    if (
-        request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed"
-    ):
+    if request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
         speak("Je n'ai pas entendu", calls[caller])
     return jsonify({"success": "success"})
+
 
 @app.route("/module_informatif", methods=["POST"])
 async def module_informatif():
@@ -2142,9 +2163,7 @@ async def rdv_exam_type():
         if rdv_info["exam_id"] is not None:
             user_response = f"C'est pour un {rdv_info["exam_id"]} {user_response}"
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        task_urgence = asyncio.create_task(
-            get_urgence_async(user_response)
-        )
+        task_urgence = asyncio.create_task(get_urgence_async(user_response))
         urgence = await task_urgence
         if urgence is True:
             hang_up(
@@ -2152,7 +2171,7 @@ async def rdv_exam_type():
                 caller,
             )
             return jsonify({"success": "success"})
-        
+
         # pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
         # if re.search(pattern, user_response, re.IGNORECASE):
         #     hang_up(
@@ -2564,9 +2583,7 @@ async def handleResponse():
             get_repeat_async(user_response=user_response)
         )
 
-        task_urgence = asyncio.create_task(
-            get_urgence_async(user_response)
-        )
+        task_urgence = asyncio.create_task(get_urgence_async(user_response))
         urgence = await task_urgence
         if urgence is True:
             hang_up(
@@ -2750,9 +2767,7 @@ async def handleResponse():
         and operation_context == "end_conversation"
     ):
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        task_urgence = asyncio.create_task(
-            get_urgence_async(user_response)
-        )
+        task_urgence = asyncio.create_task(get_urgence_async(user_response))
         urgence = await task_urgence
         if urgence is True:
             hang_up(
@@ -3038,6 +3053,7 @@ async def handleResponse():
 
 ########## ASYNC ##########
 
+
 async def get_examination(exam_type):
     url = "https://lyrae-talk-functions.azurewebsites.net/api/interrogatoire?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
 
@@ -3055,6 +3071,7 @@ async def get_examination(exam_type):
     except aiohttp.ClientError as e:
         print(f"Erreur lors de l'appel au modèle : {e}")
         return "Erreur lors de la communication avec le modèle."
+
 
 async def get_firstname_async(user_response):
     url = "https://lyrae-talk-functions.azurewebsites.net/api/get_prenom?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
@@ -3205,7 +3222,7 @@ async def get_urgence_async(user_response):
     except aiohttp.ClientError as e:
         print(f"Erreur lors de l'appel au modèle : {e}")
         return "Erreur lors de la communication avec le modèle."
-    
+
 
 async def get_human_orientation_async(user_response):
     if user_response == None:
