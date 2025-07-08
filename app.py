@@ -1881,7 +1881,8 @@ async def examination_exam_type(caller):
     )
 
     examination = await task_get_examination
-    if len(examination) > 0:
+    if len(examination) > 0: 
+        speak("Avant de raccrocher, je vais vous poser quelques questions qui nous serons utile lors de votre accueil.", caller)
         calls[caller].rdv["interrogatoire"] = examination
         play_source = text_to_speech("file_source", examination[0], calls[caller])
         start_recognizing(
@@ -3922,7 +3923,7 @@ async def find_patient(caller):
                 )
 
                 speak(
-                    f"Parfait, vous avez donc rendez-vous {phrase_creneau} au nom de {caller_info["lastname"]}. Avant de raccrocher, je vais vous poser quelques questions qui nous serons utile lors de votre accueil.",
+                    f"Parfait, vous avez donc rendez-vous {phrase_creneau} au nom de {caller_info["lastname"]}.",
                     caller,
                 )
 
