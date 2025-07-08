@@ -429,7 +429,7 @@ async def get_firstname():
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech['play_source'],
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -560,7 +560,7 @@ async def get_lastname():
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech['play_source'],
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -660,7 +660,7 @@ async def get_birthdate():
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech['play_source'],
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -757,7 +757,7 @@ async def confirm_creneau():
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech['play_source'],
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -1073,7 +1073,7 @@ async def confirm_firstname():
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech['play_source'],
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -1180,7 +1180,7 @@ async def confirm_lastname():
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech['play_source'],
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -1329,7 +1329,7 @@ async def confirm_annulation():
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech['play_source'],
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -1430,7 +1430,7 @@ async def confirm_birthdate():
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech['play_source'],
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -1576,7 +1576,7 @@ async def confirm_call_intent():
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech['play_source'],
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -1736,7 +1736,7 @@ async def confirm_identity():
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech['play_source'],
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -1831,7 +1831,7 @@ async def transfer_to_secretary():
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech['play_source'],
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -1905,7 +1905,7 @@ async def examination_response():
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech['play_source'],
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -1939,8 +1939,15 @@ async def examination_response():
             return jsonify({"success": "success"})
         question = request.args.get("question")
         if int(question) < len(calls[caller].rdv["interrogatoire"]):
-            play_source = text_to_speech("file_source", calls[caller].rdv["interrogatoire"][int(question)], calls[caller])
-            if calls[caller].rdv["reponses_interrogatoire"] is None or len(calls[caller].rdv["reponses_interrogatoire"]) == 0:
+            play_source = text_to_speech(
+                "file_source",
+                calls[caller].rdv["interrogatoire"][int(question)],
+                calls[caller],
+            )
+            if (
+                calls[caller].rdv["reponses_interrogatoire"] is None
+                or len(calls[caller].rdv["reponses_interrogatoire"]) == 0
+            ):
                 calls[caller].rdv["reponses_interrogatoire"] = [user_response]
             else:
                 calls[caller].rdv["reponses_interrogatoire"].append(user_response)
@@ -1978,7 +1985,7 @@ async def module_informatif():
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech['play_source'],
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -2037,7 +2044,7 @@ async def confirm_rdv():
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech['play_source'],
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -2160,7 +2167,7 @@ async def rdv_exam_type():
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech['play_source'],
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -2302,7 +2309,7 @@ async def get_creneaux_choice():
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech['play_source'],
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
