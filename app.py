@@ -3234,6 +3234,7 @@ async def get_exam_type_async(user_response):
 
 
 async def get_urgence_async(user_response, type_exam_id):
+    print("get_urgence_async", user_response, type_exam_id)
     global calls
     if user_response == None:
         return False
