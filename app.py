@@ -2190,14 +2190,6 @@ async def rdv_exam_type():
         if rdv_info["exam_id"] is not None:
             user_response = f"C'est pour un {rdv_info["exam_id"]} {user_response}"
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        task_urgence = asyncio.create_task(get_urgence_async(user_response, calls[caller].rdv["exam_id"]))
-        urgence = await task_urgence
-        if urgence is True:
-            hang_up(
-                "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
-                caller,
-            )
-            return jsonify({"success": "success"})
 
         # pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
         # if re.search(pattern, user_response, re.IGNORECASE):
@@ -2233,6 +2225,14 @@ async def rdv_exam_type():
         )
 
         exam_type = await task_type
+        task_urgence = asyncio.create_task(get_urgence_async(user_response, exam_type))
+        urgence = await task_urgence
+        if urgence is True:
+            hang_up(
+                "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
+                caller,
+            )
+            return jsonify({"success": "success"})
         print("#######", user_response, exam_type)
         if (
             exam_type["type_examen"] is not None
@@ -2611,15 +2611,6 @@ async def handleResponse():
             get_repeat_async(user_response=user_response)
         )
 
-        task_urgence = asyncio.create_task(get_urgence_async(user_response, calls[caller].rdv["exam_id"]))
-        urgence = await task_urgence
-        print("URGENCE", urgence)
-        if urgence is True:
-            hang_up(
-                "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
-                caller,
-            )
-            return jsonify({"success": "success"})
         # pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
         # if re.search(pattern, user_response, re.IGNORECASE):
         #     hang_up(
@@ -2684,6 +2675,14 @@ async def handleResponse():
             call_info["intent"] = intent.lower()
             # speak("ok")
             exam_type = await task_type
+            task_urgence = asyncio.create_task(get_urgence_async(user_response, exam_type))
+            urgence = await task_urgence
+            if urgence is True:
+                hang_up(
+                    "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
+                    caller,
+                )
+                return jsonify({"success": "success"})
             if exam_type["type_examen_id"] is None:
                 play_source = text_to_speech(
                     "file_source",
