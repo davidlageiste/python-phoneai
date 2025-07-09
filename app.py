@@ -2228,7 +2228,7 @@ async def rdv_exam_type():
         task_urgence = asyncio.create_task(get_urgence_async(user_response, exam_type["type_examen_id"]))
         urgence = await task_urgence
         print("3")
-        if urgence is not "False"::
+        if urgence is not "False":
             hang_up(
                 "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
                 caller,
@@ -2681,7 +2681,7 @@ async def handleResponse():
             print("urgence", urgence)
             print("1")
             print("urgence is True:", urgence is True)
-            if urgence is not "False"::
+            if urgence is not "False":
                 hang_up(
                     "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
                     caller,
