@@ -1891,7 +1891,15 @@ async def examination_exam_type(caller):
             play_source,
             caller,
         )
-
+    else:
+        play_source = text_to_speech(
+            "file_source",
+            "Puis-je faire autre chose pour vous ?",
+            calls[caller],
+        )
+        start_recognizing(
+            "/handleResponse", "end_conversation", play_source, caller
+        )
     return "ok"
 
 
@@ -2182,7 +2190,7 @@ async def rdv_exam_type():
         if rdv_info["exam_id"] is not None:
             user_response = f"C'est pour un {rdv_info["exam_id"]} {user_response}"
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        task_urgence = asyncio.create_task(get_urgence_async(user_response))
+        task_urgence = asyncio.create_task(get_urgence_async(user_response, calls[caller].rdv["exam_id"]))
         urgence = await task_urgence
         if urgence is True:
             hang_up(
@@ -2603,7 +2611,7 @@ async def handleResponse():
             get_repeat_async(user_response=user_response)
         )
 
-        task_urgence = asyncio.create_task(get_urgence_async(user_response))
+        task_urgence = asyncio.create_task(get_urgence_async(user_response, calls[caller].rdv["exam_id"]))
         urgence = await task_urgence
         print("URGENCE", urgence)
         if urgence is True:
@@ -2788,7 +2796,7 @@ async def handleResponse():
         and operation_context == "end_conversation"
     ):
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        task_urgence = asyncio.create_task(get_urgence_async(user_response))
+        task_urgence = asyncio.create_task(get_urgence_async(user_response, calls[caller].rdv["exam_id"]))
         urgence = await task_urgence
         if urgence is True:
             hang_up(
@@ -3226,12 +3234,13 @@ async def get_exam_type_async(user_response):
         return "Erreur lors de la communication avec le modèle."
 
 
-async def get_urgence_async(user_response):
+async def get_urgence_async(user_response, type_exam_id):
+    global calls
     if user_response == None:
         return False
     url = "https://lyrae-talk-functions.azurewebsites.net/api/detection_urgence?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
     headers = {"Content-Type": "application/json"}
-    payload = {"text": user_response}
+    payload = {"text": user_response, "type_exam_id": type_exam_id}
 
     try:
         async with aiohttp.ClientSession() as session:
