@@ -2225,7 +2225,7 @@ async def rdv_exam_type():
         )
 
         exam_type = await task_type
-        task_urgence = asyncio.create_task(get_urgence_async(user_response, exam_type))
+        task_urgence = asyncio.create_task(get_urgence_async(user_response, exam_type["type_examen_id"]))
         urgence = await task_urgence
         if urgence is True:
             hang_up(
@@ -2675,7 +2675,7 @@ async def handleResponse():
             call_info["intent"] = intent.lower()
             # speak("ok")
             exam_type = await task_type
-            task_urgence = asyncio.create_task(get_urgence_async(user_response, exam_type))
+            task_urgence = asyncio.create_task(get_urgence_async(user_response, exam_type["type_examen_id"]))
             urgence = await task_urgence
             if urgence is True:
                 hang_up(
