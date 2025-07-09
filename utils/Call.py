@@ -61,6 +61,8 @@ class Call:
             "annulation_phrase": None,
             "patient_rdv": None,
             "current_creneau_proposition": 0,
+            "interrogatoire": None,
+            "reponses_interrogatoire": None
         }
 
         # Errors

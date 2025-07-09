@@ -11,3 +11,5 @@ elevenlabs
 python-dotenv
 azure-identity
 num2words
+soundfile
+numpy

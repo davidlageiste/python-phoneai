@@ -3,6 +3,9 @@ import random
 from typing import IO
 from io import BytesIO
 from typing import Union
+import soundfile as sf
+import numpy as np
+import os
 
 from utils.azure_storage import upload_stream_azure, delete_blob_azure_delay
 from elevenlabs import VoiceSettings
@@ -22,7 +25,7 @@ clientElevenLabs = ElevenLabs(
 STORAGE_URL_PATH = "https://talkstoragetest.blob.core.windows.net/audio-files/"
 
 
-def text_to_speech_stream(text: str, language="fr") -> IO[bytes]:
+def text_to_speech_stream(text: str, language="fr", speed=1.05) -> IO[bytes]:
     voices = {
         # "fr": "4BHBnkrJUkJYV4HMAnNd",
         "fr": "IBCnh04O5oxx16BRFelZ",
@@ -38,10 +41,9 @@ def text_to_speech_stream(text: str, language="fr") -> IO[bytes]:
             similarity_boost=0.75,
             style=0.0,
             use_speaker_boost=True,
-            speed=1.05,
+            speed=speed,
         ),
     )
-
     audio_stream = BytesIO()
     for chunk in response:
         if chunk:
@@ -51,7 +53,7 @@ def text_to_speech_stream(text: str, language="fr") -> IO[bytes]:
 
 
 def text_to_speech(
-    process: str, text: str, call, language="fr"
+    process: str, text: str, call, language="fr", speed=1.05
 ) -> Union[FileSource | TextSource]:
     """
     Returns an audio source (FileSource ou TextSource) for Azure Communication Service based on a text
@@ -76,8 +78,8 @@ def text_to_speech(
         case "file_source":
             if call:
                 call.add_step(f"Lyrae: {text}")
-            file_name = f"{uuid.uuid4()}.mp3"
-            audio_stream = text_to_speech_stream(text)
+            file_name = f"tmp-{uuid.uuid4()}.mp3"
+            audio_stream = text_to_speech_stream(text, language, speed)
             upload_stream_azure(audio_stream, file_name)
             delete_blob_azure_delay(file_name)
             return FileSource(url=f"{STORAGE_URL_PATH}{file_name}")
@@ -90,7 +92,7 @@ def text_to_speech(
             )
 
 
-def generate_text_to_speech(item=None, language="fr") -> bool:
+def generate_text_to_speech(item=None, language="fr", speed=1.05) -> bool:
     """
     Generates and uploads an or all audio file for a language
     """
@@ -98,59 +100,129 @@ def generate_text_to_speech(item=None, language="fr") -> bool:
         if item is not None:
             if isinstance(audios[item][language], list):
                 for i, text in enumerate(audios[item][language]):
-                    audio_stream = text_to_speech_stream(text, language)
+                    audio_stream = text_to_speech_stream(text, language, speed)
                     upload_stream_azure(audio_stream, f"{item}-{language}-{i}.mp3")
             else:
-                audio_stream = text_to_speech_stream(audios[item][language], language)
+                audio_stream = text_to_speech_stream(
+                    audios[item][language], language, speed
+                )
                 upload_stream_azure(audio_stream, f"{item}-{language}.mp3")
         else:
             for file_name, pack in audios.items():
                 texts = pack[language]
                 if isinstance(texts, list):
                     for i, text in enumerate(texts):
-                        audio_stream = text_to_speech_stream(text, language)
+                        audio_stream = text_to_speech_stream(text, language, speed)
                         upload_stream_azure(
                             audio_stream, f"{file_name}-{language}-{i}.mp3"
                         )
                 else:
-                    audio_stream = text_to_speech_stream(texts, language)
+                    audio_stream = text_to_speech_stream(texts, language, speed)
                     upload_stream_azure(audio_stream, f"{file_name}-{language}.mp3")
         return True
     except:
         return False
 
 
-def spell_word(word: str, language="fr") -> str:
-    eq = {
-        "A": "à",
-        "B": "baie comme Benoît",
-        "C": "ces",
-        "D": "des comme Daniel",
-        "E": "eux",
-        "F": "èf",
-        "G": "j'ai",
-        "H": "hache",
-        "I": "I",
-        "J": "j'y",
-        "K": "ka",
-        "L": "elle",
-        "M": "aime comme Marie",
-        "N": "haine comme Nicolas",
-        "O": "au",
-        "P": "paix",
-        "Q": "ku",
-        "R": "ère",
-        "S": "aisse",
-        "T": "té comme Tristan",
-        "U": "u",
-        "V": "vé",
-        "W": "double vé",
-        "X": "iks",
-        "Y": "hi grec",
-        "Z": "zèd",
-        "-": "tiret",
-        "'": "apostrophe",
-        " ": "espace",
+char_to_file = {
+    "fr": {
+        "A": ["A"],
+        "Â": ["A", "circ"],
+        "Ä": ["A", "uml"],
+        "B": ["Bas"],
+        "C": ["C"],
+        "Ç": ["Cced"],
+        "D": ["Das"],
+        "E": ["E"],
+        "É": ["E", "acute"],
+        "È": ["E", "grave"],
+        "Ê": ["E", "circ"],
+        "Ë": ["E", "uml"],
+        "F": ["F"],
+        "G": ["G"],
+        "H": ["H"],
+        "I": ["I"],
+        "Î": ["I", "circ"],
+        "Ï": ["I", "uml"],
+        "J": ["J"],
+        "K": ["K"],
+        "L": ["L"],
+        "M": ["Mas"],
+        "N": ["Nas"],
+        "O": ["O"],
+        "Ô": ["O", "circ"],
+        "Ö": ["O", "uml"],
+        "P": ["P"],
+        "Q": ["Q"],
+        "R": ["R"],
+        "S": ["S"],
+        "T": ["Tas"],
+        "U": ["U"],
+        "Û": ["U", "circ"],
+        "Ü": ["U", "uml"],
+        "V": ["V"],
+        "W": ["W"],
+        "X": ["X"],
+        "Y": ["Y"],
+        "Ÿ": ["Y", "uml"],
+        "Z": ["Z"],
+        "-": ["tiret"],
+        "'": ["apostrophe"],
+        " ": ["espace"],
     }
+}
 
-    return " ".join(eq[x.upper()] if x.upper() in eq.keys() else x for x in list(word))
+
+def text_to_speech_spell_confirm(
+    text: str, call, language="fr", confirm=True
+) -> FileSource:
+    """
+    Returns an audio source (FileSource) for Azure Communication Service for spelled confirmation.
+    """
+    text = text.upper()
+    combined_audio = []
+    samplerate = None
+
+    if call:
+        call.add_step(
+            f"Lyrae: spell({text}){', c\'est bien ça ?' if confirm == True else ''}"
+        )
+
+    for letter in text:
+        try:
+            for sound in char_to_file[language][letter]:
+                audio_data, sr = sf.read(
+                    os.path.join(
+                        f"./audio-files/spell/{language}",
+                        f"{sound}.wav",
+                    )
+                )
+                if samplerate is None:
+                    samplerate = sr
+                elif samplerate != sr:
+                    raise ValueError(
+                        "Tous les fichiers doivent avoir le même sample rate"
+                    )
+                combined_audio.append(audio_data)
+            pause = np.zeros(int(0.1 * samplerate))  # Pause de 0.2s
+            combined_audio.append(pause)
+        except Exception as e:
+            print(f"Erreur pour la lettre {letter} : {e}")
+    if confirm:
+        audio_data, sr = sf.read(
+            os.path.join(f"./audio-files/spell/{language}", "validation.wav")
+        )
+        combined_audio.append(audio_data)
+
+    final = np.concatenate(combined_audio)
+
+    # DEBUG
+    # sf.write("test.mp3", final, samplerate)
+
+    audio_stream = BytesIO()
+    sf.write(audio_stream, final, samplerate, format="WAV")
+    audio_stream.seek(0)
+    file_name = f"tmp-{uuid.uuid4()}.wav"
+    upload_stream_azure(audio_stream, file_name)
+    delete_blob_azure_delay(file_name)
+    return FileSource(url=f"{STORAGE_URL_PATH}{file_name}")

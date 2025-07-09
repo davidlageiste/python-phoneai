@@ -21,7 +21,11 @@ from num2words import num2words
 import json
 import random
 
-from utils.tts import text_to_speech, generate_text_to_speech, spell_word
+from utils.tts import (
+    text_to_speech,
+    generate_text_to_speech,
+    text_to_speech_spell_confirm,
+)
 from utils.exam import get_client_exam_code
 from utils.recorded_audio import recorded_audios_keys, keyboard_sounds, click_sounds
 from utils.Call import Call
@@ -46,6 +50,8 @@ rdvCollection = db["rdv"]
 call_automation_client = CallAutomationClient.from_connection_string(
     "endpoint=https://lyraedemo.unitedstates.communication.azure.com/;accesskey=6NB6prS16bRw7UjKSRCObyUVQPyiwmffALNF5QiCnAxKRifFTIIbJQQJ99BEACULyCpuAreVAAAAAZCSuWZh"
 )
+
+
 
 speech_config = speechsdk.SpeechConfig(subscription=SPEECH_KEY, region=SPEECH_REGION)
 
@@ -245,7 +251,12 @@ def increment_error(caller, type):
 
 
 def start_recognizing(
-    callback_url, context, play_source, caller, background_noise="keyboard", end_silence_timeout=0.5
+    callback_url,
+    context,
+    play_source,
+    caller,
+    background_noise="keyboard",
+    end_silence_timeout=0.5,
 ):
     global calls
 
@@ -286,6 +297,7 @@ def hang_up(text, caller):
         calls[caller].call["call_connection_id"]
     ).play_media_to_all(play_source=play_source, operation_context="hang_up")
 
+
 def countPatientInDB(query):
     count = patientCollection.count_documents(query)
     return count
@@ -308,10 +320,6 @@ def generate_audio_batch():
         generate_text_to_speech()
 
     return jsonify({"status": "success"})
-
-    # if generate_text_to_speech():
-    #     return jsonify({"status": "success"})
-    # return jsonify({"status": "error"})
 
 
 @app.route("/incoming_call", methods=["POST"])
@@ -359,10 +367,11 @@ async def callback():
 
     if type == "Microsoft.Communication.CallDisconnected":
         print_calls()
-        calls[caller].store_archive(caller)
-        # with open("archive_talk.txt", "a", encoding="utf-8") as file:
-        #     file.write(calls[caller].to_string_archive(caller))
-        del calls[caller]
+        if caller in calls.keys():
+            calls[caller].store_archive(caller)
+            # with open("archive_talk.txt", "a", encoding="utf-8") as file:
+            #     file.write(calls[caller].to_string_archive(caller))
+            del calls[caller]
     if type == "Microsoft.Communication.AnswerFailed":
         print(request.json[0])
     if type == "Microsoft.Communication.RecognizeCompleted":
@@ -417,12 +426,13 @@ async def get_firstname():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
+        speak("Je ne vous ai pas entendu")
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
@@ -433,7 +443,7 @@ async def get_firstname():
             calls[caller].last_text_to_speech["operation_context"],
             calls[caller].last_text_to_speech["play_source"],
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     if (
@@ -460,16 +470,20 @@ async def get_firstname():
             task_get_firstname = asyncio.create_task(
                 get_firstname_async(user_response=clean_firstname)
             )
-            task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
+            task_human_orientation = asyncio.create_task(
+                get_human_orientation_async(user_response=user_response)
+            )
             speak("Très bien", caller)
             human_orientation = await task_human_orientation
             if human_orientation is True:
                 hang_up(
                     "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
-                    caller
+                    caller,
                 )
                 return jsonify({"success": "success"})
-            task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
+            task_get_repeat = asyncio.create_task(
+                get_repeat_async(user_response=user_response)
+            )
             get_repeat = await task_get_repeat
             if get_repeat is True:
                 start_recognizing(
@@ -477,7 +491,7 @@ async def get_firstname():
                     calls[caller].last_text_to_speech["operation_context"],
                     calls[caller].last_text_to_speech["play_source"],
                     caller,
-                    "keyboard"
+                    "keyboard",
                 )
                 return jsonify({"success": "success"})
             await asyncio.sleep(1)
@@ -504,9 +518,13 @@ async def get_firstname():
                 )
 
             else:
-                play_source = text_to_speech(
-                    "file_source",
-                    f"{clean_firstname.strip()}, {spell_word(clean_firstname.strip())}, c'est bien ça ?",
+                speak(
+                    f"{clean_firstname.strip()}",
+                    caller,
+                    speed=0.82,
+                )
+                play_source = text_to_speech_spell_confirm(
+                    clean_firstname.strip(),
                     calls[caller],
                 )
                 start_recognizing(
@@ -523,7 +541,7 @@ async def get_firstname():
             calls[caller].last_text_to_speech["operation_context"],
             f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
 
@@ -539,12 +557,13 @@ async def get_lastname():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
+        speak("Je ne vous ai pas entendu")
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
@@ -555,7 +574,7 @@ async def get_lastname():
             calls[caller].last_text_to_speech["operation_context"],
             calls[caller].last_text_to_speech["play_source"],
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     if (
@@ -564,13 +583,15 @@ async def get_lastname():
     ):
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
         # Remove every "." that comes from the AI response
-        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
+        task_human_orientation = asyncio.create_task(
+            get_human_orientation_async(user_response=user_response)
+        )
         speak("Merci", caller)
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
                 "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
-                caller
+                caller,
             )
             return jsonify({"success": "success"})
         clean_name = user_response.replace(".", "")
@@ -596,9 +617,13 @@ async def get_lastname():
             start_recognizing("/get_lastname", "get_lastname", play_source, caller)
 
         else:
-            play_source = text_to_speech(
-                "file_source",
-                f"{calls[caller].caller["lastname"]} {spell_word(calls[caller].caller["lastname"])}, c'est bien ça ?",
+            speak(
+                f"{calls[caller].caller["lastname"]}",
+                caller,
+                speed=0.82,
+            )
+            play_source = text_to_speech_spell_confirm(
+                calls[caller].caller["lastname"],
                 calls[caller],
             )
             start_recognizing(
@@ -615,10 +640,10 @@ async def get_lastname():
             calls[caller].last_text_to_speech["operation_context"],
             f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
-    
+
     return jsonify({"success": "success"})
 
 
@@ -632,12 +657,13 @@ async def get_birthdate():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
+        speak("Je ne vous ai pas entendu")
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     if (
@@ -645,15 +671,19 @@ async def get_birthdate():
         and operation_context == "get_birthdate"
     ):
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
+        task_human_orientation = asyncio.create_task(
+            get_human_orientation_async(user_response=user_response)
+        )
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
                 "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
-                caller
+                caller,
             )
             return jsonify({"success": "success"})
-        task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
+        task_get_repeat = asyncio.create_task(
+            get_repeat_async(user_response=user_response)
+        )
         get_repeat = await task_get_repeat
         if get_repeat is True:
             start_recognizing(
@@ -661,7 +691,7 @@ async def get_birthdate():
                 calls[caller].last_text_to_speech["operation_context"],
                 calls[caller].last_text_to_speech["play_source"],
                 caller,
-                "keyboard"
+                "keyboard",
             )
             return jsonify({"success": "success"})
         task_get_birthdate = asyncio.create_task(
@@ -702,7 +732,7 @@ async def get_birthdate():
             calls[caller].last_text_to_speech["operation_context"],
             f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
 
@@ -724,12 +754,13 @@ async def confirm_creneau():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
+        speak("Je ne vous ai pas entendu")
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     caller_info = calls[caller].caller
@@ -740,15 +771,19 @@ async def confirm_creneau():
         and operation_context == "confirm_creneau"
     ):
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
+        task_human_orientation = asyncio.create_task(
+            get_human_orientation_async(user_response=user_response)
+        )
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
                 "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
-                caller
+                caller,
             )
             return jsonify({"success": "success"})
-        task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
+        task_get_repeat = asyncio.create_task(
+            get_repeat_async(user_response=user_response)
+        )
         get_repeat = await task_get_repeat
         if get_repeat is True:
             start_recognizing(
@@ -756,7 +791,7 @@ async def confirm_creneau():
                 calls[caller].last_text_to_speech["operation_context"],
                 calls[caller].last_text_to_speech["play_source"],
                 caller,
-                "keyboard"
+                "keyboard",
             )
             return jsonify({"success": "success"})
         task_positive_negative = asyncio.create_task(
@@ -868,15 +903,19 @@ async def confirm_creneau():
             get_positive_negative_async(user_response)
         )
         speak("ok", caller)
-        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
+        task_human_orientation = asyncio.create_task(
+            get_human_orientation_async(user_response=user_response)
+        )
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
                 "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
-                caller
+                caller,
             )
             return jsonify({"success": "success"})
-        task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
+        task_get_repeat = asyncio.create_task(
+            get_repeat_async(user_response=user_response)
+        )
         get_repeat = await task_get_repeat
         if get_repeat is True:
             start_recognizing(
@@ -884,7 +923,7 @@ async def confirm_creneau():
                 calls[caller].last_text_to_speech["operation_context"],
                 calls[caller].last_text_to_speech["play_source"],
                 caller,
-                "keyboard"
+                "keyboard",
             )
             return jsonify({"success": "success"})
         positive_negative = await task_positive_negative
@@ -1011,10 +1050,10 @@ async def confirm_creneau():
             calls[caller].last_text_to_speech["operation_context"],
             f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
-    
+
     return jsonify({"success": "success"})
 
 
@@ -1031,12 +1070,13 @@ async def confirm_firstname():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
+        speak("Je ne vous ai pas entendu")
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
@@ -1047,7 +1087,7 @@ async def confirm_firstname():
             calls[caller].last_text_to_speech["operation_context"],
             calls[caller].last_text_to_speech["play_source"],
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     if (
@@ -1058,13 +1098,15 @@ async def confirm_firstname():
         task_model_response = asyncio.create_task(
             get_positive_negative_async(user_response)
         )
-        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
+        task_human_orientation = asyncio.create_task(
+            get_human_orientation_async(user_response=user_response)
+        )
         speak("ok", caller)
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
-                    "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
-                        caller
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+                caller,
             )
             return jsonify({"success": "success"})
         await asyncio.sleep(1)
@@ -1093,9 +1135,13 @@ async def confirm_firstname():
             return jsonify({"success": "success"})
 
         else:
-            play_source = text_to_speech(
-                "file_source",
-                f"Je n'ai pas compris, {calls[caller].caller["firstname"]}, {spell_word(calls[caller].caller["firstname"])}, c'est bien ça ?",
+            speak(
+                f"Je n'ai pas compris, {calls[caller].caller["firstname"]}",
+                caller,
+                speed=0.82,
+            )
+            play_source = text_to_speech_spell_confirm(
+                calls[caller].caller["firstname"],
                 calls[caller],
             )
             start_recognizing(
@@ -1112,7 +1158,7 @@ async def confirm_firstname():
             calls[caller].last_text_to_speech["operation_context"],
             f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
 
@@ -1131,12 +1177,13 @@ async def confirm_lastname():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
+        speak("Je ne vous ai pas entendu")
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
@@ -1147,7 +1194,7 @@ async def confirm_lastname():
             calls[caller].last_text_to_speech["operation_context"],
             calls[caller].last_text_to_speech["play_source"],
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     if type == "Microsoft.Communication.RecognizeCompleted":
@@ -1155,13 +1202,15 @@ async def confirm_lastname():
         task_model_response = asyncio.create_task(
             get_positive_negative_async(user_response)
         )
-        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
+        task_human_orientation = asyncio.create_task(
+            get_human_orientation_async(user_response=user_response)
+        )
         speak("ok", caller)
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
                 "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
-                caller
+                caller,
             )
             return jsonify({"success": "success"})
         await asyncio.sleep(1)
@@ -1200,7 +1249,7 @@ async def confirm_lastname():
 
             if count > 1 or count == 0:
                 play_source = text_to_speech(
-                    "fixed_file_source", "ask_firstname", calls[caller]
+                    "fixed_file_source", "ask_firstname_spell", calls[caller]
                 )
                 start_recognizing(
                     "/get_firstname", "get_firstname", play_source, caller
@@ -1236,9 +1285,17 @@ async def confirm_lastname():
                 )
 
         else:
-            play_source = text_to_speech(
-                "file_source",
-                f"Je n'ai pas compris, {calls[caller].caller["lastname"]}, {spell_word(calls[caller].caller["lastname"])}, c'est bien ça ?",
+            speak(
+                "Je n'ai pas compris",
+                caller,
+            )
+            speak(
+                f"Je n'ai pas compris {calls[caller].caller["lastname"]}",
+                caller,
+                speed=0.82,
+            )
+            play_source = text_to_speech_spell_confirm(
+                calls[caller].caller["lastname"],
                 calls[caller],
             )
             start_recognizing(
@@ -1251,10 +1308,10 @@ async def confirm_lastname():
             calls[caller].last_text_to_speech["operation_context"],
             f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
-    
+
     return jsonify({"success": "success"})
 
 
@@ -1269,12 +1326,13 @@ async def confirm_annulation():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
+        speak("Je ne vous ai pas entendu")
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     if type == "Microsoft.Communication.RecognizeCompleted":
@@ -1282,16 +1340,20 @@ async def confirm_annulation():
         task_model_response = asyncio.create_task(
             get_positive_negative_async(user_response)
         )
-        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
+        task_human_orientation = asyncio.create_task(
+            get_human_orientation_async(user_response=user_response)
+        )
         speak("ok", caller)
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
-                    "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
-                        caller
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+                caller,
             )
             return jsonify({"success": "success"})
-        task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
+        task_get_repeat = asyncio.create_task(
+            get_repeat_async(user_response=user_response)
+        )
         get_repeat = await task_get_repeat
         if get_repeat is True:
             start_recognizing(
@@ -1299,7 +1361,7 @@ async def confirm_annulation():
                 calls[caller].last_text_to_speech["operation_context"],
                 calls[caller].last_text_to_speech["play_source"],
                 caller,
-                "keyboard"
+                "keyboard",
             )
             return jsonify({"success": "success"})
         await asyncio.sleep(1)
@@ -1347,7 +1409,7 @@ async def confirm_annulation():
             calls[caller].last_text_to_speech["operation_context"],
             f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     return jsonify({"success": "success"})
@@ -1365,12 +1427,13 @@ async def confirm_birthdate():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
+        speak("Je ne vous ai pas entendu")
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     if (
@@ -1378,15 +1441,19 @@ async def confirm_birthdate():
         and operation_context == "confirm_birthdate"
     ):
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
+        task_human_orientation = asyncio.create_task(
+            get_human_orientation_async(user_response=user_response)
+        )
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
                 "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
-                caller
+                caller,
             )
             return jsonify({"success": "success"})
-        task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
+        task_get_repeat = asyncio.create_task(
+            get_repeat_async(user_response=user_response)
+        )
         get_repeat = await task_get_repeat
         if get_repeat is True:
             start_recognizing(
@@ -1394,7 +1461,7 @@ async def confirm_birthdate():
                 calls[caller].last_text_to_speech["operation_context"],
                 calls[caller].last_text_to_speech["play_source"],
                 caller,
-                "keyboard"
+                "keyboard",
             )
             return jsonify({"success": "success"})
         task_model_response = asyncio.create_task(
@@ -1437,7 +1504,13 @@ async def confirm_birthdate():
                 play_source = text_to_speech(
                     "fixed_file_source", "spell_lastname", calls[caller]
                 )
-                start_recognizing("/get_lastname", "get_lastname", play_source, caller, end_silence_timeout=1)
+                start_recognizing(
+                    "/get_lastname",
+                    "get_lastname",
+                    play_source,
+                    caller,
+                    end_silence_timeout=1,
+                )
             else:
                 patient = findPatientInDB(
                     {
@@ -1485,7 +1558,7 @@ async def confirm_birthdate():
             calls[caller].last_text_to_speech["operation_context"],
             f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     return jsonify({"success": "success"})
@@ -1500,12 +1573,13 @@ async def confirm_call_intent():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
+        speak("Je ne vous ai pas entendu")
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     caller_info = calls[caller].caller
@@ -1516,15 +1590,19 @@ async def confirm_call_intent():
         and operation_context == "confirm_call_intent"
     ):
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
+        task_human_orientation = asyncio.create_task(
+            get_human_orientation_async(user_response=user_response)
+        )
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
-                    "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
-                        caller
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+                caller,
             )
             return jsonify({"success": "success"})
-        task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
+        task_get_repeat = asyncio.create_task(
+            get_repeat_async(user_response=user_response)
+        )
         get_repeat = await task_get_repeat
         if get_repeat is True:
             start_recognizing(
@@ -1532,7 +1610,7 @@ async def confirm_call_intent():
                 calls[caller].last_text_to_speech["operation_context"],
                 calls[caller].last_text_to_speech["play_source"],
                 caller,
-                "keyboard"
+                "keyboard",
             )
             return jsonify({"success": "success"})
         task_model_response = asyncio.create_task(
@@ -1636,7 +1714,7 @@ async def confirm_call_intent():
             calls[caller].last_text_to_speech["operation_context"],
             f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
 
@@ -1655,12 +1733,13 @@ async def confirm_identity():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
+        speak("Je ne vous ai pas entendu")
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     if (
@@ -1668,15 +1747,19 @@ async def confirm_identity():
         and operation_context == "confirm_identity"
     ):
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
+        task_human_orientation = asyncio.create_task(
+            get_human_orientation_async(user_response=user_response)
+        )
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
                 "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
-                caller
+                caller,
             )
             return jsonify({"success": "success"})
-        task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
+        task_get_repeat = asyncio.create_task(
+            get_repeat_async(user_response=user_response)
+        )
         get_repeat = await task_get_repeat
         if get_repeat is True:
             start_recognizing(
@@ -1684,7 +1767,7 @@ async def confirm_identity():
                 calls[caller].last_text_to_speech["operation_context"],
                 calls[caller].last_text_to_speech["play_source"],
                 caller,
-                "keyboard"
+                "keyboard",
             )
             return jsonify({"success": "success"})
         task_model_response = asyncio.create_task(
@@ -1722,17 +1805,17 @@ async def confirm_identity():
                 caller=caller,
                 background_noise="click",
             )
-    
+
     elif type == "Microsoft.Communication.RecognizeFailed":
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
             f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
-    
+
     return jsonify({"success": "success"})
 
 
@@ -1745,12 +1828,13 @@ async def transfer_to_secretary():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
+        speak("Je ne vous ai pas entendu")
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     if type == "Microsoft.Communication.RecognizeCompleted":
@@ -1779,13 +1863,124 @@ async def transfer_to_secretary():
             calls[caller].last_text_to_speech["operation_context"],
             f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     return jsonify({"success": "success"})
 
 
 ########## PRISE DE RENDEZ-VOUS ##########
+
+
+async def examination_exam_type(caller):
+    global calls
+
+    print(calls[caller].rdv["sous_type_id"])
+
+    task_get_examination = asyncio.create_task(
+        get_examination(exam_type=calls[caller].rdv["sous_type_id"])
+    )
+
+    examination = await task_get_examination
+    if len(examination) > 0: 
+        speak("Avant de raccrocher, je vais vous poser quelques questions qui nous serons utile lors de votre accueil.", caller)
+        calls[caller].rdv["interrogatoire"] = examination
+        play_source = text_to_speech("file_source", examination[0], calls[caller])
+        start_recognizing(
+            "/examination_response?question=1",
+            "examination_response",
+            play_source,
+            caller,
+        )
+    else:
+        play_source = text_to_speech(
+            "file_source",
+            "Puis-je faire autre chose pour vous ?",
+            calls[caller],
+        )
+        start_recognizing(
+            "/handleResponse", "end_conversation", play_source, caller
+        )
+    return "ok"
+
+
+@app.route("/examination_response", methods=["POST"])
+async def examination_response():
+    global calls
+    if not request.json:
+        return jsonify({"success": "success"})
+    caller, operation_context, type, user_response = get_request_infos(request)
+    if user_response == "":
+        speak("Je ne vous ai pas entendu")
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            calls[caller].last_text_to_speech["play_source"],
+            caller,
+            "keyboard",
+        )
+        return jsonify({"success": "success"})
+    if (
+        request.json[0].get("type") == "Microsoft.Communication.RecognizeCompleted"
+        and operation_context == "examination_response"
+    ):
+        task_human_orientation = asyncio.create_task(
+            get_human_orientation_async(user_response=user_response)
+        )
+        human_orientation = await task_human_orientation
+        if human_orientation is True:
+            hang_up(
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+                caller,
+            )
+            return jsonify({"success": "success"})
+        task_get_repeat = asyncio.create_task(
+            get_repeat_async(user_response=user_response)
+        )
+        get_repeat = await task_get_repeat
+        if get_repeat is True:
+            start_recognizing(
+                calls[caller].last_text_to_speech["endpoint"],
+                calls[caller].last_text_to_speech["operation_context"],
+                calls[caller].last_text_to_speech["play_source"],
+                caller,
+                "keyboard",
+            )
+            return jsonify({"success": "success"})
+        question = request.args.get("question")
+        if int(question) < len(calls[caller].rdv["interrogatoire"]):
+            play_source = text_to_speech(
+                "file_source",
+                calls[caller].rdv["interrogatoire"][int(question)],
+                calls[caller],
+            )
+            if (
+                calls[caller].rdv["reponses_interrogatoire"] is None
+                or len(calls[caller].rdv["reponses_interrogatoire"]) == 0
+            ):
+                calls[caller].rdv["reponses_interrogatoire"] = [user_response]
+            else:
+                calls[caller].rdv["reponses_interrogatoire"].append(user_response)
+            start_recognizing(
+                f"/examination_response?question={str(int(question) + 1)}",
+                "examination_response",
+                play_source,
+                caller,
+            )
+            return jsonify({"success": "success"})
+        else:
+            play_source = text_to_speech(
+                "file_source",
+                "Très bien, merci beaucoup pour ces précisions, j'ai fini. Puis-je faire autre chose pour vous ?",
+                calls[caller],
+            )
+            start_recognizing(
+                "/handleResponse", "end_conversation", play_source, caller
+            )
+            return jsonify({"success": "success"})
+    if request.json[0].get("type") == "Microsoft.Communication.RecognizeFailed":
+        speak("Je n'ai pas entendu", calls[caller])
+    return jsonify({"success": "success"})
 
 
 @app.route("/module_informatif", methods=["POST"])
@@ -1796,12 +1991,13 @@ async def module_informatif():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
+        speak("Je ne vous ai pas entendu")
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     if (
@@ -1809,19 +2005,23 @@ async def module_informatif():
         and operation_context == "module_informatif"
     ):
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
+        task_human_orientation = asyncio.create_task(
+            get_human_orientation_async(user_response=user_response)
+        )
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
-                    "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
-                        caller
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+                caller,
             )
             return jsonify({"success": "success"})
         task = asyncio.create_task(get_model_response_async(user_response))
         model_response = await task
 
         play_source = text_to_speech(
-            "file_source", f"{model_response}. Puis-je faire autre chose pour vous ?", calls[caller]
+            "file_source",
+            f"{model_response}. Puis-je faire autre chose pour vous ?",
+            calls[caller],
         )
         start_recognizing("/handleResponse", "end_conversation", play_source, caller)
 
@@ -1831,7 +2031,7 @@ async def module_informatif():
             calls[caller].last_text_to_speech["operation_context"],
             f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     return jsonify({"success": "success"})
@@ -1850,18 +2050,21 @@ async def confirm_rdv():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
+        speak("Je ne vous ai pas entendu")
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     if type == "Microsoft.Communication.RecognizeCompleted" and (
         operation_context == "confirm_rdv" or operation_context == "confirm_rdv_intro"
     ):
-        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
+        task_human_orientation = asyncio.create_task(
+            get_human_orientation_async(user_response=user_response)
+        )
         task_model_response = asyncio.create_task(
             get_positive_negative_async(user_response)
         )
@@ -1870,11 +2073,13 @@ async def confirm_rdv():
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
-                    "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
-                        caller
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+                caller,
             )
             return jsonify({"success": "success"})
-        task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
+        task_get_repeat = asyncio.create_task(
+            get_repeat_async(user_response=user_response)
+        )
         get_repeat = await task_get_repeat
         if get_repeat is True:
             start_recognizing(
@@ -1882,7 +2087,7 @@ async def confirm_rdv():
                 calls[caller].last_text_to_speech["operation_context"],
                 calls[caller].last_text_to_speech["play_source"],
                 caller,
-                "keyboard"
+                "keyboard",
             )
             return jsonify({"success": "success"})
         model_response = await task_model_response
@@ -1909,6 +2114,9 @@ async def confirm_rdv():
                     "/rdv_exam_type", "rdv_exam_type", play_source, caller
                 )
         elif model_response == "positive":
+            # play_source = text_to_speech("file_source", "Pouvez-vous me lire le motif de l'examen présent sur votre ordonnance ?", calls[caller])
+            # start_recognizing("/get_motif", "get_motif", play_source, caller)
+
             task_creneaux = asyncio.create_task(
                 get_creneaux_async(
                     sous_type=calls[caller].rdv["sous_type_id"],
@@ -1916,6 +2124,7 @@ async def confirm_rdv():
                     caller=caller,
                 )
             )
+
             speak("Je regarde les disponibilités, un instant...", caller)
 
             await asyncio.sleep(1)
@@ -1947,7 +2156,7 @@ async def confirm_rdv():
             calls[caller].last_text_to_speech["operation_context"],
             f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     return jsonify({"status": "success"})
@@ -1964,12 +2173,13 @@ async def rdv_exam_type():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
+        speak("Je ne vous ai pas entendu")
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     rdv_info = calls[caller].rdv
@@ -1981,21 +2191,26 @@ async def rdv_exam_type():
         if rdv_info["exam_id"] is not None:
             user_response = f"C'est pour un {rdv_info["exam_id"]} {user_response}"
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
-        if re.search(pattern, user_response, re.IGNORECASE):
-            hang_up(
-                "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
-                caller,
-            )
-        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
+
+        # pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
+        # if re.search(pattern, user_response, re.IGNORECASE):
+        #     hang_up(
+        #         "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
+        #         caller,
+        #     )
+        task_human_orientation = asyncio.create_task(
+            get_human_orientation_async(user_response=user_response)
+        )
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
                 "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
-                    caller
+                caller,
             )
             return jsonify({"success": "success"})
-        task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
+        task_get_repeat = asyncio.create_task(
+            get_repeat_async(user_response=user_response)
+        )
         get_repeat = await task_get_repeat
         if get_repeat is True:
             start_recognizing(
@@ -2003,7 +2218,7 @@ async def rdv_exam_type():
                 calls[caller].last_text_to_speech["operation_context"],
                 calls[caller].last_text_to_speech["play_source"],
                 caller,
-                "keyboard"
+                "keyboard",
             )
             return jsonify({"success": "success"})
         task_type = asyncio.create_task(
@@ -2011,6 +2226,15 @@ async def rdv_exam_type():
         )
 
         exam_type = await task_type
+        task_urgence = asyncio.create_task(get_urgence_async(user_response, exam_type["type_examen_id"]))
+        urgence = await task_urgence
+        print("3")
+        if urgence == "True":
+            hang_up(
+                "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
+                caller,
+            )
+            return jsonify({"success": "success"})
         print("#######", user_response, exam_type)
         if (
             exam_type["type_examen"] is not None
@@ -2068,7 +2292,7 @@ async def rdv_exam_type():
             calls[caller].last_text_to_speech["operation_context"],
             f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     return jsonify({"status": "success"})
@@ -2090,14 +2314,15 @@ async def get_creneaux_choice():
         return jsonify({"success": "success"})
 
     caller, operation_context, type, user_response = get_request_infos(request)
-    
+
     if user_response == "":
+        speak("Je ne vous ai pas entendu")
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
     call_info = calls[caller].call
@@ -2113,15 +2338,19 @@ async def get_creneaux_choice():
         task_creneau_choice = asyncio.create_task(
             extract_creneau_async(user_response=user_response)
         )
-        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
+        task_human_orientation = asyncio.create_task(
+            get_human_orientation_async(user_response=user_response)
+        )
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
-                    "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
-                        caller
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+                caller,
             )
             return jsonify({"success": "success"})
-        task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
+        task_get_repeat = asyncio.create_task(
+            get_repeat_async(user_response=user_response)
+        )
         get_repeat = await task_get_repeat
         if get_repeat is True:
             start_recognizing(
@@ -2129,7 +2358,7 @@ async def get_creneaux_choice():
                 calls[caller].last_text_to_speech["operation_context"],
                 calls[caller].last_text_to_speech["play_source"],
                 caller,
-                "keyboard"
+                "keyboard",
             )
             return jsonify({"success": "success"})
         speak(
@@ -2336,7 +2565,7 @@ async def get_creneaux_choice():
             calls[caller].last_text_to_speech["operation_context"],
             f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
             caller,
-            "keyboard"
+            "keyboard",
         )
         return jsonify({"success": "success"})
 
@@ -2352,8 +2581,14 @@ async def handleResponse():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        play_source = text_to_speech("file_source", "Je ne vous ai pas entendu. Que puis-je faire pour vous ?", calls[caller])
-        start_recognizing("/handleResponse", "start_conversation", play_source, calls[caller], "click")
+        play_source = text_to_speech(
+            "file_source",
+            "Je ne vous ai pas entendu. Que puis-je faire pour vous ?",
+            calls[caller],
+        )
+        start_recognizing(
+            "/handleResponse", "start_conversation", play_source, calls[caller], "click"
+        )
         return jsonify({"success": "success"})
     call_info = calls[caller].call
     rdv_info = calls[caller].rdv
@@ -2371,23 +2606,27 @@ async def handleResponse():
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
         # print(user_response)
 
-        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
-        task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
+        task_human_orientation = asyncio.create_task(
+            get_human_orientation_async(user_response=user_response)
+        )
+        task_get_repeat = asyncio.create_task(
+            get_repeat_async(user_response=user_response)
+        )
 
-        pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
-        if re.search(pattern, user_response, re.IGNORECASE):
-            hang_up(
-                "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
-                caller,
-            )
-            return jsonify({"success": "success"})
+        # pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
+        # if re.search(pattern, user_response, re.IGNORECASE):
+        #     hang_up(
+        #         "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
+        #         caller,
+        #     )
+        #     return jsonify({"success": "success"})
 
         task_intent = asyncio.create_task(get_intent_async(user_response=user_response))
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
                 "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
-                caller
+                caller,
             )
             return jsonify({"success": "success"})
         get_repeat = await task_get_repeat
@@ -2397,7 +2636,7 @@ async def handleResponse():
                 calls[caller].last_text_to_speech["operation_context"],
                 calls[caller].last_text_to_speech["play_source"],
                 caller,
-                "keyboard"
+                "keyboard",
             )
             return jsonify({"success": "success"})
         intent = (await task_intent).lower().replace(".", "")
@@ -2412,9 +2651,13 @@ async def handleResponse():
                 task = asyncio.create_task(get_model_response_async(user_response))
                 model_response = await task
                 play_source = text_to_speech(
-                    "file_source", f"{model_response}. Puis-je faire autre chose pour vous ?", calls[caller]
+                    "file_source",
+                    f"{model_response}. Puis-je faire autre chose pour vous ?",
+                    calls[caller],
                 )
-                start_recognizing("/handleResponse", "end_conversation", play_source, caller)
+                start_recognizing(
+                    "/handleResponse", "end_conversation", play_source, caller
+                )
                 return jsonify({"success": "success"})
             else:
                 play_source = text_to_speech(
@@ -2434,6 +2677,17 @@ async def handleResponse():
             call_info["intent"] = intent.lower()
             # speak("ok")
             exam_type = await task_type
+            task_urgence = asyncio.create_task(get_urgence_async(user_response, exam_type["type_examen_id"]))
+            urgence = await task_urgence
+            print("urgence", urgence)
+            print("1")
+            print("urgence is True:", urgence is True)
+            if urgence == "True":
+                hang_up(
+                    "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
+                    caller,
+                )
+                return jsonify({"success": "success"})
             if exam_type["type_examen_id"] is None:
                 play_source = text_to_speech(
                     "file_source",
@@ -2546,22 +2800,35 @@ async def handleResponse():
         and operation_context == "end_conversation"
     ):
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
-        if re.search(pattern, user_response, re.IGNORECASE):
+        task_urgence = asyncio.create_task(get_urgence_async(user_response, calls[caller].rdv["exam_id"]))
+        urgence = await task_urgence
+        print("2")
+        if urgence == "True":
             hang_up(
                 "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
                 caller,
             )
-        task_human_orientation = asyncio.create_task(get_human_orientation_async(user_response=user_response))
+            return jsonify({"success": "success"})
+        # pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
+        # if re.search(pattern, user_response, re.IGNORECASE):
+        #     hang_up(
+        #         "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
+        #         caller,
+        #     )
+        task_human_orientation = asyncio.create_task(
+            get_human_orientation_async(user_response=user_response)
+        )
         task_intent = asyncio.create_task(get_intent_async(user_response=user_response))
         human_orientation = await task_human_orientation
         if human_orientation is True:
             hang_up(
                 "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
-                caller
+                caller,
             )
             return jsonify({"success": "success"})
-        task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
+        task_get_repeat = asyncio.create_task(
+            get_repeat_async(user_response=user_response)
+        )
         get_repeat = await task_get_repeat
         if get_repeat is True:
             start_recognizing(
@@ -2569,7 +2836,7 @@ async def handleResponse():
                 calls[caller].last_text_to_speech["operation_context"],
                 calls[caller].last_text_to_speech["play_source"],
                 caller,
-                "keyboard"
+                "keyboard",
             )
             return jsonify({"success": "success"})
         intent = await task_intent
@@ -2821,6 +3088,25 @@ async def handleResponse():
 ########## ASYNC ##########
 
 
+async def get_examination(exam_type):
+    url = "https://lyrae-talk-functions.azurewebsites.net/api/interrogatoire?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
+
+    headers = {"Content-Type": "application/json"}
+
+    payload = {"code_exam": exam_type}
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, json=payload) as response:
+                response.raise_for_status()
+                data = await response.json()
+                print("get_examination", data)
+                return data.get("response", "Pas de réponse trouvée.")
+    except aiohttp.ClientError as e:
+        print(f"Erreur lors de l'appel au modèle : {e}")
+        return "Erreur lors de la communication avec le modèle."
+
+
 async def get_firstname_async(user_response):
     url = "https://lyrae-talk-functions.azurewebsites.net/api/get_prenom?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
 
@@ -2953,7 +3239,30 @@ async def get_exam_type_async(user_response):
         return "Erreur lors de la communication avec le modèle."
 
 
+async def get_urgence_async(user_response, type_exam_id):
+    print("get_urgence_async", user_response, type_exam_id)
+    global calls
+    if user_response == None:
+        return False
+    url = "https://lyrae-talk-functions.azurewebsites.net/api/detection_urgence?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
+    headers = {"Content-Type": "application/json"}
+    payload = {"text": user_response, "type_exam_id": type_exam_id}
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, json=payload) as response:
+                response.raise_for_status()
+                data = await response.json()
+                print("get_urgence", data)
+                return data.get("response", "Pas de réponse trouvée.")
+    except aiohttp.ClientError as e:
+        print(f"Erreur lors de l'appel au modèle : {e}")
+        return "Erreur lors de la communication avec le modèle."
+
+
 async def get_human_orientation_async(user_response):
+    if user_response == None:
+        return False
     url = "https://lyrae-talk-functions.azurewebsites.net/api/detect_human_assistant_orientation?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
     headers = {"Content-Type": "application/json"}
     payload = {"text": user_response}
@@ -2971,6 +3280,8 @@ async def get_human_orientation_async(user_response):
 
 
 async def get_repeat_async(user_response):
+    if user_response == None:
+        return False
     url = "https://lyrae-talk-functions.azurewebsites.net/api/detect_repetition?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
     headers = {"Content-Type": "application/json"}
     payload = {"text": user_response}
@@ -3410,18 +3721,19 @@ def start_conversation(caller):
     start_recognizing("/handleResponse", "start_conversation", play_source, caller)
 
 
-def speak(text, caller):
+def speak(text, caller, speed=1.05):
 
     if text in recorded_audios_keys:
         play_source = text_to_speech("fixed_file_source", text, calls[caller])
     else:
-        play_source = text_to_speech("file_source", text, calls[caller])
+        play_source = text_to_speech("file_source", text, calls[caller], speed=speed)
     call_automation_client.get_call_connection(
         calls[caller].call["call_connection_id"]
     ).play_media_to_all(play_source=play_source)
 
 
 ########## XPLORE API ##########
+
 
 def createRDV(caller, externalNumber=None):
     # global lastname
@@ -3626,7 +3938,13 @@ async def find_patient(caller):
                     + ":00"
                 )
 
-                continue_conversation(f"Parfait, vous avez donc rendez-vous {phrase_creneau} au nom de {caller_info["lastname"]}. Puis-je faire autre chose pour vous ?", caller)
+                speak(
+                    f"Parfait, vous avez donc rendez-vous {phrase_creneau} au nom de {caller_info["lastname"]}.",
+                    caller,
+                )
+
+                await examination_exam_type(caller)
+                return
             else:
                 if increment_error(caller, "rdv"):
                     hang_up(
