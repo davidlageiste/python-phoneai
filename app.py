@@ -2678,6 +2678,7 @@ async def handleResponse():
             task_urgence = asyncio.create_task(get_urgence_async(user_response, exam_type["type_examen_id"]))
             urgence = await task_urgence
             print("urgence", urgence)
+            print("urgence is True:", urgence is True)
             if urgence is True:
                 hang_up(
                     "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
