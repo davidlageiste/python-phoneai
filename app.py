@@ -51,7 +51,6 @@ call_automation_client = CallAutomationClient.from_connection_string(
     "endpoint=https://lyraepreprod.unitedstates.communication.azure.com/;accesskey=1TsDRImMKFvO8AThS7PUAwww6YBxELviBkGsqFHHmiXErS2PRcAzJQQJ99BFACULyCpuAreVAAAAAZCS3Ids"
 )
 
-
 speech_config = speechsdk.SpeechConfig(subscription=SPEECH_KEY, region=SPEECH_REGION)
 
 calls: Dict[str, Call] = {}
@@ -1881,8 +1880,11 @@ async def examination_exam_type(caller):
     )
 
     examination = await task_get_examination
-    if len(examination) > 0: 
-        speak("Avant de raccrocher, je vais vous poser quelques questions qui nous serons utile lors de votre accueil.", caller)
+    if examination is not None and len(examination) > 0:
+        speak(
+            "Avant de raccrocher, je vais vous poser quelques questions qui nous serons utile lors de votre accueil.",
+            caller,
+        )
         calls[caller].rdv["interrogatoire"] = examination
         play_source = text_to_speech("file_source", examination[0], calls[caller])
         start_recognizing(
@@ -1897,9 +1899,7 @@ async def examination_exam_type(caller):
             "Puis-je faire autre chose pour vous ?",
             calls[caller],
         )
-        start_recognizing(
-            "/handleResponse", "end_conversation", play_source, caller
-        )
+        start_recognizing("/handleResponse", "end_conversation", play_source, caller)
     return "ok"
 
 
@@ -2225,7 +2225,9 @@ async def rdv_exam_type():
         )
 
         exam_type = await task_type
-        task_urgence = asyncio.create_task(get_urgence_async(user_response, exam_type["type_examen_id"]))
+        task_urgence = asyncio.create_task(
+            get_urgence_async(user_response, exam_type["type_examen_id"])
+        )
         urgence = await task_urgence
         print("3")
         if urgence == "True":
@@ -2676,7 +2678,9 @@ async def handleResponse():
             call_info["intent"] = intent.lower()
             # speak("ok")
             exam_type = await task_type
-            task_urgence = asyncio.create_task(get_urgence_async(user_response, exam_type["type_examen_id"]))
+            task_urgence = asyncio.create_task(
+                get_urgence_async(user_response, exam_type["type_examen_id"])
+            )
             urgence = await task_urgence
             print("urgence", urgence)
             print("1")
@@ -2799,7 +2803,9 @@ async def handleResponse():
         and operation_context == "end_conversation"
     ):
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        task_urgence = asyncio.create_task(get_urgence_async(user_response, calls[caller].rdv["exam_id"]))
+        task_urgence = asyncio.create_task(
+            get_urgence_async(user_response, calls[caller].rdv["exam_id"])
+        )
         urgence = await task_urgence
         print("2")
         if urgence == "True":
