@@ -1,6 +1,6 @@
 audios = {
     "intro": {
-        "fr": "Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Comment puis-je vous aider aujourd’hui ?",
+        "fr": "Bonjour, je suis Lyraé, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Comment puis-je vous aider aujourd’hui ?",
     },
     "intro_preprod": {
         "fr": "Bonjour, je suis Lyraé en pré-production. Que puis-je faire pour vous ?",
@@ -9,7 +9,7 @@ audios = {
         "fr": "Je n'ai pas compris, pouvez-vous répéter votre prénom ?"
     },
     "repeat_lastname": {
-        "fr": "Je n'ai pas compris, pouvez-vous épeler votre nom de famille à nouveau ?"
+        "fr": "Je n'ai pas compris, pouvez-vous épeler votre nom de famille lettre par lettre à nouveau ?"
     },
     "repeat_birthdate": {
         "fr": "Je n'ai pas compris, quelle est votre date de naissance ?"
@@ -26,17 +26,21 @@ audios = {
     "repeat_exam_type3": {
         "fr": "Désolé, je n'ai pas compris. Pouvez-vous répéter l'intitulé de l'examen pour lequel vous souhaitez prendre rendez-vous ?"
     },
-    "spell_lastname": {"fr": "Pouvez-vous m'épeler votre nom de famille ?"},
-    "spell_lastname2": {"fr": "Désolé, pouvez-vous m'épeler votre nom de famille ?"},
+    "spell_lastname": {
+        "fr": "Pouvez-vous m'épeler votre nom de famille lettre par lettre ?"
+    },
+    "spell_lastname2": {
+        "fr": "Désolé, pouvez-vous m'épeler votre nom de famille lettre par lettre ?"
+    },
     "ask_firstname": {"fr": "Et quel est votre prénom ?"},
-    "ask_firstname_spell": {"fr": "Pouvez-vous épeler votre prénom ?"},
+    "ask_firstname_spell": {"fr": "Pouvez-vous épeler votre prénom lettre par lettre?"},
     "ask_exam_type": {"fr": "Quel examen voulez vous passer ?"},
     "ask_prescription": {"fr": "Avez-vous une ordonnance ?"},
     "ask_birthdate": {
-        "fr": "Pour vous identifier, pouvez-vous me donner votre date de naissance ?"
+        "fr": "Pour vous identifier, pouvez-vous, s'il vous plaît, me donner votre date de naissance avec le mois en toutes lettres, par exemple, le premier janvier mille neuf cent 80"
     },
     "ask_birthdate2": {
-        "fr": "Très bien. Pouvez-vous me donner votre date de naissance ?"
+        "fr": "Très bien. Pouvez-vous me donner votre date de naissance avec le mois en toutes lettres, par exemple, le premier janvier mille neuf cent 80 ?"
     },
     "misunderstand_intent": {
         "fr": "Il semblerait que je n'ai pas compris votre demande, souhaitez-vous prendre un rendez-vous, modifier un rendez-vous, consulter un rendez-vous planifié, annuler un rendez-vous ou obtenir une information ?"
