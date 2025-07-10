@@ -37,7 +37,8 @@ SPEECH_KEY = "CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U
 SPEECH_REGION = "eastus"
 # MONGO_URL = "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
 MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
-APP_URL = "talkpreprodapi.azurewebsites.net"
+APP_URL = "a024-2a01-e0a-e04-1310-e992-1d52-b706-a7df.ngrok-free.app"
+# APP_URL = "talkpreprodapi.azurewebsites.net"
 API_URL = "sparkso-universite.com:8080"
 
 app = Flask(__name__)
@@ -48,7 +49,8 @@ patientCollection = db["patientsDB"]
 rdvCollection = db["rdv"]
 
 call_automation_client = CallAutomationClient.from_connection_string(
-    "endpoint=https://lyraepreprod.unitedstates.communication.azure.com/;accesskey=1TsDRImMKFvO8AThS7PUAwww6YBxELviBkGsqFHHmiXErS2PRcAzJQQJ99BFACULyCpuAreVAAAAAZCS3Ids"
+    "endpoint=https://lyraetalkdentaire.france.communication.azure.com/;accesskey=Bnrta2zbbwgTqmOXafpMk127vJl1MpCN6EbDuvH8n9mBk4Wp5wpSJQQJ99BDACULyCpuAreVAAAAAZCS2i6t"
+    # "endpoint=https://lyraepreprod.unitedstates.communication.azure.com/;accesskey=1TsDRImMKFvO8AThS7PUAwww6YBxELviBkGsqFHHmiXErS2PRcAzJQQJ99BFACULyCpuAreVAAAAAZCS3Ids"
 )
 
 speech_config = speechsdk.SpeechConfig(subscription=SPEECH_KEY, region=SPEECH_REGION)
@@ -307,6 +309,12 @@ def findPatientInDB(query):
     return results
 
 
+def findPatientsInDB(query):
+    results = patientCollection.find(query)
+
+    return results
+
+
 ########## ENTRY POINT ##########
 
 
@@ -424,7 +432,7 @@ async def get_firstname():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        speak("Je ne vous ai pas entendu")
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -534,10 +542,11 @@ async def get_firstname():
                 )
 
     elif type == "Microsoft.Communication.RecognizeFailed":
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -555,7 +564,7 @@ async def get_lastname():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        speak("Je ne vous ai pas entendu")
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -633,10 +642,11 @@ async def get_lastname():
             )
 
     elif type == "Microsoft.Communication.RecognizeFailed":
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -655,7 +665,7 @@ async def get_birthdate():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        speak("Je ne vous ai pas entendu")
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -725,10 +735,11 @@ async def get_birthdate():
             )
 
     elif type == "Microsoft.Communication.RecognizeFailed":
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -752,7 +763,7 @@ async def confirm_creneau():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        speak("Je ne vous ai pas entendu")
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -1043,10 +1054,11 @@ async def confirm_creneau():
             )
 
     elif type == "Microsoft.Communication.RecognizeFailed":
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -1068,7 +1080,7 @@ async def confirm_firstname():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        speak("Je ne vous ai pas entendu")
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -1112,20 +1124,78 @@ async def confirm_firstname():
         model_response = await task_model_response
 
         if model_response == "négative":
-            if increment_error(caller, "firstname"):
-                hang_up(
-                    "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.",
-                    caller,
+
+            patients = list(
+                findPatientsInDB(
+                    {
+                        "dateNaissance": {
+                            "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
+                        },
+                        "nom": {
+                            "$regex": f"^{calls[caller].caller["lastname"]}$",
+                            "$options": "i",  # Case-insensitive
+                        },
+                    }
                 )
-            else:
+            )
+            patients_names = [[x["prenom"], x["nom"]] for x in patients]
+            get_name_similarity = asyncio.create_task(
+                get_name_similarity_async(
+                    user_response=calls[caller].caller["firstname"],
+                    patients_list=patients_names,
+                )
+            )
+            name_similarity = await get_name_similarity
+            if (
+                name_similarity["nom"] is not None
+                and name_similarity["prenom"] is not None
+            ):
+                patient = findPatientInDB(
+                    {
+                        "dateNaissance": {
+                            "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
+                        },
+                        "nom": {
+                            "$regex": f"^{name_similarity["prenom"]}$",
+                            "$options": "i",  # Case-insensitive
+                        },
+                        "prenom": {
+                            "$regex": f"^{name_similarity["nom"]}$",
+                            "$options": "i",  # Case-insensitive
+                        },
+                    }
+                )
+                calls[caller].patient = patient
+                date_litterale = date_vers_litteral(calls[caller].caller["birthdate"])
                 play_source = text_to_speech(
                     "file_source",
-                    "Pouvez-vous s'il vous plaît répéter votre prénom en l'épelant?",
+                    f"{patient.get('nom')} {patient.get('prenom')} né {date_litterale} c'est bien vous ?",
                     calls[caller],
                 )
+                calls[caller].caller["lastname"] = patient.get("nom")
+                calls[caller].caller["firstname"] = patient.get("prenom")
                 start_recognizing(
-                    "/get_firstname", "get_firstname", play_source, caller
+                    callback_url="/confirm_identity",
+                    play_source=play_source,
+                    context="confirm_identity",
+                    caller=caller,
                 )
+
+            else:
+                if increment_error(caller, "firstname"):
+                    hang_up(
+                        "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.",
+                        caller,
+                    )
+                else:
+                    play_source = text_to_speech(
+                        "file_source",
+                        "Pouvez-vous s'il vous plaît répéter votre prénom en l'épelant?",
+                        calls[caller],
+                    )
+                    start_recognizing(
+                        "/get_firstname", "get_firstname", play_source, caller
+                    )
 
         elif model_response == "positive":
             # speak("Très bien, merci")
@@ -1151,10 +1221,11 @@ async def confirm_firstname():
             )
 
     elif type == "Microsoft.Communication.RecognizeFailed":
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -1175,7 +1246,7 @@ async def confirm_lastname():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        speak("Je ne vous ai pas entendu")
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -1216,21 +1287,77 @@ async def confirm_lastname():
         model_response = await task_model_response
 
         if model_response == "négative":
-            if increment_error(caller, "lastname"):
-                play_source = text_to_speech(
-                    "fixed_file_source", "misunderstand_unfortunately", calls[caller]
-                )
-                call_automation_client.get_call_connection(
-                    calls[caller].call["call_connection_id"]
-                ).play_media_to_all(
-                    play_source=play_source, operation_context="hang_up"
-                )
-                return jsonify({"status": "success"})
 
-            play_source = text_to_speech(
-                "fixed_file_source", "spell_lastname2", calls[caller]
+            patients = list(
+                findPatientsInDB(
+                    {
+                        "dateNaissance": {
+                            "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
+                        }
+                    }
+                )
             )
-            start_recognizing("/get_lastname", "get_lastname", play_source, caller)
+            patients_names = [[x["nom"], x["prenom"]] for x in patients]
+            get_name_similarity = asyncio.create_task(
+                get_name_similarity_async(
+                    user_response=calls[caller].caller["lastname"],
+                    patients_list=patients_names,
+                )
+            )
+            name_similarity = await get_name_similarity
+            if (
+                name_similarity["nom"] is not None
+                and name_similarity["prenom"] is not None
+            ):
+                patient = findPatientInDB(
+                    {
+                        "dateNaissance": {
+                            "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
+                        },
+                        "nom": {
+                            "$regex": f"^{name_similarity["nom"]}$",
+                            "$options": "i",  # Case-insensitive
+                        },
+                        "prenom": {
+                            "$regex": f"^{name_similarity["prenom"]}$",
+                            "$options": "i",  # Case-insensitive
+                        },
+                    }
+                )
+                calls[caller].patient = patient
+                date_litterale = date_vers_litteral(calls[caller].caller["birthdate"])
+                play_source = text_to_speech(
+                    "file_source",
+                    f"{patient.get('nom')} {patient.get('prenom')} né {date_litterale} c'est bien vous ?",
+                    calls[caller],
+                )
+                calls[caller].caller["lastname"] = patient.get("nom")
+                calls[caller].caller["firstname"] = patient.get("prenom")
+                start_recognizing(
+                    callback_url="/confirm_identity",
+                    play_source=play_source,
+                    context="confirm_identity",
+                    caller=caller,
+                )
+
+            else:
+                if increment_error(caller, "lastname"):
+                    play_source = text_to_speech(
+                        "fixed_file_source",
+                        "misunderstand_unfortunately",
+                        calls[caller],
+                    )
+                    call_automation_client.get_call_connection(
+                        calls[caller].call["call_connection_id"]
+                    ).play_media_to_all(
+                        play_source=play_source, operation_context="hang_up"
+                    )
+                    return jsonify({"status": "success"})
+
+                play_source = text_to_speech(
+                    "fixed_file_source", "spell_lastname2", calls[caller]
+                )
+                start_recognizing("/get_lastname", "get_lastname", play_source, caller)
 
         elif model_response == "positive":
             count = countPatientInDB(
@@ -1301,10 +1428,11 @@ async def confirm_lastname():
             )
             return jsonify({"success": "success"})
     elif type == "Microsoft.Communication.RecognizeFailed":
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -1324,7 +1452,7 @@ async def confirm_annulation():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        speak("Je ne vous ai pas entendu")
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -1402,10 +1530,11 @@ async def confirm_annulation():
             )
             start_recognizing("/confirm_annulation", "annulation", play_source, caller)
     elif type == "Microsoft.Communication.RecognizeFailed":
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -1425,7 +1554,7 @@ async def confirm_birthdate():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        speak("Je ne vous ai pas entendu")
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -1498,7 +1627,7 @@ async def confirm_birthdate():
                 }
             )
 
-            if count > 1 or count == 0:
+            if count == 0:
                 play_source = text_to_speech(
                     "fixed_file_source", "spell_lastname", calls[caller]
                 )
@@ -1509,7 +1638,7 @@ async def confirm_birthdate():
                     caller,
                     end_silence_timeout=1,
                 )
-            else:
+            elif count == 1:
                 patient = findPatientInDB(
                     {
                         "dateNaissance": {
@@ -1532,6 +1661,15 @@ async def confirm_birthdate():
                     context="confirm_identity",
                     caller=caller,
                 )
+            else:
+                patients = findPatientsInDB(
+                    {
+                        # "dateNaissance": {
+                        #     "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
+                        # }
+                    }
+                )
+                print(patients)
 
         else:
             date_litterale = date_vers_litteral(calls[caller].caller["birthdate"])
@@ -1551,10 +1689,11 @@ async def confirm_birthdate():
             )
 
     elif type == "Microsoft.Communication.RecognizeFailed":
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -1571,7 +1710,7 @@ async def confirm_call_intent():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        speak("Je ne vous ai pas entendu")
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -1707,10 +1846,11 @@ async def confirm_call_intent():
         )
 
     elif type == "Microsoft.Communication.RecognizeFailed":
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -1731,7 +1871,7 @@ async def confirm_identity():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        speak("Je ne vous ai pas entendu")
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -1805,10 +1945,11 @@ async def confirm_identity():
             )
 
     elif type == "Microsoft.Communication.RecognizeFailed":
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -1826,7 +1967,7 @@ async def transfer_to_secretary():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        speak("Je ne vous ai pas entendu")
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -1856,10 +1997,11 @@ async def transfer_to_secretary():
                 "/transfer_to_secretary", "transfer_to_secretary", play_source, caller
             )
     elif type == "Microsoft.Communication.RecognizeFailed":
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -1910,7 +2052,7 @@ async def examination_response():
         return jsonify({"success": "success"})
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        speak("Je ne vous ai pas entendu")
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -1990,7 +2132,7 @@ async def module_informatif():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        speak("Je ne vous ai pas entendu")
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -2025,10 +2167,11 @@ async def module_informatif():
         start_recognizing("/handleResponse", "end_conversation", play_source, caller)
 
     elif type == "Microsoft.Communication.RecognizeFailed":
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -2049,7 +2192,7 @@ async def confirm_rdv():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        speak("Je ne vous ai pas entendu")
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -2150,10 +2293,11 @@ async def confirm_rdv():
             start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source, caller)
 
     elif type == "Microsoft.Communication.RecognizeFailed":
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -2172,7 +2316,7 @@ async def rdv_exam_type():
 
     caller, operation_context, type, user_response = get_request_infos(request)
     if user_response == "":
-        speak("Je ne vous ai pas entendu")
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -2288,10 +2432,11 @@ async def rdv_exam_type():
             )
 
     elif type == "Microsoft.Communication.RecognizeFailed":
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -2317,7 +2462,7 @@ async def get_creneaux_choice():
     caller, operation_context, type, user_response = get_request_infos(request)
 
     if user_response == "":
-        speak("Je ne vous ai pas entendu")
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -2561,10 +2706,11 @@ async def get_creneaux_choice():
                 )
 
     elif type == "Microsoft.Communication.RecognizeFailed":
+        speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
-            f"Je ne vous ai pas entendu. {calls[caller].last_text_to_speech['play_source']}",
+            calls[caller].last_text_to_speech["play_source"],
             caller,
             "keyboard",
         )
@@ -3145,6 +3291,23 @@ async def get_lastname_async(user_response):
                 data = await response.json()
                 print("lastname", data)
                 return data.get("response", "Pas de réponse trouvée.")
+    except aiohttp.ClientError as e:
+        print(f"Erreur lors de l'appel au modèle : {e}")
+        return "Erreur lors de la communication avec le modèle."
+
+
+async def get_name_similarity_async(user_response, patients_list):
+    url = "https://lyrae-talk-functions.azurewebsites.net/api/get_prenom_similarity?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
+
+    headers = {"Content-Type": "application/json"}
+
+    payload = {"text": user_response, "patient_list": patients_list}
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers, json=payload) as response:
+                response.raise_for_status()
+                data = await response.json()
+                return data
     except aiohttp.ClientError as e:
         print(f"Erreur lors de l'appel au modèle : {e}")
         return "Erreur lors de la communication avec le modèle."
