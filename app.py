@@ -37,8 +37,7 @@ SPEECH_KEY = "CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U
 SPEECH_REGION = "eastus"
 # MONGO_URL = "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
 MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
-APP_URL = "a024-2a01-e0a-e04-1310-e992-1d52-b706-a7df.ngrok-free.app"
-# APP_URL = "talkpreprodapi.azurewebsites.net"
+APP_URL = "talkpreprodapi.azurewebsites.net"
 API_URL = "sparkso-universite.com:8080"
 
 app = Flask(__name__)
@@ -49,8 +48,7 @@ patientCollection = db["patientsDB"]
 rdvCollection = db["rdv"]
 
 call_automation_client = CallAutomationClient.from_connection_string(
-    "endpoint=https://lyraetalkdentaire.france.communication.azure.com/;accesskey=Bnrta2zbbwgTqmOXafpMk127vJl1MpCN6EbDuvH8n9mBk4Wp5wpSJQQJ99BDACULyCpuAreVAAAAAZCS2i6t"
-    # "endpoint=https://lyraepreprod.unitedstates.communication.azure.com/;accesskey=1TsDRImMKFvO8AThS7PUAwww6YBxELviBkGsqFHHmiXErS2PRcAzJQQJ99BFACULyCpuAreVAAAAAZCS3Ids"
+    "endpoint=https://lyraepreprod.unitedstates.communication.azure.com/;accesskey=1TsDRImMKFvO8AThS7PUAwww6YBxELviBkGsqFHHmiXErS2PRcAzJQQJ99BFACULyCpuAreVAAAAAZCS3Ids"
 )
 
 speech_config = speechsdk.SpeechConfig(subscription=SPEECH_KEY, region=SPEECH_REGION)
@@ -1627,7 +1625,7 @@ async def confirm_birthdate():
                 }
             )
 
-            if count == 0:
+            if count > 1 or count == 0:
                 play_source = text_to_speech(
                     "fixed_file_source", "spell_lastname", calls[caller]
                 )
@@ -1638,7 +1636,7 @@ async def confirm_birthdate():
                     caller,
                     end_silence_timeout=1,
                 )
-            elif count == 1:
+            else:
                 patient = findPatientInDB(
                     {
                         "dateNaissance": {
@@ -1661,15 +1659,6 @@ async def confirm_birthdate():
                     context="confirm_identity",
                     caller=caller,
                 )
-            else:
-                patients = findPatientsInDB(
-                    {
-                        # "dateNaissance": {
-                        #     "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
-                        # }
-                    }
-                )
-                print(patients)
 
         else:
             date_litterale = date_vers_litteral(calls[caller].caller["birthdate"])
