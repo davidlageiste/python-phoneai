@@ -20,6 +20,7 @@ from typing import Dict
 from num2words import num2words
 import json
 import random
+from itertools import zip_longest
 
 from utils.tts import (
     text_to_speech,
@@ -2037,6 +2038,7 @@ async def examination_exam_type(caller):
 @app.route("/examination_response", methods=["POST"])
 async def examination_response():
     global calls
+
     if not request.json:
         return jsonify({"success": "success"})
     caller, operation_context, type, user_response = get_request_infos(request)
@@ -2077,7 +2079,11 @@ async def examination_response():
                 "keyboard",
             )
             return jsonify({"success": "success"})
+        
+
         question = request.args.get("question")
+        rdv_info = calls[caller].rdv
+        
         if int(question) < len(calls[caller].rdv["interrogatoire"]):
             play_source = text_to_speech(
                 "file_source",
@@ -2104,6 +2110,7 @@ async def examination_response():
                 "Très bien, merci beaucoup pour ces précisions, j'ai fini. Puis-je faire autre chose pour vous ?",
                 calls[caller],
             )
+            addCommentaireRDV(rdv_info["id_examen"], caller)
             start_recognizing(
                 "/handleResponse", "end_conversation", play_source, caller
             )
@@ -4010,6 +4017,36 @@ def deleteRDV(caller):
         return "Error occurred while creating RDV"
 
 
+def addCommentaireRDV(idExamen, caller):
+    global calls
+    rdv_info = calls[caller].rdv
+
+    url = f"https://{API_URL}/api/addCommentaireRDV"
+
+    lines = []
+    for a, b in zip_longest(rdv_info["interrogatoire"], rdv_info["reponses_interrogatoire"], fillvalue=""):
+        lines.append(a)
+        lines.append(b)
+        lines.append("")  # ligne vide pour espacer
+
+    result = "\n".join(lines)
+
+    payload = {
+        "idExamen": idExamen,
+        "commentaire": result
+    }
+    
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()  # Raises HTTPError for bad status
+        data = response.json()
+        print("Ajout de commentaire: ", data)
+        return data
+
+    except requests.RequestException as e:
+        print("Request failed:", e)
+        return "Error occurred while adding commentary"
+
 def get_sous_type_exam(type_examen):
     url = "https://sandbox.xplore.fr:20443/XaPriseRvGateway/Application/api/External/GetListeExamensFromTypeExamen"
 
@@ -4077,6 +4114,7 @@ async def find_patient(caller):
             rdv = createRDV(caller)
 
             if rdv.get("success") is True:
+                calls[caller].rdv["id_examen"] = rdv.get("data").get("numeroExamen")
 
                 rdvCollection.insert_one(
                     {

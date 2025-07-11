@@ -61,8 +61,9 @@ class Call:
             "annulation_phrase": None,
             "patient_rdv": None,
             "current_creneau_proposition": 0,
-            "interrogatoire": None,
-            "reponses_interrogatoire": None
+            "interrogatoire": None,             # Après que le RDV soit créé, questions à propos de l'exam
+            "reponses_interrogatoire": None,    # Après que le RDV soit créé, réponses aux questions à propos de l'exam
+            "id_examen": None                   # Id du dernier rendez-vous créé par téléphone
         }
 
         # Errors
