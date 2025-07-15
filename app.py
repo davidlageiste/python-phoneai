@@ -1,3 +1,4 @@
+import os
 from azure.communication.callautomation import (
     CallAutomationClient,
     RecognizeInputType,
@@ -39,7 +40,7 @@ SPEECH_REGION = "eastus"
 # MONGO_URL = "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
 MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
 APP_URL = "talkpreprodapi.azurewebsites.net"
-API_URL = "sparkso-universite.com:8080"
+API_URL = "40.66.34.174"
 
 app = Flask(__name__)
 
@@ -48,8 +49,9 @@ db = client["neuracorp"]
 patientCollection = db["patientsDB"]
 rdvCollection = db["rdv"]
 
+connection_string = os.getenv("AZURE_COMMUNICATION_CONNECTION_STRING")
 call_automation_client = CallAutomationClient.from_connection_string(
-    "endpoint=https://lyraepreprod.unitedstates.communication.azure.com/;accesskey=1TsDRImMKFvO8AThS7PUAwww6YBxELviBkGsqFHHmiXErS2PRcAzJQQJ99BFACULyCpuAreVAAAAAZCS3Ids"
+    connection_string
 )
 
 speech_config = speechsdk.SpeechConfig(subscription=SPEECH_KEY, region=SPEECH_REGION)
