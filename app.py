@@ -40,7 +40,7 @@ SPEECH_REGION = "eastus"
 # MONGO_URL = "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
 MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
 APP_URL = "talkpreprodapi.azurewebsites.net"
-API_URL = "40.66.34.174"
+API_URL = "40.66.34.174:8080"
 
 app = Flask(__name__)
 
@@ -52,7 +52,7 @@ rdvCollection = db["rdv"]
 connection_string = os.getenv("AZURE_COMMUNICATION_CONNECTION_STRING")
 call_automation_client = CallAutomationClient.from_connection_string(
     connection_string
-)
+)   
 
 speech_config = speechsdk.SpeechConfig(subscription=SPEECH_KEY, region=SPEECH_REGION)
 
