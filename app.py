@@ -28,7 +28,7 @@ from utils.tts import (
     generate_text_to_speech,
     text_to_speech_spell_confirm,
 )
-from utils.exam import get_client_exam_code
+from utils.exam import get_client_exam_type, get_client_exam_code
 from utils.recorded_audio import recorded_audios_keys, keyboard_sounds, click_sounds
 from utils.Call import Call
 
@@ -50,9 +50,7 @@ patientCollection = db["patientsDB"]
 rdvCollection = db["rdv"]
 
 connection_string = os.getenv("AZURE_COMMUNICATION_CONNECTION_STRING")
-call_automation_client = CallAutomationClient.from_connection_string(
-    connection_string
-)   
+call_automation_client = CallAutomationClient.from_connection_string(connection_string)
 
 speech_config = speechsdk.SpeechConfig(subscription=SPEECH_KEY, region=SPEECH_REGION)
 
@@ -2081,11 +2079,10 @@ async def examination_response():
                 "keyboard",
             )
             return jsonify({"success": "success"})
-        
 
         question = request.args.get("question")
         rdv_info = calls[caller].rdv
-        
+
         if int(question) < len(calls[caller].rdv["interrogatoire"]):
             play_source = text_to_speech(
                 "file_source",
@@ -3355,13 +3352,15 @@ async def get_creneaux_async(sous_type, exam_type, caller, date_start=None):
     headers = {"Content-Type": "application/json"}
 
     if exam_type == "ECHOGRAPHIE":
-        exam_type = "EC"
+        exam_type = get_client_exam_type(calls[caller].call["called"], "US")
     elif exam_type == "RADIO":
-        exam_type = "RX"
+        exam_type = get_client_exam_type(calls[caller].call["called"], "RX")
     elif exam_type == "SCANNER":
-        exam_type = "CT"
+        exam_type = get_client_exam_type(calls[caller].call["called"], "CT")
     elif exam_type == "Mammographie":
-        exam_type = "MG"
+        exam_type = get_client_exam_type(calls[caller].call["called"], "MG")
+    elif exam_type == "IRM":
+        exam_type = get_client_exam_type(calls[caller].call["called"], "MR")
 
     # Get current date and time
     now = datetime.now()
@@ -4026,18 +4025,17 @@ def addCommentaireRDV(idExamen, caller):
     url = f"https://{API_URL}/api/addCommentaireRDV"
 
     lines = []
-    for a, b in zip_longest(rdv_info["interrogatoire"], rdv_info["reponses_interrogatoire"], fillvalue=""):
+    for a, b in zip_longest(
+        rdv_info["interrogatoire"], rdv_info["reponses_interrogatoire"], fillvalue=""
+    ):
         lines.append(a)
         lines.append(b)
         lines.append("")  # ligne vide pour espacer
 
     result = "\n".join(lines)
 
-    payload = {
-        "idExamen": idExamen,
-        "commentaire": result
-    }
-    
+    payload = {"idExamen": idExamen, "commentaire": result}
+
     try:
         response = requests.post(url, json=payload)
         response.raise_for_status()  # Raises HTTPError for bad status
@@ -4048,6 +4046,7 @@ def addCommentaireRDV(idExamen, caller):
     except requests.RequestException as e:
         print("Request failed:", e)
         return "Error occurred while adding commentary"
+
 
 def get_sous_type_exam(type_examen):
     url = "https://sandbox.xplore.fr:20443/XaPriseRvGateway/Application/api/External/GetListeExamensFromTypeExamen"
