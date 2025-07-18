@@ -642,7 +642,7 @@ async def get_lastname():
 
         else:
             speak(
-                f"{calls[caller].caller["lastname"]}",
+                f"{calls[caller].caller['lastname']}",
                 caller,
                 speed=0.82,
             )
