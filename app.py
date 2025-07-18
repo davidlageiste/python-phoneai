@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 from azure.communication.callautomation import (
     CallAutomationClient,
     RecognizeInputType,
@@ -31,6 +32,8 @@ from utils.tts import (
 from utils.exam import get_client_exam_code
 from utils.recorded_audio import recorded_audios_keys, keyboard_sounds, click_sounds
 from utils.Call import Call
+
+load_dotenv()
 
 COGNITIVE_SERVICE_ENDPOINT = (
     "https://lyraecognitivesservicesus.cognitiveservices.azure.com"
