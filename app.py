@@ -2362,7 +2362,7 @@ async def rdv_exam_type():
         and operation_context == "rdv_exam_type"
     ):
         if rdv_info["exam_id"] is not None:
-            user_response = f"C'est pour un {rdv_info["exam_id"]} {user_response}"
+            user_response = f"C'est pour un {rdv_info['exam_id']} {user_response}"
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
 
         # pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
