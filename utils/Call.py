@@ -118,7 +118,7 @@ TALK
     def store_archive(self, caller):
         content = self.to_string_archive(caller)
         upload_call_recap(
-            f"{caller}-{str(self.updated_at).replace(" ", "-")}.txt", "calls", content
+            f"{caller}-{str(self.updated_at).replace(' ', '-')}.txt", "calls", content
         )
 
     def __str__(self):
