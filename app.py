@@ -27,7 +27,7 @@ from itertools import zip_longest
 from utils.tts import (
     text_to_speech,
     generate_text_to_speech,
-    text_to_speech_spell_confirm,
+    text_to_speech_spell_confirm
 )
 from utils.exam import get_client_exam_type, get_client_exam_code
 from utils.recorded_audio import recorded_audios_keys, keyboard_sounds, click_sounds
@@ -4447,6 +4447,11 @@ async def find_patient(caller):
                 "/transfer_to_secretary", "transfer_unknown", play_source, caller
             )
 
+
+
+@app.route("/ping", methods=["POST"])
+async def ping():
+    return jsonify({"pong"})
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -185,7 +185,7 @@ def text_to_speech_spell_confirm(
 
     if call:
         call.add_step(
-            f"Lyrae: spell({text}){', c\'est bien ça ?' if confirm == True else ''}"
+            "Lyrae: spell({}){}".format(text, ", c'est bien ça ?" if confirm else '')
         )
 
     for letter in text:
