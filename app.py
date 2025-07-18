@@ -1170,14 +1170,14 @@ async def confirm_firstname():
                 patient = findPatientInDB(
                     {
                         "dateNaissance": {
-                            "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
+                            "$regex": f"^{calls[caller].caller['birthdate'] + 'T00:00:00'}$"
                         },
                         "nom": {
-                            "$regex": f"^{name_similarity["prenom"]}$",
+                            "$regex": f"^{name_similarity['prenom']}$",
                             "$options": "i",  # Case-insensitive
                         },
                         "prenom": {
-                            "$regex": f"^{name_similarity["nom"]}$",
+                            "$regex": f"^{name_similarity['nom']}$",
                             "$options": "i",  # Case-insensitive
                         },
                     }
@@ -1221,7 +1221,7 @@ async def confirm_firstname():
 
         else:
             speak(
-                f"Je n'ai pas compris, {calls[caller].caller["firstname"]}",
+                f"Je n'ai pas compris, {calls[caller].caller['firstname']}",
                 caller,
                 speed=0.82,
             )
@@ -1309,7 +1309,7 @@ async def confirm_lastname():
                 findPatientsInDB(
                     {
                         "dateNaissance": {
-                            "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
+                            "$regex": f"^{calls[caller].caller['birthdate'] + 'T00:00:00'}$"
                         }
                     }
                 )
@@ -1329,14 +1329,14 @@ async def confirm_lastname():
                 patient = findPatientInDB(
                     {
                         "dateNaissance": {
-                            "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
+                            "$regex": f"^{calls[caller].caller['birthdate'] + 'T00:00:00'}$"
                         },
                         "nom": {
-                            "$regex": f"^{name_similarity["nom"]}$",
+                            "$regex": f"^{name_similarity['nom']}$",
                             "$options": "i",  # Case-insensitive
                         },
                         "prenom": {
-                            "$regex": f"^{name_similarity["prenom"]}$",
+                            "$regex": f"^{name_similarity['prenom']}$",
                             "$options": "i",  # Case-insensitive
                         },
                     }
