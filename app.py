@@ -53,7 +53,6 @@ db = client["neuracorp"]
 patientCollection = db["patientsDB"]
 rdvCollection = db["rdv"]
 
-connection_string = os.getenv("AZURE_COMMUNICATION_CONNECTION_STRING")
 call_automation_client = CallAutomationClient.from_connection_string(
     "endpoint=https://lyraepreprod.unitedstates.communication.azure.com/;accesskey=1TsDRImMKFvO8AThS7PUAwww6YBxELviBkGsqFHHmiXErS2PRcAzJQQJ99BFACULyCpuAreVAAAAAZCS3Ids"
 )
