@@ -1385,10 +1385,10 @@ async def confirm_lastname():
             count = countPatientInDB(
                 {
                     "dateNaissance": {
-                        "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
+                        "$regex": f"^{calls[caller].caller['birthdate'] + 'T00:00:00'}$"
                     },
                     "nom": {
-                        "$regex": f"^{calls[caller].caller["lastname"]}$",
+                        "$regex": f"^{calls[caller].caller['lastname']}$",
                         "$options": "i",  # Case-insensitive
                     },
                 }
