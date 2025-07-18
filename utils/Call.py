@@ -105,11 +105,11 @@ class Call:
     def to_string_archive(self, caller) -> str:
         steps_str = "\n".join(self.steps)
         return f"""***********
-{caller} / {self.updated_at} / intent: {self.call["intent"]}
+{caller} / {self.updated_at} / intent: {self.call['intent']}
 
 CALLER INFO
 birthdate / lastname / firstname / email
-{self.caller["birthdate"]} / {self.caller["lastname"]} / {self.caller["firstname"]} / {self.caller["email" ]}
+{self.caller['birthdate']} / {self.caller['lastname']} / {self.caller['firstname']} / {self.caller['email']}
 
 TALK
 {steps_str}\n\n
