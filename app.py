@@ -2257,6 +2257,9 @@ async def confirm_rdv():
             # play_source = text_to_speech("file_source", "Pouvez-vous me lire le motif de l'examen présent sur votre ordonnance ?", calls[caller])
             # start_recognizing("/get_motif", "get_motif", play_source, caller)
 
+            # play_source = text_to_speech("file_source", "Pouvez-vous me lire le motif de l'examen présent sur votre ordonnance ?", calls[caller])
+            # start_recognizing("/get_motif", "get_motif", play_source, caller)
+
             task_creneaux = asyncio.create_task(
                 get_creneaux_async(
                     sous_type=calls[caller].rdv["sous_type_id"],
@@ -2264,6 +2267,7 @@ async def confirm_rdv():
                     caller=caller,
                 )
             )
+
 
             speak("Je regarde les disponibilités, un instant...", caller)
 
@@ -4139,6 +4143,9 @@ async def find_patient(caller):
                     f"Parfait, vous avez donc rendez-vous {phrase_creneau} au nom de {caller_info["lastname"]}.",
                     caller,
                 )
+
+                await examination_exam_type(caller)
+                return
 
                 await examination_exam_type(caller)
                 return
