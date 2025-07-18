@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 from azure.communication.callautomation import (
     CallAutomationClient,
     RecognizeInputType,
@@ -31,6 +32,8 @@ from utils.tts import (
 from utils.exam import get_client_exam_type, get_client_exam_code
 from utils.recorded_audio import recorded_audios_keys, keyboard_sounds, click_sounds
 from utils.Call import Call
+
+load_dotenv()
 
 COGNITIVE_SERVICE_ENDPOINT = (
     "https://lyraecognitivesservicesus.cognitiveservices.azure.com"
@@ -297,6 +300,16 @@ def hang_up(text, caller):
     ).play_media_to_all(play_source=play_source, operation_context="hang_up")
 
 
+def transfer_call(text, caller):
+    if calls[caller].call["called"] == "33801150082":
+        hang_up(
+            f"{text}. Le secrétariat n'est actuellement pas disponible, merci de rappeler à ce numéro à partir de 14 heures.",
+            caller,
+        )
+    else:
+        hang_up(f"{text}. Je vous transfère vers une secrétaire", caller)
+
+
 def countPatientInDB(query):
     count = patientCollection.count_documents(query)
     return count
@@ -459,8 +472,8 @@ async def get_firstname():
 
         if user_response == "":
             if increment_error(caller, "firstname"):
-                hang_up(
-                    "Il semblerait que nous n'arrivons pas à nous comprendre. Je vous transfère vers une secrétaire.",
+                transfer_call(
+                    "Il semblerait que nous n'arrivons pas à nous comprendre",
                     caller,
                 )
 
@@ -481,8 +494,8 @@ async def get_firstname():
             speak("Très bien", caller)
             human_orientation = await task_human_orientation
             if human_orientation is True:
-                hang_up(
-                    "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+                transfer_call(
+                    "Vous avez demandé a parler avec une secrétaire",
                     caller,
                 )
                 return jsonify({"success": "success"})
@@ -509,8 +522,8 @@ async def get_firstname():
                 or clean_firstname == "Erreur lors de la communication avec le modèle."
             ):
                 if increment_error(caller, "firstname"):
-                    hang_up(
-                        "Il semblerait que nous n'arrivons pas à nous comprendre. Je vous transfère vers une secrétaire.",
+                    transfer_call(
+                        "Il semblerait que nous n'arrivons pas à nous comprendre.",
                         caller,
                     )
                 play_source = text_to_speech(
@@ -595,8 +608,8 @@ async def get_lastname():
         speak("Merci", caller)
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            hang_up(
-                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+            transfer_call(
+                "Vous avez demandé a parler avec une secrétaire",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -608,15 +621,20 @@ async def get_lastname():
 
         if clean_name is None:
             if increment_error(caller, "lastname"):
-                play_source = text_to_speech(
-                    "fixed_file_source", "misunderstand_unfortunately", calls[caller]
+                transfer_call(
+                    "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre.",
+                    caller,
                 )
+                # play_source = text_to_speech(
+                #     "fixed_file_source", "misunderstand_unfortunately", calls[caller]
+                # )
 
-                call_automation_client.get_call_connection(
-                    calls[caller].call["call_connection_id"]
-                ).play_media_to_all(
-                    play_source=play_source, operation_context="hang_up"
-                )
+                # call_automation_client.get_call_connection(
+                #     calls[caller].call["call_connection_id"]
+                # ).play_media_to_all(
+                #     play_source=play_source, operation_context="hang_up"
+                # )
+                return jsonify({"status": "success"})
             play_source = text_to_speech(
                 "fixed_file_source", "repeat_lastname", calls[caller]
             )
@@ -683,8 +701,8 @@ async def get_birthdate():
         )
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            hang_up(
-                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+            transfer_call(
+                "Vous avez demandé a parler avec une secrétaire",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -784,8 +802,8 @@ async def confirm_creneau():
         )
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            hang_up(
-                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+            transfer_call(
+                "Vous avez demandé a parler avec une secrétaire",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -916,8 +934,8 @@ async def confirm_creneau():
         )
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            hang_up(
-                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+            transfer_call(
+                "Vous avez demandé a parler avec une secrétaire",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -1113,8 +1131,8 @@ async def confirm_firstname():
         speak("ok", caller)
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            hang_up(
-                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+            transfer_call(
+                "Vous avez demandé a parler avec une secrétaire",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -1182,8 +1200,8 @@ async def confirm_firstname():
 
             else:
                 if increment_error(caller, "firstname"):
-                    hang_up(
-                        "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.",
+                    transfer_call(
+                        "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre.",
                         caller,
                     )
                 else:
@@ -1276,8 +1294,8 @@ async def confirm_lastname():
         speak("ok", caller)
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            hang_up(
-                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+            transfer_call(
+                "Vous avez demandé a parler avec une secrétaire",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -1341,16 +1359,21 @@ async def confirm_lastname():
 
             else:
                 if increment_error(caller, "lastname"):
-                    play_source = text_to_speech(
-                        "fixed_file_source",
-                        "misunderstand_unfortunately",
-                        calls[caller],
+                    transfer_call(
+                        "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre.",
+                        caller,
                     )
-                    call_automation_client.get_call_connection(
-                        calls[caller].call["call_connection_id"]
-                    ).play_media_to_all(
-                        play_source=play_source, operation_context="hang_up"
-                    )
+
+                    # play_source = text_to_speech(
+                    #     "fixed_file_source",
+                    #     "misunderstand_unfortunately",
+                    #     calls[caller],
+                    # )
+                    # call_automation_client.get_call_connection(
+                    #     calls[caller].call["call_connection_id"]
+                    # ).play_media_to_all(
+                    #     play_source=play_source, operation_context="hang_up"
+                    # )
                     return jsonify({"status": "success"})
 
                 play_source = text_to_speech(
@@ -1471,8 +1494,8 @@ async def confirm_annulation():
         speak("ok", caller)
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            hang_up(
-                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+            transfer_call(
+                "Vous avez demandé a parler avec une secrétaire",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -1514,8 +1537,8 @@ async def confirm_annulation():
                     "/handleResponse", "end_conversation", play_source, caller
                 )
             else:
-                hang_up(
-                    "J'ai eu un problème lors de la suppression de votre rendez-vous. Je vous transfère vers une secrétaire.",
+                transfer_call(
+                    "J'ai eu un problème lors de la suppression de votre rendez-vous.",
                     caller,
                 )
         else:
@@ -1572,8 +1595,8 @@ async def confirm_birthdate():
         )
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            hang_up(
-                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+            transfer_call(
+                "Vous avez demandé a parler avec une secrétaire",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -1600,16 +1623,21 @@ async def confirm_birthdate():
 
         if model_response == "négative":
             if increment_error(caller, "birthdate"):
-                play_source = text_to_speech(
-                    "fixed_file_source",
-                    "misunderstand_unfortunately",
-                    calls[caller],
+                transfer_call(
+                    "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre.",
+                    caller,
                 )
-                call_automation_client.get_call_connection(
-                    calls[caller].call["call_connection_id"]
-                ).play_media_to_all(
-                    play_source=play_source, operation_context="hang_up"
-                )
+                # play_source = text_to_speech(
+                #     "fixed_file_source",
+                #     "misunderstand_unfortunately",
+                #     calls[caller],
+                # )
+                # call_automation_client.get_call_connection(
+                #     calls[caller].call["call_connection_id"]
+                # ).play_media_to_all(
+                #     play_source=play_source, operation_context="hang_up"
+                # )
+                return jsonify({"status": "success"})
 
             play_source = text_to_speech(
                 "fixed_file_source", "repeat_birthdate2", calls[caller]
@@ -1722,8 +1750,8 @@ async def confirm_call_intent():
         )
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            hang_up(
-                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+            transfer_call(
+                "Vous avez demandé a parler avec une secrétaire",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -1790,8 +1818,8 @@ async def confirm_call_intent():
 
         else:
             if increment_error(caller, "intent"):
-                hang_up(
-                    "Pardonnez moi, il semblerait que je n'arrive pas à vous comprendre. Je vous transfère vers une secrétaire.",
+                transfer_call(
+                    "Pardonnez moi, il semblerait que je n'arrive pas à vous comprendre.",
                     caller,
                 )
 
@@ -1817,8 +1845,8 @@ async def confirm_call_intent():
     if type == "Microsoft.Communication.RecognizeFailed":
         calls[caller].errors["intent"] += 1
         if calls[caller].errors["intent"] > 2:
-            hang_up(
-                "Pardonnez moi, il semblerait que je n'arrive pas à vous comprendre. Je vous transfère vers une secrétaire.",
+            transfer_call(
+                "Pardonnez moi, il semblerait que je n'arrive pas à vous comprendre.",
                 caller,
             )
 
@@ -1880,8 +1908,8 @@ async def confirm_identity():
         )
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            hang_up(
-                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+            transfer_call(
+                "Vous avez demandé a parler avec une secrétaire",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -1909,8 +1937,8 @@ async def confirm_identity():
 
         if model_response == "négative":
             calls[caller].patient = None
-            hang_up(
-                "Désolé, je ne peux pas donner de rendez-vous à un patient qui n'est pas déjà connu du cabinet. Vous êtes un nouveau patient : Je vous propose de vous transférer à la secrétaire",
+            transfer_call(
+                "Désolé, je ne peux ptransfer_calls donner de rendez-vous à un ptransfer_calltient qui n'est pas déjà connu du cabinet. Vous êtes un nouveau patient : Je vous propose de vous transférer à la secrétaire",
                 caller,
             )
         elif model_response == "positive":
@@ -1976,7 +2004,7 @@ async def transfer_to_secretary():
         if model_response == "négative":
             hang_up("A bientôt j'espère !", caller)
         elif model_response == "positive":
-            hang_up("Je transmets votre appel", caller)
+            transfer_call("", caller)
         else:
             play_source = text_to_speech(
                 "file_source",
@@ -2061,8 +2089,8 @@ async def examination_response():
         )
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            hang_up(
-                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+            transfer_call(
+                "Vous avez demandé a parler avec une secrétaire",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -2146,8 +2174,8 @@ async def module_informatif():
         )
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            hang_up(
-                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+            transfer_call(
+                "Vous avez demandé a parler avec une secrétaire",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -2209,8 +2237,8 @@ async def confirm_rdv():
 
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            hang_up(
-                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+            transfer_call(
+                "Vous avez demandé a parler avec une secrétaire",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -2239,8 +2267,8 @@ async def confirm_rdv():
                     "/handleResponse", "start_conversation", play_source, caller
                 )
             elif increment_error(caller, "type_exam"):
-                hang_up(
-                    "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.",
+                transfer_call(
+                    "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre.",
                     caller,
                 )
             else:
@@ -2332,8 +2360,8 @@ async def rdv_exam_type():
 
         # pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
         # if re.search(pattern, user_response, re.IGNORECASE):
-        #     hang_up(
-        #         "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
+        #     transfer_call(
+        #         "Il semblerait que vous appeliez pour une urgence.",
         #         caller,
         #     )
         task_human_orientation = asyncio.create_task(
@@ -2341,8 +2369,8 @@ async def rdv_exam_type():
         )
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            hang_up(
-                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+            transfer_call(
+                "Vous avez demandé a parler avec une secrétaire",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -2370,8 +2398,8 @@ async def rdv_exam_type():
         urgence = await task_urgence
         print("3")
         if urgence == "True":
-            hang_up(
-                "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
+            transfer_call(
+                "Il semblerait que vous appeliez pour une urgence.",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -2484,8 +2512,8 @@ async def get_creneaux_choice():
         )
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            hang_up(
-                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+            transfer_call(
+                "Vous avez demandé a parler avec une secrétaire",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -2757,8 +2785,8 @@ async def handleResponse():
 
         # pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
         # if re.search(pattern, user_response, re.IGNORECASE):
-        #     hang_up(
-        #         "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
+        #     transfer_call(
+        #         "Il semblerait que vous appeliez pour une urgence.",
         #         caller,
         #     )
         #     return jsonify({"success": "success"})
@@ -2766,8 +2794,8 @@ async def handleResponse():
         task_intent = asyncio.create_task(get_intent_async(user_response=user_response))
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            hang_up(
-                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+            transfer_call(
+                "Vous avez demandé a parler avec une secrétaire",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -2827,8 +2855,8 @@ async def handleResponse():
             print("1")
             print("urgence is True:", urgence is True)
             if urgence == "True":
-                hang_up(
-                    "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
+                transfer_call(
+                    "Il semblerait que vous appeliez pour une urgence.",
                     caller,
                 )
                 return jsonify({"success": "success"})
@@ -2913,14 +2941,18 @@ async def handleResponse():
             )
 
         elif intent.lower() == "autre":
-            play_source = text_to_speech(
-                "file_source",
-                "Je suis désolé, votre question n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.",
-                calls[caller],
+            transfer_call(
+                "Je suis désolé, votre question n'entre pas dans mon champ de compétences",
+                caller,
             )
-            start_recognizing(
-                "/handleResponse", "start_conversation", play_source, caller
-            )
+            # play_source = text_to_speech(
+            #     "file_source",
+            #     "Je suis désolé, votre question n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.",
+            #     calls[caller],
+            # )
+            # start_recognizing(
+            #     "/handleResponse", "start_conversation", play_source, caller
+            # )
 
         else:
             play_source = text_to_speech(
@@ -2950,15 +2982,15 @@ async def handleResponse():
         urgence = await task_urgence
         print("2")
         if urgence == "True":
-            hang_up(
-                "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
+            transfer_call(
+                "Il semblerait que vous appeliez pour une urgence.",
                 caller,
             )
             return jsonify({"success": "success"})
         # pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
         # if re.search(pattern, user_response, re.IGNORECASE):
-        #     hang_up(
-        #         "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
+        #     transfer_call(
+        #         "Il semblerait que vous appeliez pour une urgence.",
         #         caller,
         #     )
         task_human_orientation = asyncio.create_task(
@@ -2967,8 +2999,8 @@ async def handleResponse():
         task_intent = asyncio.create_task(get_intent_async(user_response=user_response))
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            hang_up(
-                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
+            transfer_call(
+                "Vous avez demandé a parler avec une secrétaire",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -3876,7 +3908,7 @@ def handle_annulation(caller):
 
 def start_conversation(caller):
 
-    if calls[caller].call["called"] in ["33801150214", "33801150082", "33801150143"]:
+    if calls[caller].call["called"] in ["33801150214", "33801150143"]:
         play_source = text_to_speech(
             "fixed_file_source", "intro_preprod", calls[caller]
         )
@@ -4143,8 +4175,8 @@ async def find_patient(caller):
                 return
             else:
                 if increment_error(caller, "rdv"):
-                    hang_up(
-                        "Désolé, je n'ai pas pu valider votre rendez-vous. Je vais vous rediriger vers une secrétaire.",
+                    transfer_call(
+                        "Désolé, je n'ai pas pu valider votre rendez-vous.",
                         caller,
                     )
                 else:
@@ -4385,12 +4417,16 @@ async def find_patient(caller):
                 )
     else:
         if call_info["intent"] == "prise de rendez-vous":
-            play_source = text_to_speech(
-                "fixed_file_source", "hang_up_not_known", calls[caller]
+            transfer_call(
+                "Désolé, je ne peux pas donner de rendez-vous à un patient qui n'est pas déjà connu du cabinet. Vous êtes un nouveau patient : Je vous propose de vous transférer à la secrétaire",
+                caller,
             )
-            call_automation_client.get_call_connection(
-                calls[caller].call["call_connection_id"]
-            ).play_media_to_all(play_source=play_source, operation_context="hang_up")
+            # play_source = text_to_speech(
+            #     "fixed_file_source", "hang_up_not_known", calls[caller]
+            # )
+            # call_automation_client.get_call_connection(
+            #     calls[caller].call["call_connection_id"]
+            # ).play_media_to_all(play_source=play_source, operation_context="hang_up")
         elif call_info["intent"] in [
             "consultation de rendez-vous",
             "modification de rendez-vous",
