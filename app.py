@@ -46,7 +46,7 @@ MONGO_URL = (
 # MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
 APP_URL = "lyraemuzillac.azurewebsites.net"
 API_URL = "sparkso-universite.com:8081"
-
+SANDBOX_URL = "resultat-imagerie.riva56.fr"
 app = Flask(__name__)
 
 client = MongoClient(MONGO_URL)
@@ -4089,7 +4089,7 @@ def addCommentaireRDV(idExamen, caller):
 
 
 def get_sous_type_exam(type_examen):
-    url = "https://sandbox.xplore.fr:20443/XaPriseRvGateway/Application/api/External/GetListeExamensFromTypeExamen"
+    url = "https://{SANDBOX_URL}/XaPriseRvGateway/Application/api/External/GetListeExamensFromTypeExamen"
 
     payload = {"id": type_examen}
 
