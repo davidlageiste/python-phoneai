@@ -2,7 +2,7 @@ tmp_number_center = {
     "33801150214": "sandbox",
     "33801150082": "muzillac",
     "33801150143": "sandbox",
-    "33801150360": "sandbox"
+    "33801150360": "sandbox",
 }
 
 
@@ -47,7 +47,7 @@ exam_types_names = {
     "CT": {"fr": "Scanner"},
 }
 
-exam_codes = (
+exam_codes = {
     {
         "sandbox": {
             "N01USABD": {"code": "N01USABD", "performed": True},
@@ -466,4 +466,4 @@ exam_codes = (
             "N01CT036": {"code": "", "performed": False},
         },
     },
-)
+}
