@@ -1,0 +1,21 @@
+{
+  "id": "7f78bcb0-d6f5-411d-ba67-9c44d6c00dcb",
+  "source": "calling/callConnections/11004180-a2e8-47f8-8b3e-0f2145952b4b",
+  "type": "Microsoft.Communication.CallTransferFailed",
+  "data": {
+    "version": "2024-11-15-preview",
+    "resultInformation": {
+      "code": 400,
+      "subCode": 580042,
+      "message": "Bad Request. DiagCode: 400#580042.@"
+    },
+    "callConnectionId": "11004180-a2e8-47f8-8b3e-0f2145952b4b",
+    "serverCallId": "aHR0cHM6Ly9hcGkuZmxpZ2h0cHJveHkuc2t5cGUuY29tL2FwaS92Mi9jcC9jb252LWZyY2UtMDQtcHJvZC1ha3MuY29udi5za3lwZS5jb20vY29udi9FUDFxWUUyNnBVLTRYY3FmcllpN0Z3P2k9MTAtNjAtMC0xMTImZT02Mzg4ODM4NjIwNDUzNjA1Nzk=",
+    "correlationId": "964c35d4-4c92-4b0a-bf0f-49801a4539a7",
+    "publicEventType": "Microsoft.Communication.CallTransferFailed"
+  },
+  "time": "2025-07-21T08:53:23.6160637+00:00",
+  "specversion": "1.0",
+  "datacontenttype": "application/json",
+  "subject": "calling/callConnections/11004180-a2e8-47f8-8b3e-0f2145952b4b"
+}

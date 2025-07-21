@@ -61,9 +61,9 @@ class Call:
             "annulation_phrase": None,
             "patient_rdv": None,
             "current_creneau_proposition": 0,
-            "interrogatoire": None,             # Après que le RDV soit créé, questions à propos de l'exam
-            "reponses_interrogatoire": None,    # Après que le RDV soit créé, réponses aux questions à propos de l'exam
-            "id_examen": None                   # Id du dernier rendez-vous créé par téléphone
+            "interrogatoire": None,  # Après que le RDV soit créé, questions à propos de l'exam
+            "reponses_interrogatoire": None,  # Après que le RDV soit créé, réponses aux questions à propos de l'exam
+            "id_examen": None,  # Id du dernier rendez-vous créé par téléphone
         }
 
         # Errors
@@ -88,7 +88,7 @@ class Call:
         self.last_text_to_speech: Dict[str, str, any] = {
             "endpoint": None,
             "operation_context": None,
-            "play_source": None
+            "play_source": None,
         }
 
     def to_string(self) -> str:
@@ -118,7 +118,9 @@ TALK
     def store_archive(self, caller):
         content = self.to_string_archive(caller)
         upload_call_recap(
-            f"{caller}-{str(self.updated_at).replace(' ', '-')}.txt", "calls", content
+            f"{caller}-{str(self.updated_at).replace(' ', '-')}.txt",
+            "muzillac-calls",
+            content,
         )
 
     def __str__(self):
