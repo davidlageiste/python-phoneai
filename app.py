@@ -48,7 +48,7 @@ patientCollection = db["patientsDB"]
 rdvCollection = db["rdv"]
 
 call_automation_client = CallAutomationClient.from_connection_string(
-    "endpoint=https://lyraedemo.unitedstates.communication.azure.com/;accesskey=6UsGa9zBcYmA5wz3OGfZ3wGPKSEMeDgof0R29kEvQIZwP85DTOAsJQQJ99BGACULyCpuAreVAAAAAZCSbeg1"
+    "endpoint=https://lyraedemo.unitedstates.communication.azure.com/;accesskey=F7IY7dqfsiO8WDYEBgsDgEGNDmUZyPwqhTKEB3PkF6zyfrhpjrltJQQJ99BGACULyCpuAreVAAAAAZCSEkW2"
 )
 
 speech_config = speechsdk.SpeechConfig(subscription=SPEECH_KEY, region=SPEECH_REGION)
