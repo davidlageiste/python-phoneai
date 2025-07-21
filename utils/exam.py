@@ -48,7 +48,7 @@ exam_types_names = {
     "CT": {"fr": "Scanner"},
 }
 
-exam_codes = (
+exam_codes = {
     {
         "sandbox": {
             "N01USABD": {"code": "N01USABD", "performed": True},
@@ -467,4 +467,4 @@ exam_codes = (
             "N01CT036": {"code": "", "performed": False},
         },
     },
-)
+}
