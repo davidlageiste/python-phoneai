@@ -27,7 +27,7 @@ from itertools import zip_longest
 from utils.tts import (
     text_to_speech,
     generate_text_to_speech,
-    text_to_speech_spell_confirm
+    text_to_speech_spell_confirm,
 )
 from utils.exam import get_client_exam_type, get_client_exam_code
 from utils.recorded_audio import recorded_audios_keys, keyboard_sounds, click_sounds
@@ -40,7 +40,9 @@ COGNITIVE_SERVICE_ENDPOINT = (
 )
 SPEECH_KEY = "CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U2XJ3w3AAAAACOGuWEK"
 SPEECH_REGION = "eastus"
-MONGO_URL = "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
+MONGO_URL = (
+    "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
+)
 # MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
 APP_URL = "lyraemuzillac.azurewebsites.net"
 API_URL = "sparkso-universite.com:8081"
@@ -303,7 +305,7 @@ def hang_up(text, caller):
 def transfer_call(text, caller):
     if calls[caller].call["called"] == "33801150082":
         hang_up(
-            f"{text}. Le secrétariat n'est actuellement pas disponible, merci de rappeler à ce numéro à partir de 14 heures.",
+            f"{text}. Le secrétariat n'est actuellement pas disponible, merci de rappeler à ce numéro à partir de 18 heures.",
             caller,
         )
     else:
@@ -2295,7 +2297,6 @@ async def confirm_rdv():
                     caller=caller,
                 )
             )
-
 
             speak("Je regarde les disponibilités, un instant...", caller)
 
@@ -4448,10 +4449,10 @@ async def find_patient(caller):
             )
 
 
-
 @app.route("/ping", methods=["POST"])
 async def ping():
     return jsonify({"pong"})
+
 
 if __name__ == "__main__":
     app.run(debug=True)
