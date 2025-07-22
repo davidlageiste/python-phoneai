@@ -4089,7 +4089,7 @@ def addCommentaireRDV(idExamen, caller):
 
 
 def get_sous_type_exam(type_examen):
-    url = "https://{SANDBOX_URL}/XaPriseRvGateway/Application/api/External/GetListeExamensFromTypeExamen"
+    url = f"https://{SANDBOX_URL}/XaPriseRvGateway/Application/api/External/GetListeExamensFromTypeExamen"
 
     payload = {"id": type_examen}
 
