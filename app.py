@@ -535,6 +535,7 @@ async def get_firstname():
                 start_recognizing(
                     "/get_firstname", "get_firstname", play_source, caller
                 )
+                return jsonify({"success": "success"})
 
             else:
                 speak(
@@ -553,6 +554,7 @@ async def get_firstname():
                     caller,
                     background_noise="click",
                 )
+                return jsonify({"success": "success"})
 
     elif type == "Microsoft.Communication.RecognizeFailed":
         speak("Je ne vous ai pas entendu", caller)
@@ -640,6 +642,7 @@ async def get_lastname():
                 "fixed_file_source", "repeat_lastname", calls[caller]
             )
             start_recognizing("/get_lastname", "get_lastname", play_source, caller)
+            return jsonify({"success": "success"})
 
         else:
             speak(
@@ -658,6 +661,7 @@ async def get_lastname():
                 caller,
                 background_noise="click",
             )
+            return jsonify({"success": "success"})
 
     elif type == "Microsoft.Communication.RecognizeFailed":
         speak("Je ne vous ai pas entendu", caller)
