@@ -304,22 +304,12 @@ def hang_up(text, caller):
 
 
 def transfer_call(text, caller):
-    # if calls[caller].call["called"] == "33801150082":
-    #     hang_up(
-    #         f"{text}. Le secrétariat n'est actuellement pas disponible, merci de rappeler à ce numéro à partir de 14 heures.",
-    #         caller,
-    #     )
-    # else:
-    speak(f"{text}. Je vous transfère vers une secrétaire", caller)
-    target = "+33668827897"
-    call_automation_client.get_call_connection(
-        call_connection_id=calls[caller].call["call_connection_id"]
-    ).transfer_call_to_participant(
-        target_participant=target,
-        transferee=PhoneNumberIdentifier("+" + caller.strip()),
-        operation_callback_url=f"https://{APP_URL}/callback",
+    play_source = text_to_speech(
+        "file_source", f"{text}. Je vous transfère vers une secrétaire", calls[caller]
     )
-    # hang_up(f"{text}. Je vous transfère vers une secrétaire", caller)
+    call_automation_client.get_call_connection(
+        calls[caller].call["call_connection_id"]
+    ).play_media_to_all(play_source=play_source, operation_context="transfer")
 
 
 def countPatientInDB(query):
@@ -439,6 +429,21 @@ async def callback():
         call_automation_client.get_call_connection(
             calls[caller].call["call_connection_id"]
         ).hang_up(is_for_everyone=True)
+
+    if (
+        type == "Microsoft.Communication.PlayCompleted"
+        and request.json
+        and request.json[0].get("data").get("operationContext") == "transfer"
+    ):
+        target = "+33668827897"
+        call_automation_client.get_call_connection(
+            call_connection_id=calls[caller].call["call_connection_id"]
+        ).transfer_call_to_participant(
+            target_participant=PhoneNumberIdentifier(target),
+            transferee=PhoneNumberIdentifier("+" + caller.strip()),
+            operation_callback_url=f"https://{APP_URL}/callback",
+        )
+
     return jsonify({"status": "success"})
 
 
