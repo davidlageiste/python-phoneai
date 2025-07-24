@@ -4135,9 +4135,10 @@ def addCommentaireRDV(idExamen, caller):
 
 
 def get_sous_type_exam(type_examen):
-    url = "https://sandbox.xplore.fr:20443/XaPriseRvGateway/Application/api/External/GetListeExamensFromTypeExamen"
+    # url = "https://sandbox.xplore.fr:20443/XaPriseRvGateway/Application/api/External/GetListeExamensFromTypeExamen"
+    url = f"https://{API_URL}/api/getSousTypesExamen"
 
-    payload = {"id": type_examen}
+    payload = {"examId": type_examen}
 
     print("requesting")
 
@@ -4146,7 +4147,7 @@ def get_sous_type_exam(type_examen):
         response.raise_for_status()  # Raises HTTPError for bad status
         data = response.json()
         print(data)
-        return data.get("data", "No Datas Found")
+        return data
     except requests.RequestException as e:
         print("Request failed:", e)
         return "Error occurred while retrieving RDV"
