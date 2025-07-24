@@ -40,7 +40,9 @@ COGNITIVE_SERVICE_ENDPOINT = (
 )
 SPEECH_KEY = "CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U2XJ3w3AAAAACOGuWEK"
 SPEECH_REGION = "eastus"
-MONGO_URL = "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
+MONGO_URL = (
+    "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
+)
 # MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
 APP_URL = "talkpreprodapi.azurewebsites.net"
 API_URL = "sparkso-universite.com:8081"
@@ -2420,6 +2422,12 @@ async def rdv_exam_type():
             )
             return jsonify({"success": "success"})
         print("#######", user_response, exam_type)
+        if exam_type["multiple_exam"] == True:
+            transfer_call(
+                "Il semblerait que vous appeliez pour prendre rendez-vous pour plusieurs actes, je vais devoir vous mettre en relation avec un interlocuteur humain.",
+                caller,
+            )
+            return jsonify({"success": "success"})
         if (
             exam_type["type_examen"] is not None
             and exam_type["code_examen_id"] is not None
@@ -2873,6 +2881,13 @@ async def handleResponse():
                     caller,
                 )
                 return jsonify({"success": "success"})
+            if exam_type["multiple_exam"] == True:
+                transfer_call(
+                    "Il semblerait que vous appeliez pour prendre rendez-vous pour plusieurs actes, je vais devoir vous mettre en relation avec un interlocuteur humain.",
+                    caller,
+                )
+                return jsonify({"success": "success"})
+
             if exam_type["type_examen_id"] is None:
                 play_source = text_to_speech(
                     "file_source",
@@ -3058,6 +3073,13 @@ async def handleResponse():
             call_info["intent"] = intent.lower()
             # speak("ok")
             exam_type = await task_type
+            if exam_type["multiple_exam"] == True:
+                transfer_call(
+                    "Il semblerait que vous appeliez pour prendre rendez-vous pour plusieurs actes, je vais devoir vous mettre en relation avec un interlocuteur humain.",
+                    caller,
+                )
+                return jsonify({"success": "success"})
+
             if exam_type["type_examen_id"] is None:
                 play_source = text_to_speech(
                     "file_source",
@@ -3860,6 +3882,7 @@ def continue_conversation(model_response, caller):
 
     start_recognizing("/handleResponse", "end_conversation", play_source, caller)
 
+
 async def handle_prise_rdv(caller):
     global calls
     rdv_info = calls[caller].rdv
@@ -3898,14 +3921,18 @@ async def handle_prise_rdv(caller):
                 background_noise="click",
             )
             return jsonify({"success": "success"})
-        else: 
-            play_source = text_to_speech("file_source", f"{text}. Puis-je faire autre chose pour vous ?", calls[caller])
+        else:
+            play_source = text_to_speech(
+                "file_source",
+                f"{text}. Puis-je faire autre chose pour vous ?",
+                calls[caller],
+            )
             start_recognizing(
                 "/handleResponse",
                 "end_conversation",
                 play_source,
                 caller,
-                background_noise="click"
+                background_noise="click",
             )
             return jsonify({"success": "success"})
     else:
