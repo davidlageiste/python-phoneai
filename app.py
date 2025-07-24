@@ -304,13 +304,22 @@ def hang_up(text, caller):
 
 
 def transfer_call(text, caller):
-    if calls[caller].call["called"] == "33801150082":
-        hang_up(
-            f"{text}. Le secrétariat n'est actuellement pas disponible, merci de rappeler à ce numéro à partir de 14 heures.",
-            caller,
-        )
-    else:
-        hang_up(f"{text}. Je vous transfère vers une secrétaire", caller)
+    # if calls[caller].call["called"] == "33801150082":
+    #     hang_up(
+    #         f"{text}. Le secrétariat n'est actuellement pas disponible, merci de rappeler à ce numéro à partir de 14 heures.",
+    #         caller,
+    #     )
+    # else:
+    speak(f"{text}. Je vous transfère vers une secrétaire", caller)
+    target = "+33668827897"
+    call_automation_client.get_call_connection(
+        call_connection_id=calls[caller].call["call_connection_id"]
+    ).transfer_call_to_participant(
+        target_participant=target,
+        transferee=PhoneNumberIdentifier("+" + caller.strip()),
+        operation_callback_url=f"https://{APP_URL}/callback",
+    )
+    # hang_up(f"{text}. Je vous transfère vers une secrétaire", caller)
 
 
 def countPatientInDB(query):
