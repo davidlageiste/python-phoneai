@@ -45,7 +45,7 @@ MONGO_URL = (
 )
 # MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
 APP_URL = "talkpreprodapi.azurewebsites.net"
-API_URL = "sparkso-universite.com:8081"
+API_URL = "sparkso-universite.com:8080"
 
 
 app = Flask(__name__)
