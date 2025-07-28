@@ -1,5 +1,8 @@
 audios = {
     "intro": {
+        "Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Je peux prendre, modifier ou annuler vos rendez-vous, lister vos RDV prévus, ainsi que vous fournir des informations générales sur la radiologie. Vous pouvez me parler normalement. Comment puis-je vous aider aujourd’hui ?"
+    },
+    "intro2": {
         "fr": "Bonjour, je suis Lyraé, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Comment puis-je vous aider aujourd’hui ?",
     },
     "intro_preprod": {
@@ -12,13 +15,13 @@ audios = {
         "fr": "Je n'ai pas compris, pouvez-vous épeler votre nom de famille lettre par lettre à nouveau ?"
     },
     "repeat_birthdate": {
-        "fr": "Je n'ai pas compris, quelle est votre date de naissance ?"
+        "fr": "Je n'ai pas compris, pouvez-vous, s'il vous plaît, me donner votre date de naissance avec le mois en toutes lettres, par exemple, le premier janvier mille neuf cent 80"
     },
     "repeat_birthdate2": {
         "fr": "Désolé, pouvez-vous me répéter votre date de naissance ?"
     },
     "repeat_exam_type": {
-        "fr": "Pardonnez moi, pouvez-vous me répéter l'intitulé de l'examen que vous souhaitez passer ? "
+        "fr": "Pardonnez moi je ne vous comprends pas, pouvez-vous lire exactement le nom de l'examen écrit sur votre ordonnance ?"
     },
     "repeat_exam_type2": {
         "fr": "Je ne vous ai pas entendu. Pouvez-vous répeter l'intitulé de l'examen ?"

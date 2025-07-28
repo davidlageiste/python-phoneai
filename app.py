@@ -153,6 +153,16 @@ french_months = {
     12: "décembre",
 }
 
+french_weekdays = {
+    0: "lundi",
+    1: "mardi",
+    2: "mercredi",
+    3: "jeudi",
+    4: "vendredi",
+    5: "samedi",
+    6: "dimanche",
+}
+
 
 def full_date_vers_litteral(date_str):
     # Conversion en objet datetime
@@ -557,7 +567,7 @@ async def get_firstname():
 
             else:
                 speak(
-                    f"{clean_firstname.strip()}",
+                    f"votre prénom est {clean_firstname.strip()} et il s'épèle ainsi ",
                     caller,
                     speed=0.82,
                 )
@@ -664,7 +674,7 @@ async def get_lastname():
 
         else:
             speak(
-                f"{calls[caller].caller["lastname"]}",
+                f"votre nom de famille est {calls[caller].caller["lastname"]} et il s'épèle ainsi ",
                 caller,
                 speed=0.82,
             )
@@ -1250,7 +1260,7 @@ async def confirm_firstname():
 
         else:
             speak(
-                f"Je n'ai pas compris, {calls[caller].caller["firstname"]}",
+                f"Je n'ai pas compris, votre prénom est {calls[caller].caller["firstname"]} et il s'épèle ainsi ",
                 caller,
                 speed=0.82,
             )
@@ -1464,11 +1474,7 @@ async def confirm_lastname():
 
         else:
             speak(
-                "Je n'ai pas compris",
-                caller,
-            )
-            speak(
-                f"Je n'ai pas compris {calls[caller].caller["lastname"]}",
+                f"Je n'ai pas compris, votre nom de famille est {calls[caller].caller["lastname"]} et il s'épèle ainsi",
                 caller,
                 speed=0.82,
             )
@@ -2343,7 +2349,7 @@ async def confirm_rdv():
             )
         else:
             play_source = text_to_speech(
-                "fixed_file_source", "misunderstand_exam_type", calls[caller]
+                "fixed_file_source", "repeat_exam_type", calls[caller]
             )
             start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source, caller)
 
@@ -3646,9 +3652,16 @@ def build_single_date_phrase(creneau, index=0):
     else:
         slot = creneau[str(index + 1)]
         date_obj = datetime.fromisoformat(slot["date"]).date()
+        today = datetime.today().date()
+        tomorrow = today + timedelta(days=1)
         day = date_obj.day
         month_name = french_months[date_obj.month]
-        date_str = f"{day} {month_name}"
+        if date_obj == today:
+            date_str = f"aujourd'hui le {day} {month_name}"
+        elif date_obj == tomorrow:
+            date_str = f"demain le {day} {month_name}"
+        else:
+            date_str = f"le {french_weekdays[date_obj.weekday()]} {day} {month_name}"
         heure = slot["heureDebut"]
         if index == 0:
             time_obj = datetime.strptime(heure, "%H:%M")
@@ -3660,7 +3673,7 @@ def build_single_date_phrase(creneau, index=0):
                 heure = f"{hours} heures"
             else:
                 heure = f"{hours} heures {minutes}"
-            final_sentence = f"Je peux vous proposer le {date_str} à {heure}. Est-ce que cela vous convient ?"
+            final_sentence = f"Je peux vous proposer {date_str} à {heure}. Est-ce que cela vous convient ? Merci de répondre par oui ou par non."
         else:
             time_obj = datetime.strptime(heure, "%H:%M")
             hours = time_obj.hour
@@ -3671,7 +3684,7 @@ def build_single_date_phrase(creneau, index=0):
                 heure = f"{hours} heures"
             else:
                 heure = f"{hours} heures {minutes}"
-            final_sentence = f"Est-ce que vous préférez le {date_str} à {heure} ?"
+            final_sentence = f"Est-ce que vous préférez {date_str} à {heure} ?"
 
     final_sentence = convert_numbers_to_words_french(final_sentence)
     print("final_sentence", final_sentence)
@@ -3798,7 +3811,16 @@ def build_multiple_dates_phrase(creneaux, type=None):
             date_obj = datetime.fromisoformat(slot["datePrevue"]).date()
             day = date_obj.day
             month_name = french_months[date_obj.month]
-            date_str = f"{day} {month_name}"
+            today = datetime.today().date()
+            tomorrow = today + timedelta(days=1)
+            if date_obj == today:
+                date_str = f"aujourd'hui le {day} {month_name}"
+            elif date_obj == tomorrow:
+                date_str = f"demain le {day} {month_name}"
+            else:
+                date_str = (
+                    f"le {french_weekdays[date_obj.weekday()]} {day} {month_name}"
+                )
             heure = slot["heurePrevue"]
             time_obj = datetime.strptime(heure, "%H:%M")
             hours = time_obj.hour
@@ -3809,7 +3831,7 @@ def build_multiple_dates_phrase(creneaux, type=None):
                 heure = f"{hours} heures"
             else:
                 heure = f"{hours} heures {minutes}"
-            phrases.append(f"le {ordinals[idx]} est le {date_str} à {heure}")
+            phrases.append(f"le {ordinals[idx]} est {date_str} à {heure}")
 
         # Assemble final sentence
         if nb_slots == 0:
@@ -3952,7 +3974,7 @@ async def handle_prise_rdv(caller):
     else:
         play_source = text_to_speech(
             "file_source",
-            "Très bien, quel examen voulez vous passer ?",
+            "Très bien, pour quel examen souhaitez-vous prendre rendez-vous ? Merci de préciser le type d'examen et la région anatomique, par exemple une échographie de la cheville",
             calls[caller],
         )
         start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source, caller)
