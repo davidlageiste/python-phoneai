@@ -2971,8 +2971,8 @@ async def handleResponse():
                 "Vous voulez déplacer un rendez-vous, c'est bien ça ?",
                 calls[caller],
             )
-
         elif intent.lower() == "annulation de rendez-vous":
+
             call_info["intent"] = intent.lower()
             play_source = text_to_speech(
                 "file_source",
@@ -2988,7 +2988,7 @@ async def handleResponse():
                 calls[caller],
             )
 
-        elif intent.lower() == "autre":
+        elif intent.lower() == "autre" and calls[caller].errors["intent"] >= 1:
             transfer_call(
                 "Je suis désolé, votre question n'entre pas dans mon champ de compétences",
                 caller,
@@ -3003,8 +3003,9 @@ async def handleResponse():
             # )
 
         else:
+            calls[caller].errors["intent"] += 1
             play_source = text_to_speech(
-                "fixed_file_source", "misunderstand_intent2", calls[caller]
+                "fixed_file_source", "misunderstand_intent3", calls[caller]
             )
             start_recognizing(
                 "/handleResponse", "start_conversation", play_source, caller
