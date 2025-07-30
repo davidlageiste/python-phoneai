@@ -52,7 +52,7 @@ audios = {
         "fr": "Désolé, je n'ai pas compris, que puis-je faire pour vous ?"
     },
     "misunderstand_intent3": {
-        "fr": "Désolé, je n'ai pas compris. Je peux vous donner des informations sur les examens d’imagerie et sur le cabinet. Je peux aussi donner ou modifier des rendez-vous. Pour mieux vous aider, je vous invite à formuler une phrase complète. N’hésitez pas à parler comme à une vraie personne, avec des phrases complètes."
+        "fr": "Désolé, je n'ai pas compris. Je peux vous donner des informations sur les examens d’imagerie et sur le cabinet. Je peux aussi donner ou modifier des rendez-vous. Pour mieux vous aider, je vous invite à formuler une phrase complète. N’hésitez pas à parler comme à une vraie personne avec des phrases complètes."
     },
     "misunderstand_exam_type": {
         "fr": "Je ne vous ai pas compris, pour quel type d'examen voulez-vous prendre rendez-vous ? "
