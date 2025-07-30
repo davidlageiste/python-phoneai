@@ -856,7 +856,7 @@ async def confirm_creneau():
         task_positive_negative = asyncio.create_task(
             get_positive_negative_async(user_response)
         )
-        speak("ok", caller)
+        # speak("ok", caller)
 
         positive_negative = await task_positive_negative
         if positive_negative == "négative":
@@ -2070,6 +2070,9 @@ async def transfer_to_secretary():
 async def examination_exam_type(caller):
     global calls
 
+    if calls[caller].caller["phone"] is None:
+        return jsonify({"success": "success"})
+
     print(calls[caller].rdv["sous_type_id"])
 
     task_get_examination = asyncio.create_task(
@@ -2352,6 +2355,48 @@ async def confirm_rdv():
                 "fixed_file_source", "repeat_exam_type", calls[caller]
             )
             start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source, caller)
+    elif (
+        type == "Microsoft.Communication.RecognizeCompleted"
+        and operation_context == "final_confirm_rdv"
+    ):
+        task_human_orientation = asyncio.create_task(
+            get_human_orientation_async(user_response=user_response)
+        )
+        task_model_response = asyncio.create_task(
+            get_positive_negative_async(user_response)
+        )
+        # speak("ok")
+
+        human_orientation = await task_human_orientation
+        if human_orientation is True:
+            transfer_call(
+                "Vous avez demandé a parler avec une secrétaire",
+                caller,
+            )
+            return jsonify({"success": "success"})
+        task_get_repeat = asyncio.create_task(
+            get_repeat_async(user_response=user_response)
+        )
+        get_repeat = await task_get_repeat
+        if get_repeat is True:
+            start_recognizing(
+                calls[caller].last_text_to_speech["endpoint"],
+                calls[caller].last_text_to_speech["operation_context"],
+                calls[caller].last_text_to_speech["play_source"],
+                caller,
+                "keyboard",
+            )
+            return jsonify({"success": "success"})
+        model_response = await task_model_response
+        if model_response == "négative":
+            transfer_call(
+                "Malheureusement, il semblerait que nous nous soyons mal compris",
+                caller,
+            )
+        elif model_response == "positive":
+            calls[caller].rdv["patient_rdv_confirm"] = "Yes"
+            await find_patient(caller)
+            return jsonify({"success": "success"})
 
     elif type == "Microsoft.Communication.RecognizeFailed":
         speak("Je ne vous ai pas entendu", caller)
@@ -2465,6 +2510,9 @@ async def rdv_exam_type():
             else:
                 rdv_info["exam_id"] = actual_exam_id
                 rdv_info["sous_type_id"] = actual_sous_type_id
+                rdv_info["code_examen"] = (
+                    f"{"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["code_examen"]}"
+                )
                 play_source = text_to_speech(
                     "file_source",
                     f"Vous m'avez dit {exam_type['code_examen']}, c'est ça ?",
@@ -2934,6 +2982,9 @@ async def handleResponse():
                     else:
                         rdv_info["exam_id"] = actual_exam_id
                         rdv_info["sous_type_id"] = actual_sous_type_id
+                        rdv_info["code_examen"] = (
+                            f"{"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["code_examen"]}"
+                        )
                         play_source = text_to_speech(
                             "file_source",
                             f"Vous m'avez dit vouloir prendre rendez-vous pour {"un" if exam_type["type_examen_id"] == "CT" else "une"} {exam_type["code_examen"]}, c'est ça ?",
@@ -3127,6 +3178,9 @@ async def handleResponse():
                     else:
                         rdv_info["exam_id"] = actual_exam_id
                         rdv_info["sous_type_id"] = actual_sous_type_id
+                        rdv_info["code_examen"] = (
+                            f"{"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["code_examen"]}"
+                        )
                         play_source = text_to_speech(
                             "file_source",
                             f"Vous m'avez dit vouloir prendre rendez-vous pour {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["code_examen"]}, c'est ça ?",
@@ -4020,6 +4074,25 @@ def speak(text, caller, speed=1.05):
     ).play_media_to_all(play_source=play_source)
 
 
+def get_patient_rdv_confirm(caller):
+
+    caller_info = calls[caller].caller
+    rdv_info = calls[caller].rdv
+
+    phrase_creneau = full_date_vers_litteral(
+        rdv_info["chosen_creneau"].get("date").split("T")[0]
+        + "T"
+        + rdv_info["chosen_creneau"].get("heureDebut")
+        + ":00"
+    )
+    play_source = text_to_speech(
+        "file_source",
+        f"Vous appelez pour un rendez-vous pour {caller_info["firstname"]} {caller_info["lastname"]} pour {rdv_info["code_examen"]} au cabinet de radiologie Riva à Muzillac {phrase_creneau}. Est-ce que vous confirmez bien ces informations? Répondez moi par oui ou par non. Votre réponse sera enregistrée.",
+        calls[caller],
+    )
+    start_recognizing("/confirm_rdv", "final_confirm_rdv", play_source, caller)
+
+
 ########## XPLORE API ##########
 
 
@@ -4229,6 +4302,9 @@ async def find_patient(caller):
 
     if patient:
         if call_info["intent"] == "prise de rendez-vous":
+            if rdv_info["patient_rdv_confirm"] != "Yes":
+                get_patient_rdv_confirm(caller)
+                return
             speak(
                 "Ne quittez pas le temps que je confirme votre rendez-vous.",
                 caller,
@@ -4259,7 +4335,7 @@ async def find_patient(caller):
                 )
 
                 speak(
-                    f"Parfait, vous avez donc rendez-vous {phrase_creneau} au nom de {caller_info["lastname"]}.",
+                    f"Parfait, vous avez donc rendez-vous {phrase_creneau} au nom de {caller_info["lastname"]}. Le jour de l'examen, vous devrez amener votre Ordonnance, la Carte vitale et la carte de mutuelle, une Pièce d'identité et, si besoin, vos justificatif ALD, CMU, arrêt de travail.",
                     caller,
                 )
 

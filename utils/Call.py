@@ -45,6 +45,7 @@ class Call:
             "lastname": None,
             "firstname": None,
             "email": None,
+            "phone": None,
         }
 
         self.patient: any | None = None
@@ -52,6 +53,7 @@ class Call:
         # Rdv
         self.rdv: Dict[str, str | int | Any] = {
             "rdv_intent": None,
+            "code_examen": None,
             "exam_id": None,
             "sous_type_id": None,
             "creneauDate": None,
@@ -61,9 +63,10 @@ class Call:
             "annulation_phrase": None,
             "patient_rdv": None,
             "current_creneau_proposition": 0,
-            "interrogatoire": None,             # Après que le RDV soit créé, questions à propos de l'exam
-            "reponses_interrogatoire": None,    # Après que le RDV soit créé, réponses aux questions à propos de l'exam
-            "id_examen": None                   # Id du dernier rendez-vous créé par téléphone
+            "interrogatoire": None,  # Après que le RDV soit créé, questions à propos de l'exam
+            "reponses_interrogatoire": None,  # Après que le RDV soit créé, réponses aux questions à propos de l'exam
+            "id_examen": None,  # Id du dernier rendez-vous créé par téléphone
+            "patient_rdv_confirm": None,
         }
 
         # Errors
@@ -88,7 +91,7 @@ class Call:
         self.last_text_to_speech: Dict[str, str, any] = {
             "endpoint": None,
             "operation_context": None,
-            "play_source": None
+            "play_source": None,
         }
 
     def to_string(self) -> str:
