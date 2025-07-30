@@ -866,15 +866,32 @@ async def confirm_creneau():
                     creneau=rdv_info["all_creneaux"],
                     index=rdv_info["current_creneau_proposition"],
                 )
-                play_source = text_to_speech("file_source", text, calls[caller])
-                start_recognizing(
-                    "/confirm_creneau",
-                    "confirm_creneau",
-                    play_source,
-                    caller,
-                    background_noise="click",
-                )
-                return "ok"
+                
+                if (text["success"] is False):
+                    play_source = text_to_speech(
+                        "file_source",
+                        f"{text["message"]}. Puis-je faire autre chose pour vous ?",
+                        calls[caller],
+                    )
+                    start_recognizing(
+                        "/handleResponse",
+                        "end_conversation",
+                        play_source,
+                        caller,
+                        background_noise="click",
+                    )
+                    return jsonify({"success": "success"})
+                else:
+                    play_source = text_to_speech("file_source", text["message"], calls[caller])
+                    start_recognizing(
+                        "/confirm_creneau",
+                        "modification",
+                        play_source,
+                        caller,
+                        background_noise="click",
+                    )
+                    return jsonify({"success": "success"})
+                
             else:
                 rdv_info["current_creneau_proposition"] = 0
                 last_key = sorted(rdv_info["all_creneaux"].keys(), key=int)[-1]
@@ -911,15 +928,31 @@ async def confirm_creneau():
                     creneau=rdv_info["all_creneaux"],
                     index=rdv_info["current_creneau_proposition"],
                 )
-                play_source = text_to_speech("file_source", text, calls[caller])
-                start_recognizing(
-                    "/confirm_creneau",
-                    "confirm_creneau",
-                    play_source,
-                    caller,
-                    background_noise="click",
-                )
-                return "ok"
+                if (text["success"] is False):
+                    play_source = text_to_speech(
+                        "file_source",
+                        f"{text["message"]}. Puis-je faire autre chose pour vous ?",
+                        calls[caller],
+                    )
+                    start_recognizing(
+                        "/handleResponse",
+                        "end_conversation",
+                        play_source,
+                        caller,
+                        background_noise="click",
+                    )
+                    return jsonify({"success": "success"})
+                else:
+                    play_source = text_to_speech("file_source", text["message"], calls[caller])
+                    start_recognizing(
+                        "/confirm_creneau",
+                        "modification",
+                        play_source,
+                        caller,
+                        background_noise="click",
+                    )
+                    return jsonify({"success": "success"})
+                
         elif positive_negative == "positive":
             rdv_info["chosen_creneau"] = rdv_info["all_creneaux"][
                 str(rdv_info["current_creneau_proposition"] + 1)
@@ -946,7 +979,7 @@ async def confirm_creneau():
             )
             play_source = text_to_speech(
                 "file_source",
-                "Pardonnez moi, je n'ai pas compris." + text,
+                "Pardonnez moi, je n'ai pas compris." + text["message"],
                 calls[caller],
             )
             start_recognizing(
@@ -997,14 +1030,30 @@ async def confirm_creneau():
                     creneau=rdv_info["all_creneaux"],
                     index=rdv_info["current_creneau_proposition"],
                 )
-                play_source = text_to_speech("file_source", text, calls[caller])
-                start_recognizing(
-                    "/confirm_creneau",
-                    "modification",
-                    play_source,
-                    caller,
-                    background_noise="click",
-                )
+                if (text["success"] is False):
+                    play_source = text_to_speech(
+                        "file_source",
+                        f"{text["message"]}. Puis-je faire autre chose pour vous ?",
+                        calls[caller],
+                    )
+                    start_recognizing(
+                        "/handleResponse",
+                        "end_conversation",
+                        play_source,
+                        caller,
+                        background_noise="click",
+                    )
+                    return jsonify({"success": "success"})
+                else:
+                    play_source = text_to_speech("file_source", text["message"], calls[caller])
+                    start_recognizing(
+                        "/confirm_creneau",
+                        "modification",
+                        play_source,
+                        caller,
+                        background_noise="click",
+                    )
+                    return jsonify({"success": "success"})
             else:
                 rdv_info["current_creneau_proposition"] = 0
                 last_key = sorted(rdv_info["all_creneaux"].keys(), key=int)[-1]
@@ -1041,19 +1090,34 @@ async def confirm_creneau():
                     creneau=rdv_info["all_creneaux"],
                     index=rdv_info["current_creneau_proposition"],
                 )
-                play_source = text_to_speech("file_source", text, calls[caller])
-                start_recognizing(
-                    "/confirm_creneau",
-                    "modification",
-                    play_source,
-                    caller,
-                    background_noise="click",
-                )
+                if (text["success"] is False):
+                    play_source = text_to_speech(
+                        "file_source",
+                        f"{text["message"]}. Puis-je faire autre chose pour vous ?",
+                        calls[caller],
+                    )
+                    start_recognizing(
+                        "/handleResponse",
+                        "end_conversation",
+                        play_source,
+                        caller,
+                        background_noise="click",
+                    )
+                    return jsonify({"success": "success"})
+                else:
+                    play_source = text_to_speech("file_source", text["message"], calls[caller])
+                    start_recognizing(
+                        "/confirm_creneau",
+                        "modification",
+                        play_source,
+                        caller,
+                        background_noise="click",
+                    )
+                    return jsonify({"success": "success"})
         elif positive_negative == "positive":
             rdv_info["chosen_creneau"] = rdv_info["all_creneaux"][
                 str(rdv_info["current_creneau_proposition"] + 1)
             ]
-
             dt = datetime.fromisoformat(rdv_info["chosen_creneau"])
 
             matched_creneau = None
@@ -1096,7 +1160,7 @@ async def confirm_creneau():
             )
             play_source = text_to_speech(
                 "file_source",
-                "Pardonnez moi, je n'ai pas compris." + text,
+                "Pardonnez moi, je n'ai pas compris." + text["message"],
                 calls[caller],
             )
             start_recognizing(
@@ -2342,14 +2406,30 @@ async def confirm_rdv():
             calls[caller].rdv["all_creneaux"] = creneaux
 
             text = build_single_date_phrase(creneau=creneaux)
-            play_source = text_to_speech("file_source", text, calls[caller])
-            start_recognizing(
-                "/confirm_creneau",
-                "confirm_creneau",
-                play_source,
-                caller,
-                background_noise="click",
-            )
+            if (text["success"] is False):
+                play_source = text_to_speech(
+                    "file_source",
+                    f"{text["message"]}. Puis-je faire autre chose pour vous ?",
+                    calls[caller],
+                )
+                start_recognizing(
+                    "/handleResponse",
+                    "end_conversation",
+                    play_source,
+                    caller,
+                    background_noise="click",
+                )
+                return jsonify({"success": "success"})
+            else:
+                play_source = text_to_speech("file_source", text["message"], calls[caller])
+                start_recognizing(
+                    "/confirm_creneau",
+                    "modification",
+                    play_source,
+                    caller,
+                    background_noise="click",
+                )
+                return jsonify({"success": "success"})
         else:
             play_source = text_to_speech(
                 "fixed_file_source", "repeat_exam_type", calls[caller]
@@ -3742,8 +3822,10 @@ def build_single_date_phrase(creneau, index=0):
             final_sentence = f"Est-ce que vous préférez {date_str} à {heure} ?"
 
     final_sentence = convert_numbers_to_words_french(final_sentence)
-    print("final_sentence", final_sentence)
-    return final_sentence
+    if (final_sentence == "Je suis désolé, aucun créneau n'est disponible pour le moment."):
+        return ({"success": False, "message": final_sentence})
+    else:
+        return ({"success": True, "message": final_sentence})
 
 
 def build_multiple_dates_phrase(creneaux, type=None):
@@ -4001,21 +4083,10 @@ async def handle_prise_rdv(caller):
         rdv_info["all_creneaux"] = creneaux
 
         text = build_single_date_phrase(creneau=creneaux)
-
-        if len(creneaux) != 0:
-            play_source = text_to_speech("file_source", text, calls[caller])
-            start_recognizing(
-                "/confirm_creneau",
-                "confirm_creneau",
-                play_source,
-                caller,
-                background_noise="click",
-            )
-            return jsonify({"success": "success"})
-        else:
+        if (text["success"] is False):
             play_source = text_to_speech(
                 "file_source",
-                f"{text}. Puis-je faire autre chose pour vous ?",
+                f"{text["message"]}. Puis-je faire autre chose pour vous ?",
                 calls[caller],
             )
             start_recognizing(
@@ -4026,6 +4097,17 @@ async def handle_prise_rdv(caller):
                 background_noise="click",
             )
             return jsonify({"success": "success"})
+        else:
+            play_source = text_to_speech("file_source", text["message"], calls[caller])
+            start_recognizing(
+                "/confirm_creneau",
+                "confirm_creneau",
+                play_source,
+                caller,
+                background_noise="click",
+            )
+            return jsonify({"success": "success"})
+            
     else:
         play_source = text_to_speech(
             "file_source",
@@ -4370,10 +4452,24 @@ async def find_patient(caller):
                     rdv_info["current_creneau_proposition"] = 0
 
                     text = build_single_date_phrase(creneau=creneaux)
-                    play_source = text_to_speech("file_source", text, calls[caller])
-                    start_recognizing(
-                        "/confirm_creneau", "confirm_creneau", play_source, caller
-                    )
+                    if (text["success"] is False):
+                        play_source = text_to_speech(
+                            "file_source",
+                            f"{text["message"]}. Puis-je faire autre chose pour vous ?",
+                            background_noise="click",
+                        )
+                        return jsonify({"success": "success"})
+                    else:
+                        play_source = text_to_speech("file_source", text["message"], calls[caller])
+                        start_recognizing(
+                            "/confirm_creneau",
+                            "confirm_creneau",
+                            play_source,
+                            caller,
+                            background_noise="click",
+                        )
+                        return jsonify({"success": "success"})
+
         elif (
             call_info["intent"] == "modification de rendez-vous"
             or call_info["intent"] == "consultation de rendez-vous"
@@ -4449,14 +4545,30 @@ async def find_patient(caller):
                         creneau=rdv_info["all_creneaux"],
                         index=rdv_info["current_creneau_proposition"],
                     )
-                    play_source = text_to_speech("file_source", text, calls[caller])
-                    start_recognizing(
-                        "/confirm_creneau",
-                        "modification",
-                        play_source,
-                        caller,
-                        background_noise="click",
-                    )
+                    if (text["success"] is False):
+                        play_source = text_to_speech(
+                            "file_source",
+                            f"{text["message"]}. Puis-je faire autre chose pour vous ?",
+                            calls[caller],
+                        )
+                        start_recognizing(
+                            "/handleResponse",
+                            "end_conversation",
+                            play_source,
+                            caller,
+                            background_noise="click",
+                        )
+                        return jsonify({"success": "success"})
+                    else:
+                        play_source = text_to_speech("file_source", text["message"], calls[caller])
+                        start_recognizing(
+                            "/confirm_creneau",
+                            "modification",
+                            play_source,
+                            caller,
+                            background_noise="click",
+                        )
+                        return jsonify({"success": "success"})
                     # text = build_multiple_dates_phrase(creneaux=creneaux)
                     # play_source = text_to_speech("file_source", text)
                     # start_recognizing("/get_creneaux_choice", "modification", play_source)
