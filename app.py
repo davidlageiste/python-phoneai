@@ -1270,7 +1270,9 @@ async def confirm_creneau():
             matched_creneau = None
             for key, value in rdv_info["all_creneaux"].items():
                 full_datetime_str = f"{value['date'][:10]}T{value['heureDebut']}:00"
+                full_datetime_str = f"{value['date'][:10]}T{value['heureDebut']}:00"
                 current_dt = datetime.fromisoformat(full_datetime_str)
+                if current_dt == chosen_dt:
                 if current_dt == chosen_dt:
                     matched_creneau = value
                     break
@@ -1278,6 +1280,7 @@ async def confirm_creneau():
             if matched_creneau is not None:
                 # Création de la phrase
 
+                phrase = f"{chosen_dt.day} {french_months[chosen_dt.month]} à {chosen_dt.hour} heures {chosen_dt.minute:02d}"
                 phrase = f"{chosen_dt.day} {french_months[chosen_dt.month]} à {chosen_dt.hour} heures {chosen_dt.minute:02d}"
 
                 rdv_info["creneauDate"] = phrase
