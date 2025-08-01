@@ -28,6 +28,7 @@ from utils.tts import (
     text_to_speech,
     generate_text_to_speech,
     text_to_speech_spell_confirm,
+    text_to_speech_number_confirm,
 )
 from utils.exam import get_client_exam_type, get_client_exam_code
 from utils.recorded_audio import recorded_audios_keys, keyboard_sounds, click_sounds
@@ -40,11 +41,12 @@ COGNITIVE_SERVICE_ENDPOINT = (
 )
 SPEECH_KEY = "CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U2XJ3w3AAAAACOGuWEK"
 SPEECH_REGION = "eastus"
-MONGO_URL = (
-    "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
-)
-# MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
-APP_URL = "talkpreprodapi.azurewebsites.net"
+# MONGO_URL = (
+#     "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
+# )
+MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
+# APP_URL = "talkpreprodapi.azurewebsites.net"
+APP_URL = "abc4b8bfc541.ngrok-free.app"
 API_URL = "sparkso-universite.com:8080"
 
 
@@ -397,6 +399,11 @@ async def callback():
 
     if type == "Microsoft.Communication.CallDisconnected":
         print_calls()
+        if (
+            calls[caller].rdv["id_examen"] is not None
+            and not calls[caller].rdv["phone_saved"]
+        ):
+            addPhoneToRDV(calls[caller].rdv["id_examen"], f"0{caller[2:]}", caller)
         if caller in calls.keys():
             calls[caller].store_archive(caller)
             # with open("archive_talk.txt", "a", encoding="utf-8") as file:
@@ -458,6 +465,134 @@ async def callback():
 
 
 ########## IDENTIFICATION ##########
+
+
+@app.route("/get_phone", methods=["POST"])
+async def get_phone():
+    # global firstname_error
+    # global firstname
+    global calls
+
+    if not request.json:
+        return jsonify({"success": "success"})
+
+    caller, operation_context, type, user_response = get_request_infos(request)
+    if user_response == "":
+        speak("Je ne vous ai pas entendu", caller)
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            calls[caller].last_text_to_speech["play_source"],
+            caller,
+            "keyboard",
+        )
+        return jsonify({"success": "success"})
+    task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
+    get_repeat = await task_get_repeat
+    if get_repeat is True:
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            calls[caller].last_text_to_speech["play_source"],
+            caller,
+            "keyboard",
+        )
+        return jsonify({"success": "success"})
+
+    print("user_response", user_response)
+
+    if (
+        type == "Microsoft.Communication.RecognizeCompleted"
+        and operation_context == "get_phone"
+    ):
+
+        if user_response == "":
+            if increment_error(caller, "phone"):
+                transfer_call(
+                    "Il semblerait que nous n'arrivons pas à nous comprendre",
+                    caller,
+                )
+                return jsonify({"success": "success"})
+
+            play_source = text_to_speech(
+                "file_source",
+                "Je n'ai pas compris, pouvez-vous répéter votre numéro de téléphone chiffre par chiffre?",
+                calls[caller],
+            )
+            start_recognizing("/get_phone", "get_phone", play_source, caller)
+            return jsonify({"success": "success"})
+        else:
+            task_human_orientation = asyncio.create_task(
+                get_human_orientation_async(user_response=user_response)
+            )
+            human_orientation = await task_human_orientation
+            if human_orientation is True:
+                transfer_call(
+                    "Vous avez demandé a parler avec une secrétaire",
+                    caller,
+                )
+                return jsonify({"success": "success"})
+            task_get_repeat = asyncio.create_task(
+                get_repeat_async(user_response=user_response)
+            )
+            get_repeat = await task_get_repeat
+            if get_repeat is True:
+                start_recognizing(
+                    calls[caller].last_text_to_speech["endpoint"],
+                    calls[caller].last_text_to_speech["operation_context"],
+                    calls[caller].last_text_to_speech["play_source"],
+                    caller,
+                    "keyboard",
+                )
+                return jsonify({"success": "success"})
+            await asyncio.sleep(1)
+            clean_number = re.sub(r"\D", "", user_response)
+            calls[caller].caller["phone"] = clean_number
+
+            if clean_number is None:
+                if increment_error(caller, "phone"):
+                    transfer_call(
+                        "Il semblerait que nous n'arrivons pas à nous comprendre.",
+                        caller,
+                    )
+                play_source = text_to_speech(
+                    "file_source",
+                    "Je n'ai pas compris, pouvez-vous répéter votre numéro de téléphone chiffre par chiffre ?",
+                    calls[caller],
+                )
+                start_recognizing("/get_phone", "get_phone", play_source, caller)
+                return jsonify({"success": "success"})
+
+            else:
+                speak(
+                    f"Est-ce que votre numéro est bien le",
+                    caller,
+                )
+                play_source = text_to_speech_number_confirm(
+                    clean_number,
+                    calls[caller],
+                )
+                start_recognizing(
+                    "/confirm_phone",
+                    "confirm_phone",
+                    play_source,
+                    caller,
+                    background_noise="click",
+                )
+                return jsonify({"success": "success"})
+
+    elif type == "Microsoft.Communication.RecognizeFailed":
+        speak("Je ne vous ai pas entendu, est-ce que votre numéro est bien le", caller)
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            calls[caller].last_text_to_speech["play_source"],
+            caller,
+            "keyboard",
+        )
+        return jsonify({"success": "success"})
+
+    return jsonify({"success": "success"})
 
 
 @app.route("/get_firstname", methods=["POST"])
@@ -866,8 +1001,8 @@ async def confirm_creneau():
                     creneau=rdv_info["all_creneaux"],
                     index=rdv_info["current_creneau_proposition"],
                 )
-                
-                if (text["success"] is False):
+
+                if text["success"] is False:
                     play_source = text_to_speech(
                         "file_source",
                         f"{text["message"]}. Puis-je faire autre chose pour vous ?",
@@ -882,7 +1017,9 @@ async def confirm_creneau():
                     )
                     return jsonify({"success": "success"})
                 else:
-                    play_source = text_to_speech("file_source", text["message"], calls[caller])
+                    play_source = text_to_speech(
+                        "file_source", text["message"], calls[caller]
+                    )
                     start_recognizing(
                         "/confirm_creneau",
                         "modification",
@@ -891,7 +1028,7 @@ async def confirm_creneau():
                         background_noise="click",
                     )
                     return jsonify({"success": "success"})
-                
+
             else:
                 rdv_info["current_creneau_proposition"] = 0
                 last_key = sorted(rdv_info["all_creneaux"].keys(), key=int)[-1]
@@ -928,7 +1065,7 @@ async def confirm_creneau():
                     creneau=rdv_info["all_creneaux"],
                     index=rdv_info["current_creneau_proposition"],
                 )
-                if (text["success"] is False):
+                if text["success"] is False:
                     play_source = text_to_speech(
                         "file_source",
                         f"{text["message"]}. Puis-je faire autre chose pour vous ?",
@@ -943,7 +1080,9 @@ async def confirm_creneau():
                     )
                     return jsonify({"success": "success"})
                 else:
-                    play_source = text_to_speech("file_source", text["message"], calls[caller])
+                    play_source = text_to_speech(
+                        "file_source", text["message"], calls[caller]
+                    )
                     start_recognizing(
                         "/confirm_creneau",
                         "modification",
@@ -952,7 +1091,7 @@ async def confirm_creneau():
                         background_noise="click",
                     )
                     return jsonify({"success": "success"})
-                
+
         elif positive_negative == "positive":
             rdv_info["chosen_creneau"] = rdv_info["all_creneaux"][
                 str(rdv_info["current_creneau_proposition"] + 1)
@@ -1030,7 +1169,7 @@ async def confirm_creneau():
                     creneau=rdv_info["all_creneaux"],
                     index=rdv_info["current_creneau_proposition"],
                 )
-                if (text["success"] is False):
+                if text["success"] is False:
                     play_source = text_to_speech(
                         "file_source",
                         f"{text["message"]}. Puis-je faire autre chose pour vous ?",
@@ -1045,7 +1184,9 @@ async def confirm_creneau():
                     )
                     return jsonify({"success": "success"})
                 else:
-                    play_source = text_to_speech("file_source", text["message"], calls[caller])
+                    play_source = text_to_speech(
+                        "file_source", text["message"], calls[caller]
+                    )
                     start_recognizing(
                         "/confirm_creneau",
                         "modification",
@@ -1090,7 +1231,7 @@ async def confirm_creneau():
                     creneau=rdv_info["all_creneaux"],
                     index=rdv_info["current_creneau_proposition"],
                 )
-                if (text["success"] is False):
+                if text["success"] is False:
                     play_source = text_to_speech(
                         "file_source",
                         f"{text["message"]}. Puis-je faire autre chose pour vous ?",
@@ -1105,7 +1246,9 @@ async def confirm_creneau():
                     )
                     return jsonify({"success": "success"})
                 else:
-                    play_source = text_to_speech("file_source", text["message"], calls[caller])
+                    play_source = text_to_speech(
+                        "file_source", text["message"], calls[caller]
+                    )
                     start_recognizing(
                         "/confirm_creneau",
                         "modification",
@@ -1118,6 +1261,7 @@ async def confirm_creneau():
             rdv_info["chosen_creneau"] = rdv_info["all_creneaux"][
                 str(rdv_info["current_creneau_proposition"] + 1)
             ]
+            print("TEST", rdv_info)
             dt = datetime.fromisoformat(rdv_info["chosen_creneau"])
 
             matched_creneau = None
@@ -1173,6 +1317,114 @@ async def confirm_creneau():
 
     elif type == "Microsoft.Communication.RecognizeFailed":
         speak("Je ne vous ai pas entendu", caller)
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            calls[caller].last_text_to_speech["play_source"],
+            caller,
+            "keyboard",
+        )
+        return jsonify({"success": "success"})
+
+    return jsonify({"success": "success"})
+
+
+@app.route("/confirm_phone", methods=["POST"])
+async def confirm_phone():
+    # global firstname_error
+    # global firstname
+    # global lastname
+    # global birthdate
+    global calls
+
+    if not request.json:
+        return jsonify({"success": "success"})
+
+    caller, operation_context, type, user_response = get_request_infos(request)
+    if user_response == "":
+        speak("Je ne vous ai pas entendu", caller)
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            calls[caller].last_text_to_speech["play_source"],
+            caller,
+            "keyboard",
+        )
+        return jsonify({"success": "success"})
+    task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
+    get_repeat = await task_get_repeat
+    if get_repeat is True:
+        start_recognizing(
+            calls[caller].last_text_to_speech["endpoint"],
+            calls[caller].last_text_to_speech["operation_context"],
+            calls[caller].last_text_to_speech["play_source"],
+            caller,
+            "keyboard",
+        )
+        return jsonify({"success": "success"})
+    if (
+        type == "Microsoft.Communication.RecognizeCompleted"
+        and operation_context == "confirm_phone"
+    ):
+        # user_response = request.json[0].get("data").get("speechResult").get("speech")
+        task_model_response = asyncio.create_task(
+            get_positive_negative_async(user_response)
+        )
+        task_human_orientation = asyncio.create_task(
+            get_human_orientation_async(user_response=user_response)
+        )
+
+        human_orientation = await task_human_orientation
+        if human_orientation is True:
+            transfer_call(
+                "Vous avez demandé a parler avec une secrétaire",
+                caller,
+            )
+            return jsonify({"success": "success"})
+        await asyncio.sleep(1)
+
+        model_response = await task_model_response
+
+        if model_response == "négative":
+            calls[caller].caller["phone"] = None
+
+            play_source = text_to_speech(
+                "file_source",
+                "Pouvez-vous me donner votre numéro de téléphone chiffre par chiffre ?",
+                calls[caller],
+            )
+
+            start_recognizing(
+                callback_url="/get_phone",
+                play_source=play_source,
+                context="get_phone",
+                caller=caller,
+            )
+            return jsonify({"success": "success"})
+
+        elif model_response == "positive":
+            await examination_exam_type(caller)
+            return jsonify({"success": "success"})
+
+        else:
+            speak(
+                f"Je n'ai pas compris, est-ce que votre numéro de téléphone est le",
+                caller,
+            )
+            play_source = text_to_speech_number_confirm(
+                calls[caller].caller["phone"],
+                calls[caller],
+            )
+            start_recognizing(
+                "/confirm_phone",
+                "confirm_phone",
+                play_source,
+                caller,
+                background_noise="click",
+            )
+            return jsonify({"success": "success"})
+    elif type == "Microsoft.Communication.RecognizeFailed":
+        speak("Je ne vous ai pas entendu, est-ce que votre numéro est bien le", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -2135,9 +2387,16 @@ async def examination_exam_type(caller):
     global calls
 
     if calls[caller].caller["phone"] is None:
+        speak("Pouvez-vous confirmer que votre numéro est le", caller)
+        calls[caller].caller["phone"] = f"0{caller[2:]}"
+        play_source = text_to_speech_number_confirm(
+            f"0{caller[2:]}",
+            calls[caller],
+        )
+        start_recognizing("/confirm_phone", "confirm_phone", play_source, caller)
         return jsonify({"success": "success"})
 
-    print(calls[caller].rdv["sous_type_id"])
+    addPhoneToRDV(calls[caller].rdv["id_examen"], calls[caller].caller["phone"], caller)
 
     task_get_examination = asyncio.create_task(
         get_examination(exam_type=calls[caller].rdv["sous_type_id"])
@@ -2406,7 +2665,7 @@ async def confirm_rdv():
             calls[caller].rdv["all_creneaux"] = creneaux
 
             text = build_single_date_phrase(creneau=creneaux)
-            if (text["success"] is False):
+            if text["success"] is False:
                 play_source = text_to_speech(
                     "file_source",
                     f"{text["message"]}. Puis-je faire autre chose pour vous ?",
@@ -2421,7 +2680,9 @@ async def confirm_rdv():
                 )
                 return jsonify({"success": "success"})
             else:
-                play_source = text_to_speech("file_source", text["message"], calls[caller])
+                play_source = text_to_speech(
+                    "file_source", text["message"], calls[caller]
+                )
                 start_recognizing(
                     "/confirm_creneau",
                     "modification",
@@ -3822,10 +4083,13 @@ def build_single_date_phrase(creneau, index=0):
             final_sentence = f"Est-ce que vous préférez {date_str} à {heure} ?"
 
     final_sentence = convert_numbers_to_words_french(final_sentence)
-    if (final_sentence == "Je suis désolé, aucun créneau n'est disponible pour le moment."):
-        return ({"success": False, "message": final_sentence})
+    if (
+        final_sentence
+        == "Je suis désolé, aucun créneau n'est disponible pour le moment."
+    ):
+        return {"success": False, "message": final_sentence}
     else:
-        return ({"success": True, "message": final_sentence})
+        return {"success": True, "message": final_sentence}
 
 
 def build_multiple_dates_phrase(creneaux, type=None):
@@ -4083,7 +4347,7 @@ async def handle_prise_rdv(caller):
         rdv_info["all_creneaux"] = creneaux
 
         text = build_single_date_phrase(creneau=creneaux)
-        if (text["success"] is False):
+        if text["success"] is False:
             play_source = text_to_speech(
                 "file_source",
                 f"{text["message"]}. Puis-je faire autre chose pour vous ?",
@@ -4107,7 +4371,7 @@ async def handle_prise_rdv(caller):
                 background_noise="click",
             )
             return jsonify({"success": "success"})
-            
+
     else:
         play_source = text_to_speech(
             "file_source",
@@ -4134,6 +4398,16 @@ def handle_annulation(caller):
 
 
 def start_conversation(caller):
+
+    # if calls[caller].caller["phone"] is None:
+    #     speak("Pouvez-vous confirmer que votre numéro est le", caller)
+    #     calls[caller].caller["phone"] = f"0{caller[2:]}"
+    #     play_source = text_to_speech_number_confirm(
+    #         f"0{caller[2:]}",
+    #         calls[caller],
+    #     )
+    #     start_recognizing("/confirm_phone", "confirm_phone", play_source, caller)
+    #     return jsonify({"success": "success"})
 
     if calls[caller].call["called"] in ["33801150214", "33801150143"]:
         play_source = text_to_speech(
@@ -4296,6 +4570,28 @@ def deleteRDV(caller):
         return "Error occurred while creating RDV"
 
 
+def addPhoneToRDV(idExamen, phone, caller):
+    global calls
+
+    url = f"https://{API_URL}/api/addCommentaireRDV"
+
+    result = f"Téléphone: {phone}"
+
+    payload = {"idExamen": idExamen, "commentaire": result}
+
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()  # Raises HTTPError for bad status
+        data = response.json()
+        calls[caller].rdv["phone_saved"] = True
+        print("Ajout de numéro de téléphone: ", data)
+        return data
+
+    except requests.RequestException as e:
+        print("Request failed:", e)
+        return "Error occurred while adding commentary"
+
+
 def addCommentaireRDV(idExamen, caller):
     global calls
     rdv_info = calls[caller].rdv
@@ -4452,7 +4748,7 @@ async def find_patient(caller):
                     rdv_info["current_creneau_proposition"] = 0
 
                     text = build_single_date_phrase(creneau=creneaux)
-                    if (text["success"] is False):
+                    if text["success"] is False:
                         play_source = text_to_speech(
                             "file_source",
                             f"{text["message"]}. Puis-je faire autre chose pour vous ?",
@@ -4460,7 +4756,9 @@ async def find_patient(caller):
                         )
                         return jsonify({"success": "success"})
                     else:
-                        play_source = text_to_speech("file_source", text["message"], calls[caller])
+                        play_source = text_to_speech(
+                            "file_source", text["message"], calls[caller]
+                        )
                         start_recognizing(
                             "/confirm_creneau",
                             "confirm_creneau",
@@ -4545,7 +4843,7 @@ async def find_patient(caller):
                         creneau=rdv_info["all_creneaux"],
                         index=rdv_info["current_creneau_proposition"],
                     )
-                    if (text["success"] is False):
+                    if text["success"] is False:
                         play_source = text_to_speech(
                             "file_source",
                             f"{text["message"]}. Puis-je faire autre chose pour vous ?",
@@ -4560,7 +4858,9 @@ async def find_patient(caller):
                         )
                         return jsonify({"success": "success"})
                     else:
-                        play_source = text_to_speech("file_source", text["message"], calls[caller])
+                        play_source = text_to_speech(
+                            "file_source", text["message"], calls[caller]
+                        )
                         start_recognizing(
                             "/confirm_creneau",
                             "modification",

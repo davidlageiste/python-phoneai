@@ -67,6 +67,7 @@ class Call:
             "reponses_interrogatoire": None,  # Après que le RDV soit créé, réponses aux questions à propos de l'exam
             "id_examen": None,  # Id du dernier rendez-vous créé par téléphone
             "patient_rdv_confirm": None,
+            "phone_saved": False,
         }
 
         # Errors
@@ -78,6 +79,7 @@ class Call:
             "intent": 0,
             "type_exam": 0,
             "rdv": 0,
+            "phone": 0,
         }
 
         # Steps

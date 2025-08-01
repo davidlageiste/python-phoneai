@@ -30,10 +30,10 @@ audios = {
         "fr": "Désolé, je n'ai pas compris. Pouvez-vous répéter l'intitulé de l'examen pour lequel vous souhaitez prendre rendez-vous ?"
     },
     "spell_lastname": {
-        "fr": "Pouvez-vous m'épeler votre nom de famille lettre par lettre ?"
+        "fr": "Pouvez-vous m'épeler votre nom de famille lettre par lettre, par exemple L U C A S ?"
     },
     "spell_lastname2": {
-        "fr": "Désolé, pouvez-vous m'épeler votre nom de famille lettre par lettre ?"
+        "fr": "Désolé, pouvez-vous m'épeler votre nom de famille lettre par lettre, par exemple L U C A S ?"
     },
     "ask_firstname": {"fr": "Et quel est votre prénom ?"},
     "ask_firstname_spell": {"fr": "Pouvez-vous épeler votre prénom lettre par lettre?"},
@@ -149,8 +149,8 @@ audios = {
     "alphabet": {
         "fr": "C cédille, Accent égu, Accent grave, accent circonflexe, tréma, tiret, apostrophe, espace, A, A comme Alice, B, B comme Bastien, C, C comme Céline, D, D comme Damien, Eux, Eux comme Élise, F, F comme Florent, G, G comme Gabriel, H, H comme Hugo, I, I comme Inès, Ji, Ji comme Jules, K, K comme Kévin, L, L comme Léa, M, M comme Mathieu, N, N comme Nina, O, O comme Olivier, P, P comme Pauline, Q, Q comme Quentin, R, R comme Romain, S, S comme Sophie, T, T comme Thomas, U, U comme Ulysse, V, V comme Valérie, double V, double V comme Wendy, X, X comme Xavier, igrec, igrec comme Yannis, Zèd, Zèd comme Zoé"
     },
+    "numbers": {"fr": "zéro, un, deux, trois, quatre, cinq, six, sept, huit, neuf"},
 }
-
 
 recorded_audios_keys = list(audios.keys())
 
