@@ -45,8 +45,7 @@ SPEECH_REGION = "eastus"
 #     "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
 # )
 MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
-# APP_URL = "talkpreprodapi.azurewebsites.net"
-APP_URL = "abc4b8bfc541.ngrok-free.app"
+APP_URL = "talkpreprodapi.azurewebsites.net"
 API_URL = "sparkso-universite.com:8080"
 
 
@@ -704,7 +703,6 @@ async def get_firstname():
                 speak(
                     f"votre prénom est {clean_firstname.strip()} et il s'épèle ainsi ",
                     caller,
-                    speed=0.82,
                 )
                 play_source = text_to_speech_spell_confirm(
                     clean_firstname.strip(),
@@ -811,7 +809,6 @@ async def get_lastname():
             speak(
                 f"votre nom de famille est {calls[caller].caller["lastname"]} et il s'épèle ainsi ",
                 caller,
-                speed=0.82,
             )
             play_source = text_to_speech_spell_confirm(
                 calls[caller].caller["lastname"],
@@ -1273,14 +1270,12 @@ async def confirm_creneau():
                 full_datetime_str = f"{value['date'][:10]}T{value['heureDebut']}:00"
                 current_dt = datetime.fromisoformat(full_datetime_str)
                 if current_dt == chosen_dt:
-                if current_dt == chosen_dt:
                     matched_creneau = value
                     break
 
             if matched_creneau is not None:
                 # Création de la phrase
 
-                phrase = f"{chosen_dt.day} {french_months[chosen_dt.month]} à {chosen_dt.hour} heures {chosen_dt.minute:02d}"
                 phrase = f"{chosen_dt.day} {french_months[chosen_dt.month]} à {chosen_dt.hour} heures {chosen_dt.minute:02d}"
 
                 rdv_info["creneauDate"] = phrase
@@ -1582,7 +1577,6 @@ async def confirm_firstname():
             speak(
                 f"Je n'ai pas compris, votre prénom est {calls[caller].caller["firstname"]} et il s'épèle ainsi ",
                 caller,
-                speed=0.82,
             )
             play_source = text_to_speech_spell_confirm(
                 calls[caller].caller["firstname"],
@@ -1796,7 +1790,6 @@ async def confirm_lastname():
             speak(
                 f"Je n'ai pas compris, votre nom de famille est {calls[caller].caller["lastname"]} et il s'épèle ainsi",
                 caller,
-                speed=0.82,
             )
             play_source = text_to_speech_spell_confirm(
                 calls[caller].caller["lastname"],
@@ -4073,7 +4066,7 @@ def build_single_date_phrase(creneau, index=0):
                 heure = f"{hours} heures"
             else:
                 heure = f"{hours} heures {minutes}"
-            final_sentence = f"Je peux vous proposer {date_str} à {heure}. Est-ce que cela vous convient ? Merci de répondre par oui ou par non."
+            final_sentence = f"Je peux vous proposer {date_str} à {heure}. Est-ce que cela vous convient ?"
         else:
             time_obj = datetime.strptime(heure, "%H:%M")
             hours = time_obj.hour
