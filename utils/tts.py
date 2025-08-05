@@ -169,8 +169,64 @@ char_to_file = {
         "-": ["tiret"],
         "'": ["apostrophe"],
         " ": ["espace"],
+        "0": ["0"],
+        "1": ["1"],
+        "2": ["2"],
+        "3": ["3"],
+        "4": ["4"],
+        "5": ["5"],
+        "6": ["6"],
+        "7": ["7"],
+        "8": ["8"],
+        "9": ["9"],
     }
 }
+
+
+def text_to_speech_number_confirm(number: str, call, language="fr") -> FileSource:
+    """
+    Returns an audio source (FileSource) for Azure Communication Service for spelled confirmation.
+    """
+    combined_audio = []
+    samplerate = None
+
+    if call:
+        call.add_step(number)
+
+    for i, num in enumerate(number):
+        print(num, i)
+        try:
+            for sound in char_to_file[language][num]:
+                audio_data, sr = sf.read(
+                    os.path.join(
+                        f"./audio-files/spell/{language}",
+                        f"{sound}.wav",
+                    )
+                )
+                if samplerate is None:
+                    samplerate = sr
+                elif samplerate != sr:
+                    raise ValueError(
+                        "Tous les fichiers doivent avoir le même sample rate"
+                    )
+                combined_audio.append(audio_data)
+            pause = np.zeros(int((0.2 + (i % 2 * 0.3)) * samplerate))  # Pause de 0.2s
+            combined_audio.append(pause)
+        except Exception as e:
+            print(f"Erreur pour le chiffre {num} : {e}")
+
+    final = np.concatenate(combined_audio)
+
+    # DEBUG
+    # sf.write("test.mp3", final, samplerate)
+
+    audio_stream = BytesIO()
+    sf.write(audio_stream, final, samplerate, format="WAV")
+    audio_stream.seek(0)
+    file_name = f"tmp-{uuid.uuid4()}.wav"
+    upload_stream_azure(audio_stream, file_name)
+    delete_blob_azure_delay(file_name)
+    return FileSource(url=f"{STORAGE_URL_PATH}{file_name}")
 
 
 def text_to_speech_spell_confirm(

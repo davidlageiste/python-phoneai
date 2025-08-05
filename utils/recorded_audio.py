@@ -1,5 +1,8 @@
 audios = {
     "intro": {
+        "Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Je peux prendre, modifier ou annuler vos rendez-vous, lister vos RDV prévus, ainsi que vous fournir des informations générales sur la radiologie. Vous pouvez me parler normalement. Comment puis-je vous aider aujourd’hui ?"
+    },
+    "intro2": {
         "fr": "Bonjour, je suis Lyraé, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Comment puis-je vous aider aujourd’hui ?",
     },
     "intro_preprod": {
@@ -12,13 +15,13 @@ audios = {
         "fr": "Je n'ai pas compris, pouvez-vous épeler votre nom de famille lettre par lettre à nouveau ?"
     },
     "repeat_birthdate": {
-        "fr": "Je n'ai pas compris, quelle est votre date de naissance ?"
+        "fr": "Je n'ai pas compris, pouvez-vous, s'il vous plaît, me donner votre date de naissance avec le mois en toutes lettres, par exemple, le premier janvier mille neuf cent 80"
     },
     "repeat_birthdate2": {
         "fr": "Désolé, pouvez-vous me répéter votre date de naissance ?"
     },
     "repeat_exam_type": {
-        "fr": "Pardonnez moi, pouvez-vous me répéter l'intitulé de l'examen que vous souhaitez passer ? "
+        "fr": "Pardonnez moi je ne vous comprends pas, pouvez-vous lire exactement le nom de l'examen écrit sur votre ordonnance ?"
     },
     "repeat_exam_type2": {
         "fr": "Je ne vous ai pas entendu. Pouvez-vous répeter l'intitulé de l'examen ?"
@@ -27,10 +30,10 @@ audios = {
         "fr": "Désolé, je n'ai pas compris. Pouvez-vous répéter l'intitulé de l'examen pour lequel vous souhaitez prendre rendez-vous ?"
     },
     "spell_lastname": {
-        "fr": "Pouvez-vous m'épeler votre nom de famille lettre par lettre ?"
+        "fr": "Pouvez-vous m'épeler votre nom de famille lettre par lettre, par exemple L U C A S ?"
     },
     "spell_lastname2": {
-        "fr": "Désolé, pouvez-vous m'épeler votre nom de famille lettre par lettre ?"
+        "fr": "Désolé, pouvez-vous m'épeler votre nom de famille lettre par lettre, par exemple L U C A S ?"
     },
     "ask_firstname": {"fr": "Et quel est votre prénom ?"},
     "ask_firstname_spell": {"fr": "Pouvez-vous épeler votre prénom lettre par lettre?"},
@@ -47,6 +50,9 @@ audios = {
     },
     "misunderstand_intent2": {
         "fr": "Désolé, je n'ai pas compris, que puis-je faire pour vous ?"
+    },
+    "misunderstand_intent3": {
+        "fr": "Désolé, je n'ai pas compris. Je peux vous donner des informations sur les examens d’imagerie et sur le cabinet. Je peux aussi donner ou modifier des rendez-vous. Pour mieux vous aider, je vous invite à formuler une phrase complète. N’hésitez pas à parler comme à une vraie personne avec des phrases complètes."
     },
     "misunderstand_exam_type": {
         "fr": "Je ne vous ai pas compris, pour quel type d'examen voulez-vous prendre rendez-vous ? "
@@ -143,8 +149,8 @@ audios = {
     "alphabet": {
         "fr": "C cédille, Accent égu, Accent grave, accent circonflexe, tréma, tiret, apostrophe, espace, A, A comme Alice, B, B comme Bastien, C, C comme Céline, D, D comme Damien, Eux, Eux comme Élise, F, F comme Florent, G, G comme Gabriel, H, H comme Hugo, I, I comme Inès, Ji, Ji comme Jules, K, K comme Kévin, L, L comme Léa, M, M comme Mathieu, N, N comme Nina, O, O comme Olivier, P, P comme Pauline, Q, Q comme Quentin, R, R comme Romain, S, S comme Sophie, T, T comme Thomas, U, U comme Ulysse, V, V comme Valérie, double V, double V comme Wendy, X, X comme Xavier, igrec, igrec comme Yannis, Zèd, Zèd comme Zoé"
     },
+    "numbers": {"fr": "zéro, un, deux, trois, quatre, cinq, six, sept, huit, neuf"},
 }
-
 
 recorded_audios_keys = list(audios.keys())
 
