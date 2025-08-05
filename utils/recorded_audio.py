@@ -149,7 +149,19 @@ audios = {
     "alphabet": {
         "fr": "C cédille, Accent égu, Accent grave, accent circonflexe, tréma, tiret, apostrophe, espace, A, A comme Alice, B, B comme Bastien, C, C comme Céline, D, D comme Damien, Eux, Eux comme Élise, F, F comme Florent, G, G comme Gabriel, H, H comme Hugo, I, I comme Inès, Ji, Ji comme Jules, K, K comme Kévin, L, L comme Léa, M, M comme Mathieu, N, N comme Nina, O, O comme Olivier, P, P comme Pauline, Q, Q comme Quentin, R, R comme Romain, S, S comme Sophie, T, T comme Thomas, U, U comme Ulysse, V, V comme Valérie, double V, double V comme Wendy, X, X comme Xavier, igrec, igrec comme Yannis, Zèd, Zèd comme Zoé"
     },
-    "numbers": {"fr": "zéro, un, deux, trois, quatre, cinq, six, sept, huit, neuf"},
+    "numbers": {
+        "fr":
+        # "zéro, un, deux, trois, quatre, cinq, six, sept, huit, neuf"
+        # "zéro, un, deux, trois, quatre, cinq, six, sept, huit, neuf, dix, onze, douze, treize, quatorze, quinze, seize, dix-sept, dix-huit, dix-neuf, vin"
+        # "seize, dissette, dizuit, diseneuf, vin"
+        # "vingt et un, vingt-deux, vingt-trois, vingt-quatre, vingt-cinq, vingt-six, vingt-sept, vingt-huit, vingt-neuf, trente, trente et un, trente-deux, trente-trois, trente-quatre, trente-cinq, trente-six, trente-sept, trente-huit, trente-neuf, quarante"
+        # "vinté un,  vin te trois, vingte-huite,  trente-sisse, trente-sette, trente-huite "
+        # "quarante et un, quarante-deux, quarante-trois, quarante-quatre, quarante-cinq, quarante-six, quarante-sept, quarante-huit, quarante-neuf, cinquante, cinquante et un, cinquante-deux, cinquante-trois, cinquante-quatre, cinquante-cinq, cinquante-six, cinquante-sept, cinquante-huit, cinquante-neuf, soixante",
+        # "quaranté un, quarante-sisse, quarante-huite, cinquanté un, cinquante-sisse, cinquante-huite, cinquanteneuf",
+        # "soixanté un, soixante-deux, soixante-trois, soixante-quatre, soixante-cinq, soixante-sisse, soixante-sept, soixante-huite, soixanteneuf, soissante-disse, soissanté onze, soissante-douze, soissante-treize, soissante-quatorze, soissante-quinze, soissante-seize, soissante-dix-sept, soissante-dix-huit, soissante-dix-neuf"
+        # "siss, soixanté un, soixante-deux, soixante-trois, soixante-quatre, soixante-cinq, soixante-sisse, soixante-sept, soissantedizuit, soissantedizneuf"
+        ", quatre-vin-un, diss, quatre-vin-quatre, quatre-vin-siss, quatre-vin-huite, quatre-vin-diss, quatre-vin-onze, quatre-vin-treize, quatre-vin-quatorze, quatre-vin-quinze, quatre-vin-seize, quatre-vin-dizhuite"
+    },
 }
 
 recorded_audios_keys = list(audios.keys())

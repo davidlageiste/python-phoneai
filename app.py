@@ -4396,16 +4396,6 @@ def handle_annulation(caller):
 
 def start_conversation(caller):
 
-    # if calls[caller].caller["phone"] is None:
-    #     speak("Pouvez-vous confirmer que votre numéro est le", caller)
-    #     calls[caller].caller["phone"] = f"0{caller[2:]}"
-    #     play_source = text_to_speech_number_confirm(
-    #         f"0{caller[2:]}",
-    #         calls[caller],
-    #     )
-    #     start_recognizing("/confirm_phone", "confirm_phone", play_source, caller)
-    #     return jsonify({"success": "success"})
-
     if calls[caller].call["called"] in ["33801150214", "33801150143"]:
         play_source = text_to_speech(
             "fixed_file_source", "intro_preprod", calls[caller]
