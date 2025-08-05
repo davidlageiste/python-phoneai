@@ -451,7 +451,7 @@ async def callback():
         and request.json
         and request.json[0].get("data").get("operationContext") == "transfer"
     ):
-        target = "+33668827897"
+        target = "+33672672249"
         call_automation_client.get_call_connection(
             call_connection_id=calls[caller].call["call_connection_id"]
         ).transfer_call_to_participant(
