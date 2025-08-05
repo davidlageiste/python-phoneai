@@ -1,6 +1,6 @@
 audios = {
     "intro": {
-        "fr": "Bonjour! Je suis Lyrae, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Je peux prendre, modifier ou annuler vos rendez-vous, lister vos RDV prévus, ainsi que vous fournir des informations générales sur la radiologie. Vous pouvez me parler normalement. Comment puis-je vous aider aujourd’hui ?"
+        "fr": "Bonjour, Je suis Lyraé, l'assistante vocale du centre de radiologie, je suis un agent conversationnel automatisé. Je peux prendre, modifier ou annuler vos rendez-vous, lister vos rendez-vous prévus ainsi que vous fournir des informations générales sur la radiologie. Vous pouvez me parler normalement. Comment puis-je vous aider aujourd’hui ?"
     },
     "intro2": {
         "fr": "Bonjour, je suis Lyraé, l'assistante vocale du centre de radiologie. Je suis un agent conversationnel automatisé. Comment puis-je vous aider aujourd’hui ?",

@@ -41,13 +41,14 @@ COGNITIVE_SERVICE_ENDPOINT = (
 )
 SPEECH_KEY = "CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U2XJ3w3AAAAACOGuWEK"
 SPEECH_REGION = "eastus"
-MONGO_URL = (
-    "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
-)
-# MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
-APP_URL = "lyraemuzillac.azurewebsites.net"
-API_URL = "sparkso-universite.com:8081"
-SANDBOX_URL = "resultat-imagerie.riva56.fr"
+# MONGO_URL = (
+#     "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
+# )
+MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
+APP_URL = "talkpreprodapi.azurewebsites.net"
+API_URL = "sparkso-universite.com:8080"
+
+
 app = Flask(__name__)
 
 client = MongoClient(MONGO_URL)
