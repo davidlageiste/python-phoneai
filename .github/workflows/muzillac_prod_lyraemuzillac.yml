@@ -2,12 +2,12 @@
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 # More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
 
-name: Build and deploy Python app to Azure Web App - TalkPreprodAPI
+name: Build and deploy Python app to Azure Web App - LyraeMuzillac
 
 on:
   push:
     branches:
-      - preprod
+      - muzillac_prod
   workflow_dispatch:
 
 jobs:
@@ -22,7 +22,7 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.11'
 
       - name: Create and start virtual environment
         run: |
@@ -48,9 +48,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    environment:
-      name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    
     permissions:
       id-token: write #This is required for requesting the JWT
       contents: read #This is required for actions/checkout
@@ -68,14 +66,14 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_A068BC2FE01A4B718D0B5572F5D3D6D3 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_D1BEA8718E894A58BA1B2917AC955078 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_529508E1820B467FB395121816578A5C }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_89FFFBC6E59A4810AC6D951D4AE1634D }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_B0E0C23D9727497EA8BFB9742B251F2E }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_1DF9346E26BF4EEA9DC8A2EDA21F07F6 }}
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
-          app-name: 'TalkPreprodAPI'
+          app-name: 'LyraeMuzillac'
           slot-name: 'Production'
           

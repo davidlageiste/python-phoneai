@@ -108,21 +108,24 @@ class Call:
         return json.dumps(data, indent=2, ensure_ascii=False)
 
     def to_string_archive(self, caller) -> str:
+        steps_str = "\n".join(self.steps)
         return f"""***********
-{caller} / {self.updated_at} / intent: {self.call["intent"]}
+{caller} / {self.updated_at} / intent: {self.call['intent']}
 
 CALLER INFO
 birthdate / lastname / firstname / email
-{self.caller["birthdate"]} / {self.caller["lastname"]} / {self.caller["firstname"]} / {self.caller["email" ]}
+{self.caller['birthdate']} / {self.caller['lastname']} / {self.caller['firstname']} / {self.caller['email']}
 
 TALK
-{"\n".join(self.steps)}\n\n
+{steps_str}\n\n
 """
 
     def store_archive(self, caller):
         content = self.to_string_archive(caller)
         upload_call_recap(
-            f"{caller}-{str(self.updated_at).replace(" ", "-")}.txt", "calls", content
+            f"{caller}-{str(self.updated_at).replace(' ', '-')}.txt",
+            "muzillac-calls",
+            content,
         )
 
     def __str__(self):

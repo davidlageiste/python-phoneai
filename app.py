@@ -41,14 +41,13 @@ COGNITIVE_SERVICE_ENDPOINT = (
 )
 SPEECH_KEY = "CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U2XJ3w3AAAAACOGuWEK"
 SPEECH_REGION = "eastus"
-# MONGO_URL = (
-#     "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
-# )
-MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
-APP_URL = "talkpreprodapi.azurewebsites.net"
-API_URL = "sparkso-universite.com:8080"
-
-
+MONGO_URL = (
+    "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
+)
+# MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
+APP_URL = "lyraemuzillac.azurewebsites.net"
+API_URL = "sparkso-universite.com:8081"
+SANDBOX_URL = "resultat-imagerie.riva56.fr"
 app = Flask(__name__)
 
 client = MongoClient(MONGO_URL)
@@ -807,7 +806,7 @@ async def get_lastname():
 
         else:
             speak(
-                f"votre nom de famille est {calls[caller].caller["lastname"]} et il s'épèle ainsi ",
+                f"votre nom de famille est {calls[caller].caller['lastname']} et il s'épèle ainsi ",
                 caller,
             )
             play_source = text_to_speech_spell_confirm(
@@ -1002,7 +1001,7 @@ async def confirm_creneau():
                 if text["success"] is False:
                     play_source = text_to_speech(
                         "file_source",
-                        f"{text["message"]}. Puis-je faire autre chose pour vous ?",
+                        f"{text['message']}. Puis-je faire autre chose pour vous ?",
                         calls[caller],
                     )
                     start_recognizing(
@@ -1065,7 +1064,7 @@ async def confirm_creneau():
                 if text["success"] is False:
                     play_source = text_to_speech(
                         "file_source",
-                        f"{text["message"]}. Puis-je faire autre chose pour vous ?",
+                        f"{text['message']}. Puis-je faire autre chose pour vous ?",
                         calls[caller],
                     )
                     start_recognizing(
@@ -1169,7 +1168,7 @@ async def confirm_creneau():
                 if text["success"] is False:
                     play_source = text_to_speech(
                         "file_source",
-                        f"{text["message"]}. Puis-je faire autre chose pour vous ?",
+                        f"{text['message']}. Puis-je faire autre chose pour vous ?",
                         calls[caller],
                     )
                     start_recognizing(
@@ -1231,7 +1230,7 @@ async def confirm_creneau():
                 if text["success"] is False:
                     play_source = text_to_speech(
                         "file_source",
-                        f"{text["message"]}. Puis-je faire autre chose pour vous ?",
+                        f"{text['message']}. Puis-je faire autre chose pour vous ?",
                         calls[caller],
                     )
                     start_recognizing(
@@ -1498,10 +1497,10 @@ async def confirm_firstname():
                 findPatientsInDB(
                     {
                         "dateNaissance": {
-                            "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
+                            "$regex": f"^{calls[caller].caller['birthdate'] + 'T00:00:00'}$"
                         },
                         "nom": {
-                            "$regex": f"^{calls[caller].caller["lastname"]}$",
+                            "$regex": f"^{calls[caller].caller['lastname']}$",
                             "$options": "i",  # Case-insensitive
                         },
                     }
@@ -1522,14 +1521,14 @@ async def confirm_firstname():
                 patient = findPatientInDB(
                     {
                         "dateNaissance": {
-                            "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
+                            "$regex": f"^{calls[caller].caller['birthdate'] + 'T00:00:00'}$"
                         },
                         "nom": {
-                            "$regex": f"^{name_similarity["prenom"]}$",
+                            "$regex": f"^{name_similarity['prenom']}$",
                             "$options": "i",  # Case-insensitive
                         },
                         "prenom": {
-                            "$regex": f"^{name_similarity["nom"]}$",
+                            "$regex": f"^{name_similarity['nom']}$",
                             "$options": "i",  # Case-insensitive
                         },
                     }
@@ -1575,7 +1574,7 @@ async def confirm_firstname():
 
         else:
             speak(
-                f"Je n'ai pas compris, votre prénom est {calls[caller].caller["firstname"]} et il s'épèle ainsi ",
+                f"Je n'ai pas compris, votre prénom est {calls[caller].caller['firstname']} et il s'épèle ainsi ",
                 caller,
             )
             play_source = text_to_speech_spell_confirm(
@@ -1662,7 +1661,7 @@ async def confirm_lastname():
                 findPatientsInDB(
                     {
                         "dateNaissance": {
-                            "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
+                            "$regex": f"^{calls[caller].caller['birthdate'] + 'T00:00:00'}$"
                         }
                     }
                 )
@@ -1682,14 +1681,14 @@ async def confirm_lastname():
                 patient = findPatientInDB(
                     {
                         "dateNaissance": {
-                            "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
+                            "$regex": f"^{calls[caller].caller['birthdate'] + 'T00:00:00'}$"
                         },
                         "nom": {
-                            "$regex": f"^{name_similarity["nom"]}$",
+                            "$regex": f"^{name_similarity['nom']}$",
                             "$options": "i",  # Case-insensitive
                         },
                         "prenom": {
-                            "$regex": f"^{name_similarity["prenom"]}$",
+                            "$regex": f"^{name_similarity['prenom']}$",
                             "$options": "i",  # Case-insensitive
                         },
                     }
@@ -1740,10 +1739,10 @@ async def confirm_lastname():
             count = countPatientInDB(
                 {
                     "dateNaissance": {
-                        "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
+                        "$regex": f"^{calls[caller].caller['birthdate'] + 'T00:00:00'}$"
                     },
                     "nom": {
-                        "$regex": f"^{calls[caller].caller["lastname"]}$",
+                        "$regex": f"^{calls[caller].caller['lastname']}$",
                         "$options": "i",  # Case-insensitive
                     },
                 }
@@ -1762,10 +1761,10 @@ async def confirm_lastname():
                 patient = findPatientInDB(
                     {
                         "dateNaissance": {
-                            "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
+                            "$regex": f"^{calls[caller].caller['birthdate'] + 'T00:00:00'}$"
                         },
                         "nom": {
-                            "$regex": f"^{calls[caller].caller["lastname"]}$",
+                            "$regex": f"^{calls[caller].caller['lastname']}$",
                             "$options": "i",  # Case-insensitive
                         },
                     }
@@ -1788,7 +1787,7 @@ async def confirm_lastname():
 
         else:
             speak(
-                f"Je n'ai pas compris, votre nom de famille est {calls[caller].caller["lastname"]} et il s'épèle ainsi",
+                f"Je n'ai pas compris, votre nom de famille est {calls[caller].caller['lastname']} et il s'épèle ainsi",
                 caller,
             )
             play_source = text_to_speech_spell_confirm(
@@ -1999,7 +1998,7 @@ async def confirm_birthdate():
             count = countPatientInDB(
                 {
                     "dateNaissance": {
-                        "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
+                        "$regex": f"^{calls[caller].caller['birthdate'] + 'T00:00:00'}$"
                     }
                 }
             )
@@ -2019,7 +2018,7 @@ async def confirm_birthdate():
                 patient = findPatientInDB(
                     {
                         "dateNaissance": {
-                            "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
+                            "$regex": f"^{calls[caller].caller['birthdate'] + 'T00:00:00'}$"
                         }
                     }
                 )
@@ -2301,7 +2300,7 @@ async def confirm_identity():
             date_litterale = date_vers_litteral(calls[caller].caller["birthdate"])
             play_source = text_to_speech(
                 "file_source",
-                f"Désolé, je n'ai pas compris, vous êtes bien {calls[caller].caller["lastname"]} {calls[caller].caller["firstname"]}. Né {date_litterale} ?",
+                f"Désolé, je n'ai pas compris, vous êtes bien {calls[caller].caller['lastname']} {calls[caller].caller['firstname']}. Né {date_litterale} ?",
                 calls[caller],
             )
             start_recognizing(
@@ -2493,9 +2492,12 @@ async def examination_response():
             )
             return jsonify({"success": "success"})
         else:
+            mammographie_text = ""
+            if calls[caller].rdv["exam_id"] == "MA":
+                mammographie_text = "Pensez à ramener vos anciennes mammographies et echographies le jour de l'examen. C'est très important pour l'équipe d'imagerie mammaire."
             play_source = text_to_speech(
                 "file_source",
-                "Très bien, merci beaucoup pour ces précisions, j'ai fini. Puis-je faire autre chose pour vous ?",
+                f"Très bien, merci beaucoup pour ces précisions, j'ai fini. ${mammographie_text} Puis-je faire autre chose pour vous ?",
                 calls[caller],
             )
             addCommentaireRDV(rdv_info["id_examen"], caller)
@@ -2643,6 +2645,9 @@ async def confirm_rdv():
             # play_source = text_to_speech("file_source", "Pouvez-vous me lire le motif de l'examen présent sur votre ordonnance ?", calls[caller])
             # start_recognizing("/get_motif", "get_motif", play_source, caller)
 
+            # play_source = text_to_speech("file_source", "Pouvez-vous me lire le motif de l'examen présent sur votre ordonnance ?", calls[caller])
+            # start_recognizing("/get_motif", "get_motif", play_source, caller)
+
             task_creneaux = asyncio.create_task(
                 get_creneaux_async(
                     sous_type=calls[caller].rdv["sous_type_id"],
@@ -2665,7 +2670,7 @@ async def confirm_rdv():
             if text["success"] is False:
                 play_source = text_to_speech(
                     "file_source",
-                    f"{text["message"]}. Puis-je faire autre chose pour vous ?",
+                    f"{text['message']}. Puis-je faire autre chose pour vous ?",
                     calls[caller],
                 )
                 start_recognizing(
@@ -2776,7 +2781,7 @@ async def rdv_exam_type():
         and operation_context == "rdv_exam_type"
     ):
         if rdv_info["exam_id"] is not None:
-            user_response = f"C'est pour un {rdv_info["exam_id"]} {user_response}"
+            user_response = f"C'est pour un {rdv_info['exam_id']} {user_response}"
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
 
         # pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
@@ -2842,14 +2847,14 @@ async def rdv_exam_type():
             )
             if not is_performed:
                 hang_up(
-                    f"Vous avez demandé {"un" if exam_type["type_examen_id"] == "CT" else "une"} {exam_type["code_examen"]}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
+                    f"Vous avez demandé {'un' if exam_type['type_examen_id'] == 'CT' else 'une'} {exam_type['code_examen']}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
                     caller,
                 )
             else:
                 rdv_info["exam_id"] = actual_exam_id
                 rdv_info["sous_type_id"] = actual_sous_type_id
                 rdv_info["code_examen"] = (
-                    f"{"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["code_examen"]}"
+                    f"{'un' if exam_type['type_examen'] == 'CT' else 'une'} {exam_type['code_examen']}"
                 )
                 play_source = text_to_speech(
                     "file_source",
@@ -2866,7 +2871,7 @@ async def rdv_exam_type():
             rdv_info["exam_id"] = exam_type["type_examen"]
             play_source = text_to_speech(
                 "file_source",
-                f"Vous m'avez dit {"un" if exam_type["type_examen_id"] == "CT" else "une"} {exam_type["type_examen"]}. Pouvez-vous, s'il vous plaît, préciser la zone anatomique concernée?",
+                f"Vous m'avez dit {'un' if exam_type['type_examen_id'] == 'CT' else 'une'} {exam_type['type_examen']}. Pouvez-vous, s'il vous plaît, préciser la zone anatomique concernée?",
                 calls[caller],
             )
             start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source, caller)
@@ -3115,7 +3120,7 @@ async def get_creneaux_choice():
 
             play_source = text_to_speech(
                 "file_source",
-                f"Je n'ai pas compris le rendez-vous que vous souhaitez annuler. {rdv_info["annulation_phrase"]}",
+                f"Je n'ai pas compris le rendez-vous que vous souhaitez annuler. {rdv_info['annulation_phrase']}",
                 calls[caller],
             )
             start_recognizing("/get_creneaux_choice", "annulation", play_source, caller)
@@ -3151,7 +3156,7 @@ async def get_creneaux_choice():
             else:
                 play_source = text_to_speech(
                     "file_source",
-                    f"Je n'ai pas compris le rendez-vous que vous souhaitez annuler. {rdv_info["annulation_phrase"]}",
+                    f"Je n'ai pas compris le rendez-vous que vous souhaitez annuler. {rdv_info['annulation_phrase']}",
                     calls[caller],
                 )
                 start_recognizing(
@@ -3314,18 +3319,18 @@ async def handleResponse():
                     )
                     if not is_performed:
                         hang_up(
-                            f"Vous avez demandé {"un" if exam_type["type_examen_id"] == "CT" else "une"} {exam_type["code_examen"]}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
+                            f"Vous avez demandé {'un' if exam_type['type_examen_id'] == 'CT' else 'une'} {exam_type['code_examen']}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
                             caller,
                         )
                     else:
                         rdv_info["exam_id"] = actual_exam_id
                         rdv_info["sous_type_id"] = actual_sous_type_id
                         rdv_info["code_examen"] = (
-                            f"{"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["code_examen"]}"
+                            f"{'un' if exam_type['type_examen'] == 'CT' else 'une'} {exam_type['code_examen']}"
                         )
                         play_source = text_to_speech(
                             "file_source",
-                            f"Vous m'avez dit vouloir prendre rendez-vous pour {"un" if exam_type["type_examen_id"] == "CT" else "une"} {exam_type["code_examen"]}, c'est ça ?",
+                            f"Vous m'avez dit vouloir prendre rendez-vous pour {'un' if exam_type['type_examen_id'] == 'CT' else 'une'} {exam_type['code_examen']}, c'est ça ?",
                             calls[caller],
                         )
                         start_recognizing(
@@ -3339,7 +3344,7 @@ async def handleResponse():
                     rdv_info["exam_id"] = exam_type["type_examen"]
                     play_source = text_to_speech(
                         "file_source",
-                        f"Vous souhaitez prendre rendez-vous pour {"un" if exam_type["type_examen_id"] == "CT" else "une"} {exam_type["type_examen"]}. Pouvez-vous, s'il vous plaît, préciser la zone anatomique concernée?",
+                        f"Vous souhaitez prendre rendez-vous pour {'un' if exam_type['type_examen_id'] == 'CT' else 'une'} {exam_type['type_examen']}. Pouvez-vous, s'il vous plaît, préciser la zone anatomique concernée?",
                         calls[caller],
                     )
                     start_recognizing(
@@ -3510,18 +3515,18 @@ async def handleResponse():
                     )
                     if not is_performed:
                         hang_up(
-                            f"Vous avez demandé {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["code_examen"]}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
+                            f"Vous avez demandé {'un' if exam_type['type_examen'] == 'CT' else 'une'} {exam_type['code_examen']}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
                             caller,
                         )
                     else:
                         rdv_info["exam_id"] = actual_exam_id
                         rdv_info["sous_type_id"] = actual_sous_type_id
                         rdv_info["code_examen"] = (
-                            f"{"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["code_examen"]}"
+                            f"{'un' if exam_type['type_examen'] == 'CT' else 'une'} {exam_type['code_examen']}"
                         )
                         play_source = text_to_speech(
                             "file_source",
-                            f"Vous m'avez dit vouloir prendre rendez-vous pour {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["code_examen"]}, c'est ça ?",
+                            f"Vous m'avez dit vouloir prendre rendez-vous pour {'un' if exam_type['type_examen'] == 'CT' else 'une'} {exam_type['code_examen']}, c'est ça ?",
                             calls[caller],
                         )
                         start_recognizing(
@@ -3535,7 +3540,7 @@ async def handleResponse():
                     rdv_info["exam_id"] = exam_type["type_examen"]
                     play_source = text_to_speech(
                         "file_source",
-                        f"Vous souhaitez prendre rendez-vous pour {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["type_examen"]}. Pouvez-vous, s'il vous plaît, préciser la zone anatomique concernée?",
+                        f"Vous souhaitez prendre rendez-vous pour {'un' if exam_type['type_examen'] == 'CT' else 'une'} {exam_type['type_examen']}. Pouvez-vous, s'il vous plaît, préciser la zone anatomique concernée?",
                         calls[caller],
                     )
                     start_recognizing(
@@ -4347,7 +4352,7 @@ async def handle_prise_rdv(caller):
         if text["success"] is False:
             play_source = text_to_speech(
                 "file_source",
-                f"{text["message"]}. Puis-je faire autre chose pour vous ?",
+                f"{text['message']}. Puis-je faire autre chose pour vous ?",
                 calls[caller],
             )
             start_recognizing(
@@ -4430,7 +4435,7 @@ def get_patient_rdv_confirm(caller):
     )
     play_source = text_to_speech(
         "file_source",
-        f"Vous appelez pour un rendez-vous pour {caller_info["firstname"]} {caller_info["lastname"]} pour {rdv_info["code_examen"]} au cabinet de radiologie Riva à Muzillac {phrase_creneau}. Est-ce que vous confirmez bien ces informations? Répondez moi par oui ou par non. Votre réponse sera enregistrée.",
+        f"Vous appelez pour un rendez-vous pour {caller_info['firstname']} {caller_info['lastname']} pour {rdv_info['code_examen']} au cabinet de radiologie Riva à Muzillac {phrase_creneau}. Est-ce que vous confirmez bien ces informations? Répondez moi par oui ou par non. Votre réponse sera enregistrée.",
         calls[caller],
     )
     start_recognizing("/confirm_rdv", "final_confirm_rdv", play_source, caller)
@@ -4610,7 +4615,7 @@ def addCommentaireRDV(idExamen, caller):
 
 
 def get_sous_type_exam(type_examen):
-    # url = "https://sandbox.xplore.fr:20443/XaPriseRvGateway/Application/api/External/GetListeExamensFromTypeExamen"
+    # url = f"https://{SANDBOX_URL}/XaPriseRvGateway/Application/api/External/GetListeExamensFromTypeExamen"
     url = f"https://{API_URL}/api/getSousTypesExamen"
 
     payload = {"examId": type_examen}
@@ -4650,14 +4655,14 @@ async def find_patient(caller):
         patient = patientCollection.find_one(
             {
                 "dateNaissance": {
-                    "$regex": f"^{caller_info["birthdate"] + 'T00:00:00'}$"
+                    "$regex": f"^{caller_info['birthdate'] + 'T00:00:00'}$"
                 },
                 "nom": {
-                    "$regex": f"^{caller_info["lastname"]}$",
+                    "$regex": f"^{caller_info['lastname']}$",
                     "$options": "i",
                 },  # Case-insensitive
                 "prenom": {
-                    "$regex": f"^{strip_accents(caller_info["firstname"])}$",
+                    "$regex": f"^{strip_accents(caller_info['firstname'])}$",
                     "$options": "i",  # Case-insensitive
                 },
             }
@@ -4700,7 +4705,7 @@ async def find_patient(caller):
                 )
 
                 speak(
-                    f"Parfait, vous avez donc rendez-vous {phrase_creneau} au nom de {caller_info["lastname"]}. Le jour de l'examen, vous devrez amener votre Ordonnance, la Carte vitale et la carte de mutuelle, une Pièce d'identité et, si besoin, vos justificatif ALD, CMU, arrêt de travail.",
+                    f"Parfait, vous avez donc rendez-vous {phrase_creneau} au nom de {caller_info['lastname']}. Le jour de l'examen, vous devrez amener votre Ordonnance, la Carte vitale et la carte de mutuelle, une Pièce d'identité et, si besoin, vos justificatif ALD, CMU, arrêt de travail.",
                     caller,
                 )
 
@@ -4738,7 +4743,7 @@ async def find_patient(caller):
                     if text["success"] is False:
                         play_source = text_to_speech(
                             "file_source",
-                            f"{text["message"]}. Puis-je faire autre chose pour vous ?",
+                            f"{text['message']}. Puis-je faire autre chose pour vous ?",
                             background_noise="click",
                         )
                         return jsonify({"success": "success"})
@@ -4833,7 +4838,7 @@ async def find_patient(caller):
                     if text["success"] is False:
                         play_source = text_to_speech(
                             "file_source",
-                            f"{text["message"]}. Puis-je faire autre chose pour vous ?",
+                            f"{text['message']}. Puis-je faire autre chose pour vous ?",
                             calls[caller],
                         )
                         start_recognizing(
@@ -5005,6 +5010,11 @@ async def find_patient(caller):
             start_recognizing(
                 "/transfer_to_secretary", "transfer_unknown", play_source, caller
             )
+
+
+@app.route("/ping", methods=["POST"])
+async def ping():
+    return jsonify({"pong"})
 
 
 if __name__ == "__main__":
