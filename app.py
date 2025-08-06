@@ -556,10 +556,16 @@ async def get_phone():
                     )
                 play_source = text_to_speech(
                     "file_source",
-                    "Je n'ai pas compris, pouvez-vous répéter votre numéro de téléphone chiffre par chiffre ?",
+                    "Je n'ai pas compris, pouvez-vous répéter votre numéro de téléphone?",
                     calls[caller],
                 )
-                start_recognizing("/get_phone", "get_phone", play_source, caller)
+                start_recognizing(
+                    "/get_phone",
+                    "get_phone",
+                    play_source,
+                    caller,
+                    end_silence_timeout=1,
+                )
                 return jsonify({"success": "success"})
 
             else:
@@ -1389,7 +1395,7 @@ async def confirm_phone():
 
             play_source = text_to_speech(
                 "file_source",
-                "Pouvez-vous me donner votre numéro de téléphone chiffre par chiffre ?",
+                "Pouvez-vous me donner votre numéro de téléphone?",
                 calls[caller],
             )
 
@@ -1398,6 +1404,7 @@ async def confirm_phone():
                 play_source=play_source,
                 context="get_phone",
                 caller=caller,
+                end_silence_timeout=1,
             )
             return jsonify({"success": "success"})
 
