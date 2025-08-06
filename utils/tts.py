@@ -282,8 +282,14 @@ def text_to_speech_number_confirm(number: str, call, language="fr") -> FileSourc
 
     if call:
         call.add_step(number)
-    grouped_number = [number[0], number[1]] + [
-        number[i : i + 2] for i in range(2, len(number), 2)
+    grouped_number = [
+        char
+        for group in [number[i : i + 2] for i in range(0, len(number), 2)]
+        for char in (
+            [group[0], group[1]]
+            if group.startswith("0") and len(group) == 2
+            else [group]
+        )
     ]
 
     for i, num in enumerate(grouped_number):
@@ -334,7 +340,7 @@ def text_to_speech_spell_confirm(
 
     if call:
         call.add_step(
-            "Lyrae: spell({}){}".format(text, ", c'est bien ça ?" if confirm else '')
+            "Lyrae: spell({}){}".format(text, ", c'est bien ça ?" if confirm else "")
         )
 
     for letter in text:
