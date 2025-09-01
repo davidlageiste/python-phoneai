@@ -2874,7 +2874,7 @@ async def rdv_exam_type():
         elif (
             exam_type["type_examen"] is not None and exam_type["code_examen_id"] is None
         ):
-            if rdv_info["exam_id"] is not None:
+            if rdv_info["exam_id"] is not None or str(exam_type.get('type_exam_id', '')).lower() == 'autre':
                 speak("Désolé, je n'ai pas compris", caller)
             rdv_info["exam_id"] = exam_type["type_examen"]
             play_source = text_to_speech(
