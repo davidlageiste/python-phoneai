@@ -1261,9 +1261,7 @@ async def confirm_creneau():
                     )
                     return jsonify({"success": "success"})
         elif positive_negative == "positive":
-            rdv_info["chosen_creneau"] = rdv_info["all_creneaux"][
-                str(rdv_info["current_creneau_proposition"] + 1)
-            ]
+            rdv_info["chosen_creneau"] = rdv_info["all_creneaux"][str(rdv_info["current_creneau_proposition"] + 1)]
             chosen_date_str = rdv_info["chosen_creneau"]["date"][:10]
             chosen_time_str = rdv_info["chosen_creneau"]["heureDebut"]
             chosen_dt = datetime.fromisoformat(
@@ -1273,16 +1271,23 @@ async def confirm_creneau():
             matched_creneau = None
             for key, value in rdv_info["all_creneaux"].items():
                 full_datetime_str = f"{value['date'][:10]}T{value['heureDebut']}:00"
-                full_datetime_str = f"{value['date'][:10]}T{value['heureDebut']}:00"
                 current_dt = datetime.fromisoformat(full_datetime_str)
                 if current_dt == chosen_dt:
                     matched_creneau = value
                     break
 
             if matched_creneau is not None:
-                # Création de la phrase
+                # --- gestion du "premier" ---
+                jour = "premier" if chosen_dt.day == 1 else str(chosen_dt.day)
+                mois = french_months[chosen_dt.month]
 
-                phrase = f"{chosen_dt.day} {french_months[chosen_dt.month]} à {chosen_dt.hour} heures {chosen_dt.minute:02d}"
+                # gestion de l'heure
+                if chosen_dt.minute == 0:
+                    heure = f"{chosen_dt.hour} heures"
+                else:
+                    heure = f"{chosen_dt.hour} heures {chosen_dt.minute}"
+
+                phrase = f"{jour} {mois} à {heure}"
 
                 rdv_info["creneauDate"] = phrase
                 rdv_info["chosen_creneau"] = matched_creneau
@@ -3007,9 +3012,17 @@ async def get_creneaux_choice():
                     break
 
             if matched_creneau is not None:
-                # Création de la phrase
+                # --- gestion du "premier" ---
+                jour = "premier" if dt.day == 1 else str(dt.day)
+                mois = french_months[dt.month]
 
-                phrase = f"{dt.day} {french_months[dt.month]} à {dt.hour} heures {dt.minute:02d}"
+                # --- gestion de l'heure ---
+                if dt.minute == 0:
+                    heure = f"{dt.hour} heures"
+                else:
+                    heure = f"{dt.hour} heures {dt.minute}"
+
+                phrase = f"{jour} {mois} à {heure}"
 
                 rdv_info["creneauDate"] = phrase
                 rdv_info["chosen_creneau"] = matched_creneau
@@ -3077,10 +3090,17 @@ async def get_creneaux_choice():
                     break
 
             if matched_creneau is not None:
-                # Création de la phrase
+                # --- gestion du "premier" ---
+                jour = "premier" if dt.day == 1 else str(dt.day)
+                mois = french_months[dt.month]
 
-                phrase = f"{dt.day} {french_months[dt.month]} à {dt.hour} heures {dt.minute:02d}"
+                # --- gestion de l'heure ---
+                if dt.minute == 0:
+                    heure = f"{dt.hour} heures"
+                else:
+                    heure = f"{dt.hour} heures {dt.minute}"
 
+                phrase = f"{jour} {mois} à {heure}"
                 rdv_info["creneauDate"] = phrase
                 rdv_info["chosen_creneau"] = matched_creneau
 
@@ -3144,14 +3164,25 @@ async def get_creneaux_choice():
                 if current_dt == dt:
                     matched_creneau = item
                     break
+
             if matched_creneau is not None:
                 rdv_info["cancel_creneau"] = matched_creneau
-                date_str = matched_creneau["datePrevue"][:10]
-                time_str = matched_creneau["heurePrevue"]
+
+                # --- gestion du "premier" ---
+                jour = "premier" if current_dt.day == 1 else str(current_dt.day)
+                mois = french_months[current_dt.month]
+
+                # --- gestion de l'heure ---
+                if current_dt.minute == 0:
+                    heure = f"{current_dt.hour} heures"
+                else:
+                    heure = f"{current_dt.hour} heures {current_dt.minute}"
+
+                phrase = f"{jour} {mois} à {heure}"
 
                 play_source = text_to_speech(
                     "file_source",
-                    f"Vous confirmez que vous voulez annuler votre rendez-vous du {date_str} à {time_str}",
+                    f"Vous confirmez que vous voulez annuler votre rendez-vous du {phrase}",
                     calls[caller],
                 )
                 start_recognizing(
@@ -4060,36 +4091,31 @@ def build_single_date_phrase(creneau, index=0):
         date_obj = datetime.fromisoformat(slot["date"]).date()
         today = datetime.today().date()
         tomorrow = today + timedelta(days=1)
-        day = date_obj.day
+
+        day = "premier" if date_obj.day == 1 else str(date_obj.day)
         month_name = french_months[date_obj.month]
+
         if date_obj == today:
             date_str = f"aujourd'hui le {day} {month_name}"
         elif date_obj == tomorrow:
             date_str = f"demain le {day} {month_name}"
         else:
             date_str = f"le {french_weekdays[date_obj.weekday()]} {day} {month_name}"
-        heure = slot["heureDebut"]
-        if index == 0:
-            time_obj = datetime.strptime(heure, "%H:%M")
-            hours = time_obj.hour
-            minutes = time_obj.minute
 
-            # Format as "8 heures" or "8 heures 15"
-            if minutes == 0:
-                heure = f"{hours} heures"
-            else:
-                heure = f"{hours} heures {minutes}"
+        heure = slot["heureDebut"]
+
+        time_obj = datetime.strptime(heure, "%H:%M")
+        hours = time_obj.hour
+        minutes = time_obj.minute
+
+        if minutes == 0:
+            heure = f"{hours} heures"
+        else:
+            heure = f"{hours} heures {minutes}"
+
+        if index == 0:
             final_sentence = f"Je peux vous proposer {date_str} à {heure}. Est-ce que cela vous convient ?"
         else:
-            time_obj = datetime.strptime(heure, "%H:%M")
-            hours = time_obj.hour
-            minutes = time_obj.minute
-
-            # Format as "8 heures" or "8 heures 15"
-            if minutes == 0:
-                heure = f"{hours} heures"
-            else:
-                heure = f"{hours} heures {minutes}"
             final_sentence = f"Est-ce que vous préférez {date_str} à {heure} ?"
 
     final_sentence = convert_numbers_to_words_french(final_sentence)
@@ -4100,7 +4126,6 @@ def build_single_date_phrase(creneau, index=0):
         return {"success": False, "message": final_sentence}
     else:
         return {"success": True, "message": final_sentence}
-
 
 def build_multiple_dates_phrase(creneaux, type=None):
     data = creneaux
@@ -4810,7 +4835,9 @@ async def find_patient(caller):
                     + "T"
                     + future_rdvs[0].get("heurePrevue")
                 )
-                formatted_date = f"le {dt.day} {french_months[dt.month]} {dt.year}"
+                jour = "premier" if dt.day == 1 else str(dt.day)
+
+                formatted_date = f"le {jour} {french_months[dt.month]} {dt.year}"
                 hours, minutes = future_rdvs[0].get("heurePrevue").split(":")
 
                 all_sous_type = get_sous_type_exam(future_rdvs[0].get("typeExamen"))
@@ -4950,7 +4977,8 @@ async def find_patient(caller):
                     + "T"
                     + planned_rdv[0].get("heurePrevue")
                 )
-                formatted_date = f"le {dt.day} {french_months[dt.month]} {dt.year}"
+                jour = "premier" if dt.day == 1 else str(dt.day)
+                formatted_date = f"le {jour} {french_months[dt.month]} {dt.year}"
                 hours, minutes = planned_rdv[0].get("heurePrevue").split(":")
 
                 rdv_info["cancel_creneau"] = planned_rdv[0]
