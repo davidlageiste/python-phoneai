@@ -282,15 +282,25 @@ def text_to_speech_number_confirm(number: str, call, language="fr") -> FileSourc
 
     if call:
         call.add_step(number)
-    grouped_number = [
-        char
-        for group in [number[i : i + 2] for i in range(0, len(number), 2)]
-        for char in (
-            [group[0], group[1]]
-            if group.startswith("0") and len(group) == 2
-            else [group]
-        )
-    ]
+    # grouped_number = [
+    #     char
+    #     for group in [number[i : i + 2] for i in range(0, len(number), 2)]
+    #     for char in (
+    #         [group[0], group[1]]
+    #         if group.startswith("0") and len(group) == 2
+    #         else [group]
+    #     )
+    # ]
+    # print(grouped_number)
+    grouped_number = []
+    for i, num in enumerate(number):
+        if i % 2 == 0 and num == "0":
+            grouped_number.append(num)
+        elif i % 2 == 1 and number[i - 1] == "0":
+            grouped_number.append(num)
+        elif i % 2 == 1:
+            grouped_number.append(number[i-1:i+1])
+    print(grouped_number)
 
     for i, num in enumerate(grouped_number):
         print(num, i)
