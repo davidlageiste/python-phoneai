@@ -1904,12 +1904,27 @@ async def confirm_annulation():
                     caller,
                 )
         else:
-            date_str = calls[caller].rdv["cancel_creneau"]["datePrevue"][:10]
-            time_str = calls[caller].rdv["cancel_creneau"]["heurePrevue"]
+            cancel_creneau = calls[caller].rdv["cancel_creneau"]
+
+            # Conversion en datetime
+            dt = datetime.fromisoformat(f"{cancel_creneau['datePrevue'][:10]}T{cancel_creneau['heurePrevue']}:00")
+
+            # Jour + mois en français
+            jour = "premier" if dt.day == 1 else str(dt.day)
+            mois = french_months[dt.month]
+
+            # Gestion de l'heure
+            if dt.minute == 0:
+                heure = f"{dt.hour} heures"
+            else:
+                heure = f"{dt.hour} heures {dt.minute}"
+
+            # Phrase finale
+            phrase = f"{jour} {mois} à {heure}"
 
             play_source = text_to_speech(
                 "file_source",
-                f"Je n'ai pas compris, voulez-vous annuler le rendez-vous du {date_str} à {time_str} ?",
+                f"Je n'ai pas compris, voulez-vous annuler le rendez-vous du {phrase} ?",
                 calls[caller],
             )
             start_recognizing("/confirm_annulation", "annulation", play_source, caller)
