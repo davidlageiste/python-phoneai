@@ -371,6 +371,7 @@ def incoming_call():
     calls[caller] = Call(called)
     encodedContext = data.get("data").get("incomingCallContext")
 
+    print("here")
     call_automation_client.answer_call(
         incoming_call_context=encodedContext,
         callback_url=f"https://{APP_URL}/callback?caller={caller}",
@@ -427,14 +428,25 @@ async def callback():
         calls[caller].call["caller"] = caller
         # print_calls()
 
-        # target = PhoneNumberIdentifier("+33801150143")
+        target = PhoneNumberIdentifier("+33651506690")
 
-        # call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
-        #     target_participant=target,
-        #     transferee=PhoneNumberIdentifier("+" + caller.strip()),
-        #     operation_callback_url=f"https://{APP_URL}/callback",
-        # )
-        start_conversation(caller=caller)
+        await asyncio.sleep(5)
+
+        print(target)
+        print("+" + caller.strip())
+        print(calls[caller].call["call_connection_id"])
+        sip_headers={}
+        sip_headers.add("X-MS-Custom-headerName", "headerValue")
+        sip_headers.add("User-To-User","uuivale")
+        call_automation_client.get_call_connection(call_connection_id=calls[caller].call["call_connection_id"]).transfer_call_to_participant(
+            target_participant=target,
+            sip_headers=sip_headers,
+            transferee=PhoneNumberIdentifier("+" + caller.strip()),
+            operation_callback_url=f"https://{APP_URL}/callback",
+        )
+
+
+        # start_conversation(caller=caller)
         # await find_patient(caller)
         # handle_prise_rdv(caller)
     if (
@@ -5063,7 +5075,8 @@ async def find_patient(caller):
             )
 
 
-@app.route("/ping", methods=["POST"])
+
+@app.route("/ping", methods=["GET"])
 async def ping():
     return jsonify({"pong"})
 
