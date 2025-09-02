@@ -2511,7 +2511,7 @@ async def examination_response():
         question = request.args.get("question")
         rdv_info = calls[caller].rdv
 
-        if int(question) < len(calls[caller].rdv["interrogatoire"]):
+        if int(question) <= len(calls[caller].rdv["interrogatoire"]):
             play_source = text_to_speech(
                 "file_source",
                 calls[caller].rdv["interrogatoire"][int(question)],
