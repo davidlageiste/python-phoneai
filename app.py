@@ -428,25 +428,25 @@ async def callback():
         calls[caller].call["caller"] = caller
         # print_calls()
 
-        target = PhoneNumberIdentifier("+33651506690")
+        # target = PhoneNumberIdentifier("+33651506690")
 
-        await asyncio.sleep(5)
+        # await asyncio.sleep(5)
 
-        print(target)
-        print("+" + caller.strip())
-        print(calls[caller].call["call_connection_id"])
-        sip_headers={}
-        sip_headers.add("X-MS-Custom-headerName", "headerValue")
-        sip_headers.add("User-To-User","uuivale")
-        call_automation_client.get_call_connection(call_connection_id=calls[caller].call["call_connection_id"]).transfer_call_to_participant(
-            target_participant=target,
-            sip_headers=sip_headers,
-            transferee=PhoneNumberIdentifier("+" + caller.strip()),
-            operation_callback_url=f"https://{APP_URL}/callback",
-        )
+        # # print(target)
+        # # print("+" + caller.strip())
+        # # print(calls[caller].call["call_connection_id"])
+        # # sip_headers={}
+        # # sip_headers.add("X-MS-Custom-headerName", "headerValue")
+        # # sip_headers.add("User-To-User","uuivale")
+        # # call_automation_client.get_call_connection(call_connection_id=calls[caller].call["call_connection_id"]).transfer_call_to_participant(
+        # #     target_participant=target,
+        # #     sip_headers=sip_headers,
+        # #     transferee=PhoneNumberIdentifier("+" + caller.strip()),
+        # #     operation_callback_url=f"https://{APP_URL}/callback",
+        # # )
 
 
-        # start_conversation(caller=caller)
+        start_conversation(caller=caller)
         # await find_patient(caller)
         # handle_prise_rdv(caller)
     if (
