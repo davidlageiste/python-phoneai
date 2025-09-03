@@ -4301,7 +4301,7 @@ def build_multiple_dates_phrase(creneaux, type=None):
                 heure = f"{hours} heures"
             else:
                 heure = f"{hours} heures {minutes}"
-            phrases.append(f"le {ordinals[idx]} est {date_str} à {heure}")
+            phrases.append(f"{ordinals[idx]} est {date_str} à {heure}")
 
         # Assemble final sentence
         if nb_slots == 0:
