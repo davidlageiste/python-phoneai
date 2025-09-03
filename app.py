@@ -4936,7 +4936,7 @@ async def find_patient(caller):
                     return "ok"
                 play_source = text_to_speech(
                     "file_source",
-                    f"{text}. Puis-je faire autre chose pour vous ?",
+                    f"{text}. Puis-je faire autre chose pour vous ? Je peux prendre, annuler, consulter ou modifier un rendez vous, ou simplement répondre à vos questions.",
                     calls[caller],
                 )
                 start_recognizing(
