@@ -1133,7 +1133,7 @@ async def confirm_creneau():
             )
             play_source = text_to_speech(
                 "file_source",
-                "Pardonnez moi, je n'ai pas compris." + text["message"],
+                "Pardonnez moi, je n'ai pas compris. " + text["message"],
                 calls[caller],
             )
             start_recognizing(
@@ -1290,14 +1290,14 @@ async def confirm_creneau():
 
             if matched_creneau is not None:
                 # --- gestion du "premier" ---
-                jour = "premier" if chosen_dt.day == 1 else str(chosen_dt.day)
+                jour = "premier" if chosen_dt.day == 1 else num2words(str(chosen_dt.day), lang='fr')
                 mois = french_months[chosen_dt.month]
 
                 # gestion de l'heure
                 if chosen_dt.minute == 0:
-                    heure = f"{chosen_dt.hour} heures"
+                    heure = f"{num2words(chosen_dt.hour, lang='fr')} heures"
                 else:
-                    heure = f"{chosen_dt.hour} heures {chosen_dt.minute}"
+                    heure = f"{num2words(chosen_dt.hour, lang='fr')} heures {num2words(chosen_dt.minute, lang='fr')}"
 
                 phrase = f"{jour} {mois} à {heure}"
 
@@ -1305,10 +1305,9 @@ async def confirm_creneau():
                 rdv_info["chosen_creneau"] = matched_creneau
 
                 if call_info["intent"] == "prise de rendez-vous":
-                    speak(f"Vous avez choisi le {phrase}.", caller)
                     play_source = text_to_speech(
                         "file_source",
-                        "Puis-je avoir votre date de naissance ?",
+                        f"coucou Vous avez choisi le {phrase}. Puis-je avoir votre date de naissance ?",
                         calls[caller],
                     )
                     start_recognizing(
@@ -1327,7 +1326,7 @@ async def confirm_creneau():
             )
             play_source = text_to_speech(
                 "file_source",
-                "Pardonnez moi, je n'ai pas compris." + text["message"],
+                "Pardonnez moi, je n'ai pas compris. " + text["message"],
                 calls[caller],
             )
             start_recognizing(
@@ -2545,7 +2544,7 @@ async def examination_response():
                 mammographie_text = "Pensez à ramener vos anciennes mammographies et echographies le jour de l'examen. C'est très important pour l'équipe d'imagerie mammaire."
             play_source = text_to_speech(
                 "file_source",
-                f"Très bien, merci beaucoup pour ces précisions, j'ai fini. ${mammographie_text} Puis-je faire autre chose pour vous ?",
+                f"Très bien, merci beaucoup pour ces précisions, j'ai fini. {mammographie_text} Puis-je faire autre chose pour vous ?",
                 calls[caller],
             )
             addCommentaireRDV(rdv_info["id_examen"], caller)
@@ -3048,14 +3047,14 @@ async def get_creneaux_choice():
 
             if matched_creneau is not None:
                 # --- gestion du "premier" ---
-                jour = "premier" if dt.day == 1 else str(dt.day)
-                mois = french_months[dt.month]
+                jour = "premier" if chosen_dt.day == 1 else num2words(str(chosen_dt.day), lang='fr')
+                mois = french_months[chosen_dt.month]
 
-                # --- gestion de l'heure ---
-                if dt.minute == 0:
-                    heure = f"{dt.hour} heures"
+                # gestion de l'heure
+                if chosen_dt.minute == 0:
+                    heure = f"{num2words(chosen_dt.hour, lang='fr')} heures"
                 else:
-                    heure = f"{dt.hour} heures {dt.minute}"
+                    heure = f"{num2words(chosen_dt.hour, lang='fr')} heures {num2words(chosen_dt.minute, lang='fr')}"
 
                 phrase = f"{jour} {mois} à {heure}"
 
@@ -3063,10 +3062,9 @@ async def get_creneaux_choice():
                 rdv_info["chosen_creneau"] = matched_creneau
 
                 if call_info["rdvintent"] == "prise de rendez-vous":
-                    speak(f"Vous avez choisi le {phrase}.", caller)
                     play_source = text_to_speech(
                         "file_source",
-                        "Puis-je avoir votre date de naissance ?",
+                        f"Vous avez choisi le {phrase}. Puis-je avoir votre date de naissance ?",
                         calls[caller],
                     )
                     start_recognizing(
@@ -3127,24 +3125,23 @@ async def get_creneaux_choice():
 
             if matched_creneau is not None:
                 # --- gestion du "premier" ---
-                jour = "premier" if dt.day == 1 else str(dt.day)
-                mois = french_months[dt.month]
+                jour = "premier" if chosen_dt.day == 1 else num2words(str(chosen_dt.day), lang='fr')
+                mois = french_months[chosen_dt.month]
 
-                # --- gestion de l'heure ---
-                if dt.minute == 0:
-                    heure = f"{dt.hour} heures"
+                # gestion de l'heure
+                if chosen_dt.minute == 0:
+                    heure = f"{num2words(chosen_dt.hour, lang='fr')} heures"
                 else:
-                    heure = f"{dt.hour} heures {dt.minute}"
+                    heure = f"{num2words(chosen_dt.hour, lang='fr')} heures {num2words(chosen_dt.minute, lang='fr')}"
 
                 phrase = f"{jour} {mois} à {heure}"
                 rdv_info["creneauDate"] = phrase
                 rdv_info["chosen_creneau"] = matched_creneau
 
                 if call_info["intent"] == "prise de rendez-vous":
-                    speak(f"Vous avez choisi le {phrase}.", caller)
                     play_source = text_to_speech(
                         "file_source",
-                        "Puis-je avoir votre date de naissance ?",
+                        f"Vous avez choisi le {phrase}. Puis-je avoir votre date de naissance ?",
                         calls[caller],
                     )
                     start_recognizing(
