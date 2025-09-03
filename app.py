@@ -1307,7 +1307,7 @@ async def confirm_creneau():
                 if call_info["intent"] == "prise de rendez-vous":
                     play_source = text_to_speech(
                         "file_source",
-                        f"coucou Vous avez choisi le {phrase}. Puis-je avoir votre date de naissance ?",
+                        f"Vous avez choisi le {phrase}. Puis-je avoir votre date de naissance ?",
                         calls[caller],
                     )
                     start_recognizing(
