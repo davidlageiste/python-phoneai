@@ -4680,6 +4680,21 @@ def addCommentaireRDV(idExamen, caller):
         print("Request failed:", e)
         return "Error occurred while adding commentary"
 
+def get_patient_xplore(datas):
+    url = f"https://{API_URL}/api/getPatient"
+    payload = datas
+
+    print("requesting")
+
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()  # Raises HTTPError for bad status
+        data = response.json()
+        print("get_patient_xplore", data)
+        return data.get("data", "")
+    except requests.RequestException as e:
+        print("Request failed:", e)
+        return "Error occurred while retrieving RDV"
 
 def get_sous_type_exam(type_examen):
     # url = f"https://{SANDBOX_URL}/XaPriseRvGateway/Application/api/External/GetListeExamensFromTypeExamen"
@@ -4719,21 +4734,10 @@ async def find_patient(caller):
     rdv_info = calls[caller].rdv
     patient = None
     if calls[caller].patient is None:
-        patient = patientCollection.find_one(
-            {
-                "dateNaissance": {
-                    "$regex": f"^{caller_info['birthdate'] + 'T00:00:00'}$"
-                },
-                "nom": {
-                    "$regex": f"^{caller_info['lastname']}$",
-                    "$options": "i",
-                },  # Case-insensitive
-                "prenom": {
-                    "$regex": f"^{strip_accents(caller_info['firstname'])}$",
-                    "$options": "i",  # Case-insensitive
-                },
-            }
-        )
+        tmp_patient = get_patient_xplore({"Nom": caller_info['lastname'], "Prenom": caller_info['firstname']})
+        if patient and patient["DateNaissance"] == caller_info['birthdate'] + 'T00:00:00':
+            patient = tmp_patient
+        
     else:
         patient = calls[caller].patient
 
