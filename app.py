@@ -45,6 +45,7 @@ SPEECH_REGION = "eastus"
 #     "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
 # )
 MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
+# APP_URL = "b1f0d1df17ce.ngrok-free.app"
 APP_URL = "talkpreprodapi.azurewebsites.net"
 API_URL = "sparkso-universite.com:8080"
 
@@ -1305,9 +1306,10 @@ async def confirm_creneau():
                 rdv_info["chosen_creneau"] = matched_creneau
 
                 if call_info["intent"] == "prise de rendez-vous":
+                    speak(f"Vous avez choisi le {phrase}.", caller)
                     play_source = text_to_speech(
                         "file_source",
-                        f"Vous avez choisi le {phrase}. Puis-je avoir votre date de naissance ?",
+                        "Puis-je avoir votre date de naissance ?",
                         calls[caller],
                     )
                     start_recognizing(
@@ -2511,7 +2513,7 @@ async def examination_response():
         question = request.args.get("question")
         rdv_info = calls[caller].rdv
 
-        if int(question) <= len(calls[caller].rdv["interrogatoire"]):
+        if int(question) < len(calls[caller].rdv["interrogatoire"]):
             play_source = text_to_speech(
                 "file_source",
                 calls[caller].rdv["interrogatoire"][int(question)],
@@ -2532,6 +2534,13 @@ async def examination_response():
             )
             return jsonify({"success": "success"})
         else:
+            if (
+                calls[caller].rdv["reponses_interrogatoire"] is None
+                or len(calls[caller].rdv["reponses_interrogatoire"]) == 0
+            ):
+                calls[caller].rdv["reponses_interrogatoire"] = [user_response]
+            else:
+                calls[caller].rdv["reponses_interrogatoire"].append(user_response)
             mammographie_text = ""
             if calls[caller].rdv["exam_id"] == "MA":
                 mammographie_text = "Pensez à ramener vos anciennes mammographies et echographies le jour de l'examen. C'est très important pour l'équipe d'imagerie mammaire."
@@ -3055,9 +3064,10 @@ async def get_creneaux_choice():
                 rdv_info["chosen_creneau"] = matched_creneau
 
                 if call_info["rdvintent"] == "prise de rendez-vous":
+                    speak(f"Vous avez choisi le {phrase}.", caller)
                     play_source = text_to_speech(
                         "file_source",
-                        f"Vous avez choisi le {phrase}. Puis-je avoir votre date de naissance ?",
+                        "Puis-je avoir votre date de naissance ?",
                         calls[caller],
                     )
                     start_recognizing(
@@ -3132,9 +3142,10 @@ async def get_creneaux_choice():
                 rdv_info["chosen_creneau"] = matched_creneau
 
                 if call_info["intent"] == "prise de rendez-vous":
+                    speak(f"Vous avez choisi le {phrase}.", caller)
                     play_source = text_to_speech(
                         "file_source",
-                        f"Vous avez choisi le {phrase}. Puis-je avoir votre date de naissance ?",
+                        "Puis-je avoir votre date de naissance ?",
                         calls[caller],
                     )
                     start_recognizing(
