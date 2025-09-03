@@ -3873,7 +3873,7 @@ def start_conversation(caller):
             "fixed_file_source", "intro_preprod", calls[caller]
         )
     else:
-        play_source = text_to_speech("fixed_file_source", "intro", calls[caller])
+        play_source = text_to_speech("fixed_file_source", "intro_preprod", calls[caller])
 
     start_recognizing("/handleResponse", "start_conversation", play_source, caller)
 
