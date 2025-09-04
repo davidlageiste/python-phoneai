@@ -4734,11 +4734,15 @@ async def find_patient(caller):
     rdv_info = calls[caller].rdv
     patient = None
     if calls[caller].patient is None:
+        print("______________ NO PATIENT")
         tmp_patient = get_patient_xplore({"Nom": caller_info['lastname'], "Prenom": caller_info['firstname']})
         if patient and patient["DateNaissance"] == caller_info['birthdate'] + 'T00:00:00':
             patient = tmp_patient
             calls[caller].caller["email"] = patient.get("email")
+            print("_____________ PATIENT", patient)
+            print("___________ PATIENT EMAIL", patient.get("email"))
     else:
+        print("______________ GOING INTO ELSE")
         patient = calls[caller].patient
 
     if patient:
