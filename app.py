@@ -1319,6 +1319,7 @@ async def confirm_creneau():
                         f"Très bien, votre rendez-vous sera déplacé au {phrase}", caller
                     )
                     editRDV(caller)
+
         else:
             text = build_single_date_phrase(
                 creneau=rdv_info["all_creneaux"],
@@ -3047,14 +3048,14 @@ async def get_creneaux_choice():
 
             if matched_creneau is not None:
                 # --- gestion du "premier" ---
-                jour = "premier" if chosen_dt.day == 1 else num2words(str(chosen_dt.day), lang='fr')
-                mois = french_months[chosen_dt.month]
+                jour = "premier" if current_dt.day == 1 else num2words(str(current_dt.day), lang='fr')
+                mois = french_months[current_dt.month]
 
                 # gestion de l'heure
-                if chosen_dt.minute == 0:
-                    heure = f"{num2words(chosen_dt.hour, lang='fr')} heures"
+                if current_dt.minute == 0:
+                    heure = f"{num2words(current_dt.hour, lang='fr')} heures"
                 else:
-                    heure = f"{num2words(chosen_dt.hour, lang='fr')} heures {num2words(chosen_dt.minute, lang='fr')}"
+                    heure = f"{num2words(current_dt.hour, lang='fr')} heures {num2words(current_dt.minute, lang='fr')}"
 
                 phrase = f"{jour} {mois} à {heure}"
 
@@ -3125,14 +3126,14 @@ async def get_creneaux_choice():
 
             if matched_creneau is not None:
                 # --- gestion du "premier" ---
-                jour = "premier" if chosen_dt.day == 1 else num2words(str(chosen_dt.day), lang='fr')
-                mois = french_months[chosen_dt.month]
+                jour = "premier" if current_dt.day == 1 else num2words(str(current_dt.day), lang='fr')
+                mois = french_months[current_dt.month]
 
                 # gestion de l'heure
-                if chosen_dt.minute == 0:
-                    heure = f"{num2words(chosen_dt.hour, lang='fr')} heures"
+                if current_dt.minute == 0:
+                    heure = f"{num2words(current_dt.hour, lang='fr')} heures"
                 else:
-                    heure = f"{num2words(chosen_dt.hour, lang='fr')} heures {num2words(chosen_dt.minute, lang='fr')}"
+                    heure = f"{num2words(current_dt.hour, lang='fr')} heures {num2words(current_dt.minute, lang='fr')}"
 
                 phrase = f"{jour} {mois} à {heure}"
                 rdv_info["creneauDate"] = phrase
@@ -3148,13 +3149,15 @@ async def get_creneaux_choice():
                         "/get_birthdate", "get_birthdate", play_source, caller
                     )
 
-                elif call_info["intent"] == "modification de rendez-vous":
-                    speak(
-                        f"Très bien, votre rendez-vous sera déplacé au {phrase}",
-                        caller,
-                    )
                     editRDV(caller)
-
+                    play_source = text_to_speech(
+                        "file_source",
+                        "Très bien, votre rendez-vous a bien été déplacé au {phrase}. Puis-je faire autre chose pour vous ?",
+                        calls[caller],
+                    )
+                    start_recognizing(
+                        "/handleResponse", "end_conversation", play_source, caller
+                    )
             else:
                 text = build_multiple_dates_phrase(creneaux=rdv_info["all_creneaux"])
                 play_source = text_to_speech(
