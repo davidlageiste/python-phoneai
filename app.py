@@ -4588,7 +4588,7 @@ def editRDV(caller):
         "firstName": caller_info["firstname"],
         "lastName": caller_info["lastname"],
         "birthDate": caller_info["birthdate"],
-        "email": caller_info["patient_email"],
+        "email": caller_info["email"],
         "newCreneau": rdv_info["chosen_creneau"],
     }
 
