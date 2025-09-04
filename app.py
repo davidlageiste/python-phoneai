@@ -4737,7 +4737,7 @@ async def find_patient(caller):
         tmp_patient = get_patient_xplore({"Nom": caller_info['lastname'], "Prenom": caller_info['firstname']})
         if patient and patient["DateNaissance"] == caller_info['birthdate'] + 'T00:00:00':
             patient = tmp_patient
-        
+            calls[caller].caller["email"] = patient.get("email")
     else:
         patient = calls[caller].patient
 
