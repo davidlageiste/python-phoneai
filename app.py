@@ -4742,15 +4742,15 @@ async def find_patient(caller):
             print("_____________ PATIENT", patient)
             print("___________ PATIENT EMAIL", patient.get("email"))
     else:
+        tmp_patient = get_patient_xplore({"Nom": caller_info['lastname'], "Prenom": caller_info['firstname']})
+        if tmp_patient and tmp_patient["DateNaissance"] == caller_info['birthdate'] + 'T00:00:00':
+            patient = tmp_patient
+            calls[caller].caller["email"] = patient.get("email")
+            calls[caller].patient = patient
         print("______________ GOING INTO ELSE")
         print("________ CALLER INFO", caller_info)
         print("________ PATIENT", patient)
         print("PATIENT SAVED", calls[caller].patient)
-        tmp_patient = get_patient_xplore({"Nom": caller_info['lastname'], "Prenom": caller_info['firstname']})
-        if patient and patient["DateNaissance"] == caller_info['birthdate'] + 'T00:00:00':
-            patient = tmp_patient
-            calls[caller].caller["email"] = patient.get("email")
-            calls[caller].patient = patient
     if patient:
         if call_info["intent"] == "prise de rendez-vous":
             if rdv_info["patient_rdv_confirm"] != "Yes":
