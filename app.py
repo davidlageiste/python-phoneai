@@ -2327,7 +2327,7 @@ async def confirm_identity():
         if model_response == "négative":
             calls[caller].patient = None
             transfer_call(
-                "Désolé, je ne peux ptransfer_calls donner de rendez-vous à un ptransfer_calltient qui n'est pas déjà connu du cabinet. Vous êtes un nouveau patient : Je vous propose de vous transférer à la secrétaire",
+                "Désolé, je ne peux pas donner de rendez-vous à un patient qui n'est pas déjà connu du cabinet. Vous êtes un nouveau patient : Je vous propose de vous transférer à la secrétaire",
                 caller,
             )
         elif model_response == "positive":
@@ -4878,7 +4878,7 @@ async def find_patient(caller):
                 formatted_date = f"le {jour} {french_months[dt.month]} {dt.year}"
                 hours, minutes = future_rdvs[0].get("heurePrevue").split(":")
 
-                all_sous_type = get_sous_type_exam(future_rdvs[0].get("typeExamen"))
+                all_sous_type = get_sous_type_exam(future_rdvs[0].get("typeExamen")).get("data")
                 sous_type = next(
                     (
                         item
@@ -5020,7 +5020,7 @@ async def find_patient(caller):
                 hours, minutes = planned_rdv[0].get("heurePrevue").split(":")
 
                 rdv_info["cancel_creneau"] = planned_rdv[0]
-                all_sous_type = get_sous_type_exam(planned_rdv[0].get("typeExamen"))
+                all_sous_type = get_sous_type_exam(planned_rdv[0].get("typeExamen")).get("data")
                 sous_type = next(
                     (
                         item
