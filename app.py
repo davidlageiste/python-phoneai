@@ -4691,7 +4691,7 @@ def get_patient_xplore(datas):
         response.raise_for_status()  # Raises HTTPError for bad status
         data = response.json()
         print("get_patient_xplore", data)
-        return data.get("data", "")
+        return data.get("data", "")[0]
     except requests.RequestException as e:
         print("Request failed:", e)
         return "Error occurred while retrieving RDV"
