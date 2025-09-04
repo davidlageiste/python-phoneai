@@ -1315,10 +1315,13 @@ async def confirm_creneau():
                     )
 
                 elif call_info["intent"] == "modification de rendez-vous":
-                    speak(
-                        f"Très bien, votre rendez-vous sera déplacé au {phrase}", caller
-                    )
                     editRDV(caller)
+                    play_source = text_to_speech(
+                        "file_source",
+                        "Très bien, votre rendez-vous a bien été déplacé au {phrase}. Puis-je faire autre chose pour vous ?",
+                        calls[caller],
+                    )
+                    start_recognizing("/handleResponse", "en_conversation", play_source, caller)
 
         else:
             text = build_single_date_phrase(
