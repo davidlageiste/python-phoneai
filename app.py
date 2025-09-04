@@ -4846,7 +4846,7 @@ async def find_patient(caller):
             call_info["intent"] == "modification de rendez-vous"
             or call_info["intent"] == "consultation de rendez-vous"
         ):
-            planned_rdv = getRDV(patient.get("idPatient"))
+            planned_rdv = getRDV(patient.get("idPatient") or patient.get("numeroDossier"))
             if patient.get("externalID", None) is not None:
                 planned_rdv_external = getRDV(patient.get("externalID"))
                 planned_rdv = planned_rdv + planned_rdv_external
@@ -4993,7 +4993,7 @@ async def find_patient(caller):
 
             await asyncio.sleep(1)
 
-            planned_rdv = getRDV(patient.get("idPatient"))
+            planned_rdv = getRDV(patient.get("idPatient") or patient.get("numeroDossier"))
             if patient.get("externalID", None) is not None:
                 planned_rdv_external = getRDV(patient.get("externalID"))
                 print("planned_rdv_external", planned_rdv_external)
