@@ -4751,6 +4751,7 @@ async def find_patient(caller):
                 caller,
             )
             email = patient.get("email")
+            calls[caller].caller["email"] = email
             caller_info["email"] = email
             # if first_result.get("externalNumber") is None:
             rdv = createRDV(caller)
