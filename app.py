@@ -4686,7 +4686,10 @@ def addCommentaireRDV(idExamen, caller):
         print("Request failed:", e)
         return "Error occurred while adding commentary"
 
-def get_patient_xplore(datas):
+def get_patient_xplore(datas, caller):
+    global calls
+    caller_infos = calls[caller].caller
+    
     url = f"https://{API_URL}/api/getPatient"
     payload = datas
 
@@ -4697,10 +4700,40 @@ def get_patient_xplore(datas):
         response.raise_for_status()  # Raises HTTPError for bad status
         data = response.json()
         print("get_patient_xplore", data)
-        return data.get("data", "")[0]
+
+        patients = data.get("data", [])
+        target_lastname = caller_infos.get("lastname")
+
+        # Find the patient whose "nom" matches caller_infos["lastname"]
+        for patient in patients:
+            if patient.get("nom") == target_lastname:
+                return patient
+
+        # If no match found
+        return None  
     except requests.RequestException as e:
         print("Request failed:", e)
         return "Error occurred while retrieving RDV"
+
+# def get_patient_xplore(datas, caller):
+#     global calls
+
+#     caller_infos = calls[caller].caller
+    
+#     url = f"https://{API_URL}/api/getPatient"
+#     payload = datas
+
+#     print("requesting")
+
+#     try:
+#         response = requests.post(url, json=payload)
+#         response.raise_for_status()  # Raises HTTPError for bad status
+#         data = response.json()
+#         print("get_patient_xplore", data)
+#         return data.get("data", "")[0]
+#     except requests.RequestException as e:
+#         print("Request failed:", e)
+#         return "Error occurred while retrieving RDV"
 
 def get_sous_type_exam(type_examen):
     # url = f"https://{SANDBOX_URL}/XaPriseRvGateway/Application/api/External/GetListeExamensFromTypeExamen"
@@ -4741,14 +4774,14 @@ async def find_patient(caller):
     patient = None
     if calls[caller].patient is None:
         print("______________ NO PATIENT")
-        tmp_patient = get_patient_xplore({"Nom": caller_info['lastname'], "Prenom": caller_info['firstname']})
+        tmp_patient = get_patient_xplore({"Nom": caller_info['lastname'], "Prenom": caller_info['firstname']}, caller)
         if patient and patient["DateNaissance"] == caller_info['birthdate'] + 'T00:00:00':
             patient = tmp_patient
             calls[caller].caller["email"] = patient.get("email")
             print("_____________ PATIENT", patient)
             print("___________ PATIENT EMAIL", patient.get("email"))
     else:
-        tmp_patient = get_patient_xplore({"Nom": caller_info['lastname'], "Prenom": caller_info['firstname']})
+        tmp_patient = get_patient_xplore({"Nom": caller_info['lastname'], "Prenom": caller_info['firstname']}, caller)
         if tmp_patient and tmp_patient["dateNaissance"] == caller_info['birthdate'] + 'T00:00:00':
             patient = tmp_patient
             calls[caller].caller["email"] = patient.get("email")
