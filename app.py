@@ -2782,6 +2782,7 @@ async def confirm_rdv():
             )
             return jsonify({"success": "success"})
         model_response = await task_model_response
+        print("---> final_confirm_rdv:", model_response)
         if model_response == "négative":
             transfer_call(
                 "Malheureusement, il semblerait que nous nous soyons mal compris",
