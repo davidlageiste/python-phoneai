@@ -2628,6 +2628,7 @@ async def confirm_rdv():
         return jsonify({"success": "success"})
 
     caller, operation_context, type, user_response = get_request_infos(request)
+    print("----> confirm_rdv", caller, operation_context, type, user_response)
     if user_response == "":
         speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
