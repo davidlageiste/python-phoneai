@@ -169,8 +169,173 @@ char_to_file = {
         "-": ["tiret"],
         "'": ["apostrophe"],
         " ": ["espace"],
+        "0": ["0"],
+        "1": ["1"],
+        "2": ["2"],
+        "3": ["3"],
+        "4": ["4"],
+        "5": ["5"],
+        "6": ["6"],
+        "7": ["7"],
+        "8": ["8"],
+        "9": ["9"],
+        "10": ["10"],
+        "11": ["11"],
+        "12": ["12"],
+        "13": ["13"],
+        "14": ["14"],
+        "15": ["15"],
+        "16": ["16"],
+        "17": ["17"],
+        "18": ["18"],
+        "19": ["19"],
+        "20": ["20"],
+        "21": ["21"],
+        "22": ["22"],
+        "23": ["23"],
+        "24": ["24"],
+        "25": ["25"],
+        "26": ["26"],
+        "27": ["27"],
+        "28": ["28"],
+        "29": ["29"],
+        "30": ["30"],
+        "31": ["31"],
+        "32": ["32"],
+        "33": ["33"],
+        "34": ["34"],
+        "35": ["35"],
+        "36": ["36"],
+        "37": ["37"],
+        "38": ["38"],
+        "39": ["39"],
+        "40": ["40"],
+        "41": ["41"],
+        "42": ["42"],
+        "43": ["43"],
+        "44": ["44"],
+        "45": ["45"],
+        "46": ["46"],
+        "47": ["47"],
+        "48": ["48"],
+        "49": ["49"],
+        "50": ["50"],
+        "51": ["51"],
+        "52": ["52"],
+        "53": ["53"],
+        "54": ["54"],
+        "55": ["55"],
+        "56": ["56"],
+        "57": ["57"],
+        "58": ["58"],
+        "59": ["59"],
+        "60": ["60"],
+        "61": ["61"],
+        "62": ["62"],
+        "63": ["63"],
+        "64": ["64"],
+        "65": ["65"],
+        "66": ["66"],
+        "67": ["67"],
+        "68": ["68"],
+        "69": ["69"],
+        "70": ["70"],
+        "71": ["71"],
+        "72": ["72"],
+        "73": ["73"],
+        "74": ["74"],
+        "75": ["75"],
+        "76": ["76"],
+        "77": ["77"],
+        "78": ["78"],
+        "79": ["79"],
+        "80": ["80"],
+        "81": ["81"],
+        "82": ["82"],
+        "83": ["83"],
+        "84": ["84"],
+        "85": ["85"],
+        "86": ["86"],
+        "87": ["87"],
+        "88": ["88"],
+        "89": ["89"],
+        "90": ["90"],
+        "91": ["91"],
+        "92": ["92"],
+        "93": ["93"],
+        "94": ["94"],
+        "95": ["95"],
+        "96": ["96"],
+        "97": ["97"],
+        "98": ["98"],
+        "99": ["99"],
     }
 }
+
+
+def text_to_speech_number_confirm(number: str, call, language="fr") -> FileSource:
+    """
+    Returns an audio source (FileSource) for Azure Communication Service for spelled confirmation.
+    """
+    combined_audio = []
+    samplerate = None
+
+    if call:
+        call.add_step(number)
+    grouped_number = [
+        char
+        for group in [number[i : i + 2] for i in range(0, len(number), 2)]
+        for char in (
+            [group[0], group[1]]
+            if group.startswith("0") and len(group) == 2
+            else [group]
+        )
+    ]
+    print(grouped_number)
+    grouped_number2 = []
+    for i, num in enumerate(number):
+        if i % 2 == 0 and num == "0":
+            grouped_number2.append(num)
+        elif i % 2 == 1 and number[i - 1] == "0":
+            grouped_number2.append(num)
+        elif i % 2 == 1:
+            grouped_number2.append(number[i-1:i+1])
+    print(grouped_number2)
+
+    for i, num in enumerate(grouped_number):
+        print(num, i)
+        try:
+            for sound in char_to_file[language][num]:
+                audio_data, sr = sf.read(
+                    os.path.join(
+                        f"./audio-files/spell/{language}",
+                        f"{sound}.wav",
+                    )
+                )
+                if samplerate is None:
+                    samplerate = sr
+                elif samplerate != sr:
+                    raise ValueError(
+                        "Tous les fichiers doivent avoir le même sample rate"
+                    )
+                combined_audio.append(audio_data)
+            pause = np.zeros(int((0.2 + (i % 2 * 0.3)) * samplerate))  # Pause de 0.2s
+            combined_audio.append(pause)
+        except Exception as e:
+            print(f"Erreur pour le chiffre {num} : {e}")
+
+    final = np.concatenate(combined_audio)
+
+    # DEBUG
+    # sf.write("test.mp3", final, samplerate)
+
+    audio_stream = BytesIO()
+    sf.write(audio_stream, final, samplerate, format="WAV")
+    audio_stream.seek(0)
+    file_name = f"tmp-{uuid.uuid4()}.wav"
+    upload_stream_azure(audio_stream, file_name)
+    delete_blob_azure_delay(file_name)
+    return FileSource(url=f"{STORAGE_URL_PATH}{file_name}")
 
 
 def text_to_speech_spell_confirm(
@@ -185,7 +350,7 @@ def text_to_speech_spell_confirm(
 
     if call:
         call.add_step(
-            f"Lyrae: spell({text}){', c\'est bien ça ?' if confirm == True else ''}"
+            "Lyrae: spell({}){}".format(text, ", c'est bien ça ?" if confirm else "")
         )
 
     for letter in text:
