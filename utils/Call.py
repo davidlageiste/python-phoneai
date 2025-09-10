@@ -45,7 +45,6 @@ class Call:
             "lastname": None,
             "firstname": None,
             "email": None,
-            "phone": None,
         }
 
         self.patient: any | None = None
@@ -53,7 +52,6 @@ class Call:
         # Rdv
         self.rdv: Dict[str, str | int | Any] = {
             "rdv_intent": None,
-            "code_examen": None,
             "exam_id": None,
             "sous_type_id": None,
             "creneauDate": None,
@@ -63,11 +61,8 @@ class Call:
             "annulation_phrase": None,
             "patient_rdv": None,
             "current_creneau_proposition": 0,
-            "interrogatoire": None,  # Après que le RDV soit créé, questions à propos de l'exam
-            "reponses_interrogatoire": None,  # Après que le RDV soit créé, réponses aux questions à propos de l'exam
-            "id_examen": None,  # Id du dernier rendez-vous créé par téléphone
-            "patient_rdv_confirm": None,
-            "phone_saved": False,
+            "interrogatoire": None,
+            "reponses_interrogatoire": None
         }
 
         # Errors
@@ -79,7 +74,6 @@ class Call:
             "intent": 0,
             "type_exam": 0,
             "rdv": 0,
-            "phone": 0,
         }
 
         # Steps
@@ -93,7 +87,7 @@ class Call:
         self.last_text_to_speech: Dict[str, str, any] = {
             "endpoint": None,
             "operation_context": None,
-            "play_source": None,
+            "play_source": None
         }
 
     def to_string(self) -> str:
@@ -108,24 +102,21 @@ class Call:
         return json.dumps(data, indent=2, ensure_ascii=False)
 
     def to_string_archive(self, caller) -> str:
-        steps_str = "\n".join(self.steps)
         return f"""***********
-{caller} / {self.updated_at} / intent: {self.call['intent']}
+{caller} / {self.updated_at} / intent: {self.call["intent"]}
 
 CALLER INFO
 birthdate / lastname / firstname / email
-{self.caller['birthdate']} / {self.caller['lastname']} / {self.caller['firstname']} / {self.caller['email']}
+{self.caller["birthdate"]} / {self.caller["lastname"]} / {self.caller["firstname"]} / {self.caller["email" ]}
 
 TALK
-{steps_str}\n\n
+{"\n".join(self.steps)}\n\n
 """
 
     def store_archive(self, caller):
         content = self.to_string_archive(caller)
         upload_call_recap(
-            f"{caller}-{str(self.updated_at).replace(' ', '-')}.txt",
-            "muzillac-calls",
-            content,
+            f"{caller}-{str(self.updated_at).replace(" ", "-")}.txt", "calls", content
         )
 
     def __str__(self):
