@@ -1,5 +1,3 @@
-import os
-from dotenv import load_dotenv
 from azure.communication.callautomation import (
     CallAutomationClient,
     RecognizeInputType,
@@ -22,32 +20,25 @@ from typing import Dict
 from num2words import num2words
 import json
 import random
-from itertools import zip_longest
 
 from utils.tts import (
     text_to_speech,
     generate_text_to_speech,
     text_to_speech_spell_confirm,
-    text_to_speech_number_confirm,
 )
-from utils.exam import get_client_exam_type, get_client_exam_code
+from utils.exam import get_client_exam_code
 from utils.recorded_audio import recorded_audios_keys, keyboard_sounds, click_sounds
 from utils.Call import Call
-
-load_dotenv()
 
 COGNITIVE_SERVICE_ENDPOINT = (
     "https://lyraecognitivesservicesus.cognitiveservices.azure.com"
 )
 SPEECH_KEY = "CwdBzhR9vodZ5lXf4S52ErZaUy9eUG05JJCtDuu4xjjL5rylozVFJQQJ99BAAC5T7U2XJ3w3AAAAACOGuWEK"
 SPEECH_REGION = "eastus"
-# MONGO_URL = (
-#     "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
-# )
+# MONGO_URL = "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
 MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
 APP_URL = "lyrae-demo.azurewebsites.net"
 API_URL = "sparkso-universite.com:8080"
-
 
 app = Flask(__name__)
 
@@ -56,8 +47,9 @@ db = client["neuracorp"]
 patientCollection = db["patientsDB"]
 rdvCollection = db["rdv"]
 
-connection_string = os.getenv("AZURE_COMMUNICATION_CONNECTION_STRING")
-call_automation_client = CallAutomationClient.from_connection_string(connection_string)
+call_automation_client = CallAutomationClient.from_connection_string(
+    "endpoint=https://lyraedemo.unitedstates.communication.azure.com/;accesskey=F7IY7dqfsiO8WDYEBgsDgEGNDmUZyPwqhTKEB3PkF6zyfrhpjrltJQQJ99BGACULyCpuAreVAAAAAZCSEkW2"
+)
 
 speech_config = speechsdk.SpeechConfig(subscription=SPEECH_KEY, region=SPEECH_REGION)
 
@@ -152,16 +144,6 @@ french_months = {
     10: "octobre",
     11: "novembre",
     12: "décembre",
-}
-
-french_weekdays = {
-    0: "lundi",
-    1: "mardi",
-    2: "mercredi",
-    3: "jeudi",
-    4: "vendredi",
-    5: "samedi",
-    6: "dimanche",
 }
 
 
@@ -314,15 +296,6 @@ def hang_up(text, caller):
     ).play_media_to_all(play_source=play_source, operation_context="hang_up")
 
 
-def transfer_call(text, caller):
-    play_source = text_to_speech(
-        "file_source", f"{text}. Je vous transfère vers une secrétaire", calls[caller]
-    )
-    call_automation_client.get_call_connection(
-        calls[caller].call["call_connection_id"]
-    ).play_media_to_all(play_source=play_source, operation_context="transfer")
-
-
 def countPatientInDB(query):
     count = patientCollection.count_documents(query)
     return count
@@ -371,7 +344,6 @@ def incoming_call():
     calls[caller] = Call(called)
     encodedContext = data.get("data").get("incomingCallContext")
 
-    print("here")
     call_automation_client.answer_call(
         incoming_call_context=encodedContext,
         callback_url=f"https://{APP_URL}/callback?caller={caller}",
@@ -399,11 +371,6 @@ async def callback():
 
     if type == "Microsoft.Communication.CallDisconnected":
         print_calls()
-        if (
-            calls[caller].rdv["id_examen"] is not None
-            and not calls[caller].rdv["phone_saved"]
-        ):
-            addPhoneToRDV(calls[caller].rdv["id_examen"], f"0{caller[2:]}", caller)
         if caller in calls.keys():
             calls[caller].store_archive(caller)
             # with open("archive_talk.txt", "a", encoding="utf-8") as file:
@@ -428,24 +395,13 @@ async def callback():
         calls[caller].call["caller"] = caller
         # print_calls()
 
-        # target = PhoneNumberIdentifier("+33651506690")
+        # target = PhoneNumberIdentifier("+33801150143")
 
-        # await asyncio.sleep(5)
-
-        # # print(target)
-        # # print("+" + caller.strip())
-        # # print(calls[caller].call["call_connection_id"])
-        # # sip_headers={}
-        # # sip_headers.add("X-MS-Custom-headerName", "headerValue")
-        # # sip_headers.add("User-To-User","uuivale")
-        # # call_automation_client.get_call_connection(call_connection_id=calls[caller].call["call_connection_id"]).transfer_call_to_participant(
-        # #     target_participant=target,
-        # #     sip_headers=sip_headers,
-        # #     transferee=PhoneNumberIdentifier("+" + caller.strip()),
-        # #     operation_callback_url=f"https://{APP_URL}/callback",
-        # # )
-
-
+        # call_automation_client.get_call_connection(call_connection_id=call_connection_id).transfer_call_to_participant(
+        #     target_participant=target,
+        #     transferee=PhoneNumberIdentifier("+" + caller.strip()),
+        #     operation_callback_url=f"https://{APP_URL}/callback",
+        # )
         start_conversation(caller=caller)
         # await find_patient(caller)
         # handle_prise_rdv(caller)
@@ -457,159 +413,10 @@ async def callback():
         call_automation_client.get_call_connection(
             calls[caller].call["call_connection_id"]
         ).hang_up(is_for_everyone=True)
-
-    if (
-        type == "Microsoft.Communication.PlayCompleted"
-        and request.json
-        and request.json[0].get("data").get("operationContext") == "transfer"
-    ):
-        target = "+33672672249"
-        call_automation_client.get_call_connection(
-            call_connection_id=calls[caller].call["call_connection_id"]
-        ).transfer_call_to_participant(
-            target_participant=PhoneNumberIdentifier(target),
-            transferee=PhoneNumberIdentifier("+" + caller.strip()),
-            operation_callback_url=f"https://{APP_URL}/callback",
-        )
-
     return jsonify({"status": "success"})
 
 
 ########## IDENTIFICATION ##########
-
-
-@app.route("/get_phone", methods=["POST"])
-async def get_phone():
-    # global firstname_error
-    # global firstname
-    global calls
-
-    if not request.json:
-        return jsonify({"success": "success"})
-
-    caller, operation_context, type, user_response = get_request_infos(request)
-    if user_response == "":
-        speak("Je ne vous ai pas entendu", caller)
-        start_recognizing(
-            calls[caller].last_text_to_speech["endpoint"],
-            calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech["play_source"],
-            caller,
-            "keyboard",
-        )
-        return jsonify({"success": "success"})
-    task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
-    get_repeat = await task_get_repeat
-    if get_repeat is True:
-        start_recognizing(
-            calls[caller].last_text_to_speech["endpoint"],
-            calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech["play_source"],
-            caller,
-            "keyboard",
-        )
-        return jsonify({"success": "success"})
-
-    print("user_response", user_response)
-
-    if (
-        type == "Microsoft.Communication.RecognizeCompleted"
-        and operation_context == "get_phone"
-    ):
-
-        if user_response == "":
-            if increment_error(caller, "phone"):
-                transfer_call(
-                    "Il semblerait que nous n'arrivons pas à nous comprendre",
-                    caller,
-                )
-                return jsonify({"success": "success"})
-
-            play_source = text_to_speech(
-                "file_source",
-                "Je n'ai pas compris, pouvez-vous répéter votre numéro de téléphone chiffre par chiffre?",
-                calls[caller],
-            )
-            start_recognizing("/get_phone", "get_phone", play_source, caller)
-            return jsonify({"success": "success"})
-        else:
-            task_human_orientation = asyncio.create_task(
-                get_human_orientation_async(user_response=user_response)
-            )
-            human_orientation = await task_human_orientation
-            if human_orientation is True:
-                transfer_call(
-                    "Vous avez demandé a parler avec une secrétaire",
-                    caller,
-                )
-                return jsonify({"success": "success"})
-            task_get_repeat = asyncio.create_task(
-                get_repeat_async(user_response=user_response)
-            )
-            get_repeat = await task_get_repeat
-            if get_repeat is True:
-                start_recognizing(
-                    calls[caller].last_text_to_speech["endpoint"],
-                    calls[caller].last_text_to_speech["operation_context"],
-                    calls[caller].last_text_to_speech["play_source"],
-                    caller,
-                    "keyboard",
-                )
-                return jsonify({"success": "success"})
-            await asyncio.sleep(1)
-            clean_number = re.sub(r"\D", "", user_response)
-            calls[caller].caller["phone"] = clean_number
-
-            if clean_number is None:
-                if increment_error(caller, "phone"):
-                    transfer_call(
-                        "Il semblerait que nous n'arrivons pas à nous comprendre.",
-                        caller,
-                    )
-                play_source = text_to_speech(
-                    "file_source",
-                    "Je n'ai pas compris, pouvez-vous répéter votre numéro de téléphone?",
-                    calls[caller],
-                )
-                start_recognizing(
-                    "/get_phone",
-                    "get_phone",
-                    play_source,
-                    caller,
-                    end_silence_timeout=1,
-                )
-                return jsonify({"success": "success"})
-
-            else:
-                speak(
-                    f"Est-ce que votre numéro est bien le",
-                    caller,
-                )
-                play_source = text_to_speech_number_confirm(
-                    clean_number,
-                    calls[caller],
-                )
-                start_recognizing(
-                    "/confirm_phone",
-                    "confirm_phone",
-                    play_source,
-                    caller,
-                    background_noise="click",
-                )
-                return jsonify({"success": "success"})
-
-    elif type == "Microsoft.Communication.RecognizeFailed":
-        speak("Je ne vous ai pas entendu, est-ce que votre numéro est bien le", caller)
-        start_recognizing(
-            calls[caller].last_text_to_speech["endpoint"],
-            calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech["play_source"],
-            caller,
-            "keyboard",
-        )
-        return jsonify({"success": "success"})
-
-    return jsonify({"success": "success"})
 
 
 @app.route("/get_firstname", methods=["POST"])
@@ -651,11 +458,10 @@ async def get_firstname():
 
         if user_response == "":
             if increment_error(caller, "firstname"):
-                transfer_call(
-                    "Il semblerait que nous n'arrivons pas à nous comprendre",
+                hang_up(
+                    "Il semblerait que nous n'arrivons pas à nous comprendre. Je vous transfère vers une secrétaire.",
                     caller,
                 )
-                return jsonify({"success": "success"})
 
             play_source = text_to_speech(
                 "file_source",
@@ -663,7 +469,6 @@ async def get_firstname():
                 calls[caller],
             )
             start_recognizing("/get_firstname", "get_firstname", play_source, caller)
-            return jsonify({"success": "success"})
         else:
             clean_firstname = user_response.replace(".", "")
             task_get_firstname = asyncio.create_task(
@@ -675,8 +480,8 @@ async def get_firstname():
             speak("Très bien", caller)
             human_orientation = await task_human_orientation
             if human_orientation is True:
-                transfer_call(
-                    "Vous avez demandé a parler avec une secrétaire",
+                hang_up(
+                    "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                     caller,
                 )
                 return jsonify({"success": "success"})
@@ -703,8 +508,8 @@ async def get_firstname():
                 or clean_firstname == "Erreur lors de la communication avec le modèle."
             ):
                 if increment_error(caller, "firstname"):
-                    transfer_call(
-                        "Il semblerait que nous n'arrivons pas à nous comprendre.",
+                    hang_up(
+                        "Il semblerait que nous n'arrivons pas à nous comprendre. Je vous transfère vers une secrétaire.",
                         caller,
                     )
                 play_source = text_to_speech(
@@ -715,12 +520,12 @@ async def get_firstname():
                 start_recognizing(
                     "/get_firstname", "get_firstname", play_source, caller
                 )
-                return jsonify({"success": "success"})
 
             else:
                 speak(
-                    f"votre prénom est {clean_firstname.strip()} et il s'épèle ainsi ",
+                    f"{clean_firstname.strip()}",
                     caller,
+                    speed=0.82,
                 )
                 play_source = text_to_speech_spell_confirm(
                     clean_firstname.strip(),
@@ -733,7 +538,6 @@ async def get_firstname():
                     caller,
                     background_noise="click",
                 )
-                return jsonify({"success": "success"})
 
     elif type == "Microsoft.Communication.RecognizeFailed":
         speak("Je ne vous ai pas entendu", caller)
@@ -790,8 +594,8 @@ async def get_lastname():
         speak("Merci", caller)
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            transfer_call(
-                "Vous avez demandé a parler avec une secrétaire",
+            hang_up(
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -803,30 +607,25 @@ async def get_lastname():
 
         if clean_name is None:
             if increment_error(caller, "lastname"):
-                transfer_call(
-                    "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre.",
-                    caller,
+                play_source = text_to_speech(
+                    "fixed_file_source", "misunderstand_unfortunately", calls[caller]
                 )
-                # play_source = text_to_speech(
-                #     "fixed_file_source", "misunderstand_unfortunately", calls[caller]
-                # )
 
-                # call_automation_client.get_call_connection(
-                #     calls[caller].call["call_connection_id"]
-                # ).play_media_to_all(
-                #     play_source=play_source, operation_context="hang_up"
-                # )
-                return jsonify({"status": "success"})
+                call_automation_client.get_call_connection(
+                    calls[caller].call["call_connection_id"]
+                ).play_media_to_all(
+                    play_source=play_source, operation_context="hang_up"
+                )
             play_source = text_to_speech(
                 "fixed_file_source", "repeat_lastname", calls[caller]
             )
             start_recognizing("/get_lastname", "get_lastname", play_source, caller)
-            return jsonify({"success": "success"})
 
         else:
             speak(
-                f"votre nom de famille est {calls[caller].caller['lastname']} et il s'épèle ainsi ",
+                f"{calls[caller].caller["lastname"]}",
                 caller,
+                speed=0.82,
             )
             play_source = text_to_speech_spell_confirm(
                 calls[caller].caller["lastname"],
@@ -839,7 +638,6 @@ async def get_lastname():
                 caller,
                 background_noise="click",
             )
-            return jsonify({"success": "success"})
 
     elif type == "Microsoft.Communication.RecognizeFailed":
         speak("Je ne vous ai pas entendu", caller)
@@ -884,8 +682,8 @@ async def get_birthdate():
         )
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            transfer_call(
-                "Vous avez demandé a parler avec une secrétaire",
+            hang_up(
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -985,8 +783,8 @@ async def confirm_creneau():
         )
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            transfer_call(
-                "Vous avez demandé a parler avec une secrétaire",
+            hang_up(
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -1006,7 +804,7 @@ async def confirm_creneau():
         task_positive_negative = asyncio.create_task(
             get_positive_negative_async(user_response)
         )
-        # speak("ok", caller)
+        speak("ok", caller)
 
         positive_negative = await task_positive_negative
         if positive_negative == "négative":
@@ -1016,34 +814,14 @@ async def confirm_creneau():
                     creneau=rdv_info["all_creneaux"],
                     index=rdv_info["current_creneau_proposition"],
                 )
-
-                if text["success"] is False:
-                    play_source = text_to_speech(
-                        "file_source",
-                        f"{text['message']}. Puis-je faire autre chose pour vous ?",
-                        calls[caller],
-                    )
-                    start_recognizing(
-                        "/handleResponse",
-                        "end_conversation",
-                        play_source,
-                        caller,
-                        background_noise="click",
-                    )
-                    return jsonify({"success": "success"})
-                else:
-                    play_source = text_to_speech(
-                        "file_source", text["message"], calls[caller]
-                    )
-                    start_recognizing(
-                        "/confirm_creneau",
-                        "modification",
-                        play_source,
-                        caller,
-                        background_noise="click",
-                    )
-                    return jsonify({"success": "success"})
-
+                play_source = text_to_speech("file_source", text, calls[caller])
+                start_recognizing(
+                    "/confirm_creneau",
+                    "confirm_creneau",
+                    play_source,
+                    caller,
+                    background_noise="click",
+                )
             else:
                 rdv_info["current_creneau_proposition"] = 0
                 last_key = sorted(rdv_info["all_creneaux"].keys(), key=int)[-1]
@@ -1080,32 +858,14 @@ async def confirm_creneau():
                     creneau=rdv_info["all_creneaux"],
                     index=rdv_info["current_creneau_proposition"],
                 )
-                if text["success"] is False:
-                    play_source = text_to_speech(
-                        "file_source",
-                        f"{text['message']}. Puis-je faire autre chose pour vous ?",
-                        calls[caller],
-                    )
-                    start_recognizing(
-                        "/handleResponse",
-                        "end_conversation",
-                        play_source,
-                        caller,
-                        background_noise="click",
-                    )
-                    return jsonify({"success": "success"})
-                else:
-                    play_source = text_to_speech(
-                        "file_source", text["message"], calls[caller]
-                    )
-                    start_recognizing(
-                        "/confirm_creneau",
-                        "modification",
-                        play_source,
-                        caller,
-                        background_noise="click",
-                    )
-                    return jsonify({"success": "success"})
+                play_source = text_to_speech("file_source", text, calls[caller])
+                start_recognizing(
+                    "/confirm_creneau",
+                    "confirm_creneau",
+                    play_source,
+                    caller,
+                    background_noise="click",
+                )
 
         elif positive_negative == "positive":
             rdv_info["chosen_creneau"] = rdv_info["all_creneaux"][
@@ -1117,7 +877,6 @@ async def confirm_creneau():
                 or caller_info["birthdate"] is not None
             ):
                 await find_patient(caller)
-                return "ok"
             else:
                 play_source = text_to_speech(
                     "fixed_file_source", "ask_birthdate2", calls[caller]
@@ -1125,7 +884,6 @@ async def confirm_creneau():
                 start_recognizing(
                     "/get_birthdate", "get_birthdate", play_source, caller
                 )
-                return "ok"
         else:
             text = build_single_date_phrase(
                 creneau=rdv_info["all_creneaux"],
@@ -1133,7 +891,7 @@ async def confirm_creneau():
             )
             play_source = text_to_speech(
                 "file_source",
-                "Pardonnez moi, je n'ai pas compris. " + text["message"],
+                "Pardonnez moi, je n'ai pas compris." + text,
                 calls[caller],
             )
             start_recognizing(
@@ -1143,7 +901,6 @@ async def confirm_creneau():
                 caller,
                 background_noise="click",
             )
-            return "ok"
     elif (
         type == "Microsoft.Communication.RecognizeCompleted"
         and operation_context == "modification"
@@ -1158,8 +915,8 @@ async def confirm_creneau():
         )
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            transfer_call(
-                "Vous avez demandé a parler avec une secrétaire",
+            hang_up(
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -1184,32 +941,14 @@ async def confirm_creneau():
                     creneau=rdv_info["all_creneaux"],
                     index=rdv_info["current_creneau_proposition"],
                 )
-                if text["success"] is False:
-                    play_source = text_to_speech(
-                        "file_source",
-                        f"{text['message']}. Puis-je faire autre chose pour vous ?",
-                        calls[caller],
-                    )
-                    start_recognizing(
-                        "/handleResponse",
-                        "end_conversation",
-                        play_source,
-                        caller,
-                        background_noise="click",
-                    )
-                    return jsonify({"success": "success"})
-                else:
-                    play_source = text_to_speech(
-                        "file_source", text["message"], calls[caller]
-                    )
-                    start_recognizing(
-                        "/confirm_creneau",
-                        "modification",
-                        play_source,
-                        caller,
-                        background_noise="click",
-                    )
-                    return jsonify({"success": "success"})
+                play_source = text_to_speech("file_source", text, calls[caller])
+                start_recognizing(
+                    "/confirm_creneau",
+                    "modification",
+                    play_source,
+                    caller,
+                    background_noise="click",
+                )
             else:
                 rdv_info["current_creneau_proposition"] = 0
                 last_key = sorted(rdv_info["all_creneaux"].keys(), key=int)[-1]
@@ -1246,60 +985,35 @@ async def confirm_creneau():
                     creneau=rdv_info["all_creneaux"],
                     index=rdv_info["current_creneau_proposition"],
                 )
-                if text["success"] is False:
-                    play_source = text_to_speech(
-                        "file_source",
-                        f"{text['message']}. Puis-je faire autre chose pour vous ?",
-                        calls[caller],
-                    )
-                    start_recognizing(
-                        "/handleResponse",
-                        "end_conversation",
-                        play_source,
-                        caller,
-                        background_noise="click",
-                    )
-                    return jsonify({"success": "success"})
-                else:
-                    play_source = text_to_speech(
-                        "file_source", text["message"], calls[caller]
-                    )
-                    start_recognizing(
-                        "/confirm_creneau",
-                        "modification",
-                        play_source,
-                        caller,
-                        background_noise="click",
-                    )
-                    return jsonify({"success": "success"})
+                play_source = text_to_speech("file_source", text, calls[caller])
+                start_recognizing(
+                    "/confirm_creneau",
+                    "modification",
+                    play_source,
+                    caller,
+                    background_noise="click",
+                )
         elif positive_negative == "positive":
-            rdv_info["chosen_creneau"] = rdv_info["all_creneaux"][str(rdv_info["current_creneau_proposition"] + 1)]
-            chosen_date_str = rdv_info["chosen_creneau"]["date"][:10]
-            chosen_time_str = rdv_info["chosen_creneau"]["heureDebut"]
-            chosen_dt = datetime.fromisoformat(
-                f"{chosen_date_str}T{chosen_time_str}:00"
-            )
+            rdv_info["chosen_creneau"] = rdv_info["all_creneaux"][
+                str(rdv_info["current_creneau_proposition"] + 1)
+            ]
+
+            dt = datetime.fromisoformat(rdv_info["chosen_creneau"])
 
             matched_creneau = None
             for key, value in rdv_info["all_creneaux"].items():
-                full_datetime_str = f"{value['date'][:10]}T{value['heureDebut']}:00"
+                full_datetime_str = (
+                    value["date"][:10] + "T" + value["heureDebut"] + ":00"
+                )
                 current_dt = datetime.fromisoformat(full_datetime_str)
-                if current_dt == chosen_dt:
+                if current_dt == dt:
                     matched_creneau = value
                     break
 
             if matched_creneau is not None:
-                # --- gestion du "premier" ---
-                jour = "premier" if chosen_dt.day == 1 else num2words(str(chosen_dt.day), lang='fr')
-                mois = french_months[chosen_dt.month]
+                # Création de la phrase
 
-                # gestion de l'heure
-                if chosen_dt.minute == 0:
-                    heure = f"{num2words(chosen_dt.hour, lang='fr')} heures"
-                else:
-                    heure = f"{num2words(chosen_dt.hour, lang='fr')} heures {num2words(chosen_dt.minute, lang='fr')}"
-
-                phrase = f"{jour} {mois} à {heure}"
+                phrase = f"{dt.day} {french_months[dt.month]} à {dt.hour} heures {dt.minute:02d}"
 
                 rdv_info["creneauDate"] = phrase
                 rdv_info["chosen_creneau"] = matched_creneau
@@ -1315,14 +1029,10 @@ async def confirm_creneau():
                     )
 
                 elif call_info["intent"] == "modification de rendez-vous":
-                    editRDV(caller)
-                    play_source = text_to_speech(
-                        "file_source",
-                        "Très bien, votre rendez-vous a bien été déplacé au {phrase}. Puis-je faire autre chose pour vous ?",
-                        calls[caller],
+                    speak(
+                        f"Très bien, votre rendez-vous sera déplacé au {phrase}", caller
                     )
-                    start_recognizing("/handleResponse", "en_conversation", play_source, caller)
-
+                    editRDV(caller)
         else:
             text = build_single_date_phrase(
                 creneau=rdv_info["all_creneaux"],
@@ -1330,7 +1040,7 @@ async def confirm_creneau():
             )
             play_source = text_to_speech(
                 "file_source",
-                "Pardonnez moi, je n'ai pas compris. " + text["message"],
+                "Pardonnez moi, je n'ai pas compris." + text,
                 calls[caller],
             )
             start_recognizing(
@@ -1343,115 +1053,6 @@ async def confirm_creneau():
 
     elif type == "Microsoft.Communication.RecognizeFailed":
         speak("Je ne vous ai pas entendu", caller)
-        start_recognizing(
-            calls[caller].last_text_to_speech["endpoint"],
-            calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech["play_source"],
-            caller,
-            "keyboard",
-        )
-        return jsonify({"success": "success"})
-
-    return jsonify({"success": "success"})
-
-
-@app.route("/confirm_phone", methods=["POST"])
-async def confirm_phone():
-    # global firstname_error
-    # global firstname
-    # global lastname
-    # global birthdate
-    global calls
-
-    if not request.json:
-        return jsonify({"success": "success"})
-
-    caller, operation_context, type, user_response = get_request_infos(request)
-    if user_response == "":
-        speak("Je ne vous ai pas entendu", caller)
-        start_recognizing(
-            calls[caller].last_text_to_speech["endpoint"],
-            calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech["play_source"],
-            caller,
-            "keyboard",
-        )
-        return jsonify({"success": "success"})
-    task_get_repeat = asyncio.create_task(get_repeat_async(user_response=user_response))
-    get_repeat = await task_get_repeat
-    if get_repeat is True:
-        start_recognizing(
-            calls[caller].last_text_to_speech["endpoint"],
-            calls[caller].last_text_to_speech["operation_context"],
-            calls[caller].last_text_to_speech["play_source"],
-            caller,
-            "keyboard",
-        )
-        return jsonify({"success": "success"})
-    if (
-        type == "Microsoft.Communication.RecognizeCompleted"
-        and operation_context == "confirm_phone"
-    ):
-        # user_response = request.json[0].get("data").get("speechResult").get("speech")
-        task_model_response = asyncio.create_task(
-            get_positive_negative_async(user_response)
-        )
-        task_human_orientation = asyncio.create_task(
-            get_human_orientation_async(user_response=user_response)
-        )
-
-        human_orientation = await task_human_orientation
-        if human_orientation is True:
-            transfer_call(
-                "Vous avez demandé a parler avec une secrétaire",
-                caller,
-            )
-            return jsonify({"success": "success"})
-        await asyncio.sleep(1)
-
-        model_response = await task_model_response
-
-        if model_response == "négative":
-            calls[caller].caller["phone"] = None
-
-            play_source = text_to_speech(
-                "file_source",
-                "Pouvez-vous me donner votre numéro de téléphone?",
-                calls[caller],
-            )
-
-            start_recognizing(
-                callback_url="/get_phone",
-                play_source=play_source,
-                context="get_phone",
-                caller=caller,
-                end_silence_timeout=1,
-            )
-            return jsonify({"success": "success"})
-
-        elif model_response == "positive":
-            await examination_exam_type(caller)
-            return jsonify({"success": "success"})
-
-        else:
-            speak(
-                f"Je n'ai pas compris, est-ce que votre numéro de téléphone est le",
-                caller,
-            )
-            play_source = text_to_speech_number_confirm(
-                calls[caller].caller["phone"],
-                calls[caller],
-            )
-            start_recognizing(
-                "/confirm_phone",
-                "confirm_phone",
-                play_source,
-                caller,
-                background_noise="click",
-            )
-            return jsonify({"success": "success"})
-    elif type == "Microsoft.Communication.RecognizeFailed":
-        speak("Je ne vous ai pas entendu, est-ce que votre numéro est bien le", caller)
         start_recognizing(
             calls[caller].last_text_to_speech["endpoint"],
             calls[caller].last_text_to_speech["operation_context"],
@@ -1511,8 +1112,8 @@ async def confirm_firstname():
         speak("ok", caller)
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            transfer_call(
-                "Vous avez demandé a parler avec une secrétaire",
+            hang_up(
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -1526,10 +1127,10 @@ async def confirm_firstname():
                 findPatientsInDB(
                     {
                         "dateNaissance": {
-                            "$regex": f"^{calls[caller].caller['birthdate'] + 'T00:00:00'}$"
+                            "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
                         },
                         "nom": {
-                            "$regex": f"^{calls[caller].caller['lastname']}$",
+                            "$regex": f"^{calls[caller].caller["lastname"]}$",
                             "$options": "i",  # Case-insensitive
                         },
                     }
@@ -1550,14 +1151,14 @@ async def confirm_firstname():
                 patient = findPatientInDB(
                     {
                         "dateNaissance": {
-                            "$regex": f"^{calls[caller].caller['birthdate'] + 'T00:00:00'}$"
+                            "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
                         },
                         "nom": {
-                            "$regex": f"^{name_similarity['prenom']}$",
+                            "$regex": f"^{name_similarity["prenom"]}$",
                             "$options": "i",  # Case-insensitive
                         },
                         "prenom": {
-                            "$regex": f"^{name_similarity['nom']}$",
+                            "$regex": f"^{name_similarity["nom"]}$",
                             "$options": "i",  # Case-insensitive
                         },
                     }
@@ -1577,12 +1178,11 @@ async def confirm_firstname():
                     context="confirm_identity",
                     caller=caller,
                 )
-                return jsonify({"success": "success"})
 
             else:
                 if increment_error(caller, "firstname"):
-                    transfer_call(
-                        "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre.",
+                    hang_up(
+                        "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.",
                         caller,
                     )
                 else:
@@ -1594,7 +1194,6 @@ async def confirm_firstname():
                     start_recognizing(
                         "/get_firstname", "get_firstname", play_source, caller
                     )
-                    return jsonify({"success": "success"})
 
         elif model_response == "positive":
             # speak("Très bien, merci")
@@ -1603,8 +1202,9 @@ async def confirm_firstname():
 
         else:
             speak(
-                f"Je n'ai pas compris, votre prénom est {calls[caller].caller['firstname']} et il s'épèle ainsi ",
+                f"Je n'ai pas compris, {calls[caller].caller["firstname"]}",
                 caller,
+                speed=0.82,
             )
             play_source = text_to_speech_spell_confirm(
                 calls[caller].caller["firstname"],
@@ -1617,7 +1217,7 @@ async def confirm_firstname():
                 caller,
                 background_noise="click",
             )
-            return jsonify({"success": "success"})
+
     elif type == "Microsoft.Communication.RecognizeFailed":
         speak("Je ne vous ai pas entendu", caller)
         start_recognizing(
@@ -1675,8 +1275,8 @@ async def confirm_lastname():
         speak("ok", caller)
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            transfer_call(
-                "Vous avez demandé a parler avec une secrétaire",
+            hang_up(
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -1690,7 +1290,7 @@ async def confirm_lastname():
                 findPatientsInDB(
                     {
                         "dateNaissance": {
-                            "$regex": f"^{calls[caller].caller['birthdate'] + 'T00:00:00'}$"
+                            "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
                         }
                     }
                 )
@@ -1710,14 +1310,14 @@ async def confirm_lastname():
                 patient = findPatientInDB(
                     {
                         "dateNaissance": {
-                            "$regex": f"^{calls[caller].caller['birthdate'] + 'T00:00:00'}$"
+                            "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
                         },
                         "nom": {
-                            "$regex": f"^{name_similarity['nom']}$",
+                            "$regex": f"^{name_similarity["nom"]}$",
                             "$options": "i",  # Case-insensitive
                         },
                         "prenom": {
-                            "$regex": f"^{name_similarity['prenom']}$",
+                            "$regex": f"^{name_similarity["prenom"]}$",
                             "$options": "i",  # Case-insensitive
                         },
                     }
@@ -1737,41 +1337,34 @@ async def confirm_lastname():
                     context="confirm_identity",
                     caller=caller,
                 )
-                return jsonify({"success": "success"})
 
             else:
                 if increment_error(caller, "lastname"):
-                    transfer_call(
-                        "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre.",
-                        caller,
+                    play_source = text_to_speech(
+                        "fixed_file_source",
+                        "misunderstand_unfortunately",
+                        calls[caller],
                     )
-
-                    # play_source = text_to_speech(
-                    #     "fixed_file_source",
-                    #     "misunderstand_unfortunately",
-                    #     calls[caller],
-                    # )
-                    # call_automation_client.get_call_connection(
-                    #     calls[caller].call["call_connection_id"]
-                    # ).play_media_to_all(
-                    #     play_source=play_source, operation_context="hang_up"
-                    # )
+                    call_automation_client.get_call_connection(
+                        calls[caller].call["call_connection_id"]
+                    ).play_media_to_all(
+                        play_source=play_source, operation_context="hang_up"
+                    )
                     return jsonify({"status": "success"})
 
                 play_source = text_to_speech(
                     "fixed_file_source", "spell_lastname2", calls[caller]
                 )
                 start_recognizing("/get_lastname", "get_lastname", play_source, caller)
-                return jsonify({"success": "success"})
 
         elif model_response == "positive":
             count = countPatientInDB(
                 {
                     "dateNaissance": {
-                        "$regex": f"^{calls[caller].caller['birthdate'] + 'T00:00:00'}$"
+                        "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
                     },
                     "nom": {
-                        "$regex": f"^{calls[caller].caller['lastname']}$",
+                        "$regex": f"^{calls[caller].caller["lastname"]}$",
                         "$options": "i",  # Case-insensitive
                     },
                 }
@@ -1790,10 +1383,10 @@ async def confirm_lastname():
                 patient = findPatientInDB(
                     {
                         "dateNaissance": {
-                            "$regex": f"^{calls[caller].caller['birthdate'] + 'T00:00:00'}$"
+                            "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
                         },
                         "nom": {
-                            "$regex": f"^{calls[caller].caller['lastname']}$",
+                            "$regex": f"^{calls[caller].caller["lastname"]}$",
                             "$options": "i",  # Case-insensitive
                         },
                     }
@@ -1816,8 +1409,13 @@ async def confirm_lastname():
 
         else:
             speak(
-                f"Je n'ai pas compris, votre nom de famille est {calls[caller].caller['lastname']} et il s'épèle ainsi",
+                "Je n'ai pas compris",
                 caller,
+            )
+            speak(
+                f"Je n'ai pas compris {calls[caller].caller["lastname"]}",
+                caller,
+                speed=0.82,
             )
             play_source = text_to_speech_spell_confirm(
                 calls[caller].caller["lastname"],
@@ -1872,8 +1470,8 @@ async def confirm_annulation():
         speak("ok", caller)
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            transfer_call(
-                "Vous avez demandé a parler avec une secrétaire",
+            hang_up(
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -1915,32 +1513,17 @@ async def confirm_annulation():
                     "/handleResponse", "end_conversation", play_source, caller
                 )
             else:
-                transfer_call(
-                    "J'ai eu un problème lors de la suppression de votre rendez-vous.",
+                hang_up(
+                    "J'ai eu un problème lors de la suppression de votre rendez-vous. Je vous transfère vers une secrétaire.",
                     caller,
                 )
         else:
-            cancel_creneau = calls[caller].rdv["cancel_creneau"]
-
-            # Conversion en datetime
-            dt = datetime.fromisoformat(f"{cancel_creneau['datePrevue'][:10]}T{cancel_creneau['heurePrevue']}:00")
-
-            # Jour + mois en français
-            jour = "premier" if dt.day == 1 else str(dt.day)
-            mois = french_months[dt.month]
-
-            # Gestion de l'heure
-            if dt.minute == 0:
-                heure = f"{dt.hour} heures"
-            else:
-                heure = f"{dt.hour} heures {dt.minute}"
-
-            # Phrase finale
-            phrase = f"{jour} {mois} à {heure}"
+            date_str = calls[caller].rdv["cancel_creneau"]["datePrevue"][:10]
+            time_str = calls[caller].rdv["cancel_creneau"]["heurePrevue"]
 
             play_source = text_to_speech(
                 "file_source",
-                f"Je n'ai pas compris, voulez-vous annuler le rendez-vous du {phrase} ?",
+                f"Je n'ai pas compris, voulez-vous annuler le rendez-vous du {date_str} à {time_str} ?",
                 calls[caller],
             )
             start_recognizing("/confirm_annulation", "annulation", play_source, caller)
@@ -1988,8 +1571,8 @@ async def confirm_birthdate():
         )
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            transfer_call(
-                "Vous avez demandé a parler avec une secrétaire",
+            hang_up(
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -2016,21 +1599,16 @@ async def confirm_birthdate():
 
         if model_response == "négative":
             if increment_error(caller, "birthdate"):
-                transfer_call(
-                    "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre.",
-                    caller,
+                play_source = text_to_speech(
+                    "fixed_file_source",
+                    "misunderstand_unfortunately",
+                    calls[caller],
                 )
-                # play_source = text_to_speech(
-                #     "fixed_file_source",
-                #     "misunderstand_unfortunately",
-                #     calls[caller],
-                # )
-                # call_automation_client.get_call_connection(
-                #     calls[caller].call["call_connection_id"]
-                # ).play_media_to_all(
-                #     play_source=play_source, operation_context="hang_up"
-                # )
-                return jsonify({"status": "success"})
+                call_automation_client.get_call_connection(
+                    calls[caller].call["call_connection_id"]
+                ).play_media_to_all(
+                    play_source=play_source, operation_context="hang_up"
+                )
 
             play_source = text_to_speech(
                 "fixed_file_source", "repeat_birthdate2", calls[caller]
@@ -2042,7 +1620,7 @@ async def confirm_birthdate():
             count = countPatientInDB(
                 {
                     "dateNaissance": {
-                        "$regex": f"^{calls[caller].caller['birthdate'] + 'T00:00:00'}$"
+                        "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
                     }
                 }
             )
@@ -2062,7 +1640,7 @@ async def confirm_birthdate():
                 patient = findPatientInDB(
                     {
                         "dateNaissance": {
-                            "$regex": f"^{calls[caller].caller['birthdate'] + 'T00:00:00'}$"
+                            "$regex": f"^{calls[caller].caller["birthdate"] + 'T00:00:00'}$"
                         }
                     }
                 )
@@ -2143,8 +1721,8 @@ async def confirm_call_intent():
         )
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            transfer_call(
-                "Vous avez demandé a parler avec une secrétaire",
+            hang_up(
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -2211,8 +1789,8 @@ async def confirm_call_intent():
 
         else:
             if increment_error(caller, "intent"):
-                transfer_call(
-                    "Pardonnez moi, il semblerait que je n'arrive pas à vous comprendre.",
+                hang_up(
+                    "Pardonnez moi, il semblerait que je n'arrive pas à vous comprendre. Je vous transfère vers une secrétaire.",
                     caller,
                 )
 
@@ -2238,8 +1816,8 @@ async def confirm_call_intent():
     if type == "Microsoft.Communication.RecognizeFailed":
         calls[caller].errors["intent"] += 1
         if calls[caller].errors["intent"] > 2:
-            transfer_call(
-                "Pardonnez moi, il semblerait que je n'arrive pas à vous comprendre.",
+            hang_up(
+                "Pardonnez moi, il semblerait que je n'arrive pas à vous comprendre. Je vous transfère vers une secrétaire.",
                 caller,
             )
 
@@ -2301,8 +1879,8 @@ async def confirm_identity():
         )
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            transfer_call(
-                "Vous avez demandé a parler avec une secrétaire",
+            hang_up(
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -2330,7 +1908,7 @@ async def confirm_identity():
 
         if model_response == "négative":
             calls[caller].patient = None
-            transfer_call(
+            hang_up(
                 "Désolé, je ne peux pas donner de rendez-vous à un patient qui n'est pas déjà connu du cabinet. Vous êtes un nouveau patient : Je vous propose de vous transférer à la secrétaire",
                 caller,
             )
@@ -2344,7 +1922,7 @@ async def confirm_identity():
             date_litterale = date_vers_litteral(calls[caller].caller["birthdate"])
             play_source = text_to_speech(
                 "file_source",
-                f"Désolé, je n'ai pas compris, vous êtes bien {calls[caller].caller['lastname']} {calls[caller].caller['firstname']}. Né {date_litterale} ?",
+                f"Désolé, je n'ai pas compris, vous êtes bien {calls[caller].caller["lastname"]} {calls[caller].caller["firstname"]}. Né {date_litterale} ?",
                 calls[caller],
             )
             start_recognizing(
@@ -2397,7 +1975,7 @@ async def transfer_to_secretary():
         if model_response == "négative":
             hang_up("A bientôt j'espère !", caller)
         elif model_response == "positive":
-            transfer_call("", caller)
+            hang_up("Je transmets votre appel", caller)
         else:
             play_source = text_to_speech(
                 "file_source",
@@ -2426,17 +2004,7 @@ async def transfer_to_secretary():
 async def examination_exam_type(caller):
     global calls
 
-    if calls[caller].caller["phone"] is None:
-        speak("Pouvez-vous confirmer que votre numéro est le", caller)
-        calls[caller].caller["phone"] = f"0{caller[2:]}"
-        play_source = text_to_speech_number_confirm(
-            f"0{caller[2:]}",
-            calls[caller],
-        )
-        start_recognizing("/confirm_phone", "confirm_phone", play_source, caller)
-        return jsonify({"success": "success"})
-
-    addPhoneToRDV(calls[caller].rdv["id_examen"], calls[caller].caller["phone"], caller)
+    print(calls[caller].rdv["sous_type_id"])
 
     task_get_examination = asyncio.create_task(
         get_examination(exam_type=calls[caller].rdv["sous_type_id"])
@@ -2456,7 +2024,6 @@ async def examination_exam_type(caller):
             play_source,
             caller,
         )
-        return jsonify({"success": "success"})
     else:
         play_source = text_to_speech(
             "file_source",
@@ -2464,13 +2031,12 @@ async def examination_exam_type(caller):
             calls[caller],
         )
         start_recognizing("/handleResponse", "end_conversation", play_source, caller)
-        return jsonify({"success": "success"})
+    return "ok"
 
 
 @app.route("/examination_response", methods=["POST"])
 async def examination_response():
     global calls
-
     if not request.json:
         return jsonify({"success": "success"})
     caller, operation_context, type, user_response = get_request_infos(request)
@@ -2493,8 +2059,8 @@ async def examination_response():
         )
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            transfer_call(
-                "Vous avez demandé a parler avec une secrétaire",
+            hang_up(
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -2511,10 +2077,7 @@ async def examination_response():
                 "keyboard",
             )
             return jsonify({"success": "success"})
-
         question = request.args.get("question")
-        rdv_info = calls[caller].rdv
-
         if int(question) < len(calls[caller].rdv["interrogatoire"]):
             play_source = text_to_speech(
                 "file_source",
@@ -2536,22 +2099,11 @@ async def examination_response():
             )
             return jsonify({"success": "success"})
         else:
-            if (
-                calls[caller].rdv["reponses_interrogatoire"] is None
-                or len(calls[caller].rdv["reponses_interrogatoire"]) == 0
-            ):
-                calls[caller].rdv["reponses_interrogatoire"] = [user_response]
-            else:
-                calls[caller].rdv["reponses_interrogatoire"].append(user_response)
-            mammographie_text = ""
-            if calls[caller].rdv["exam_id"] == "MA":
-                mammographie_text = "Pensez à ramener vos anciennes mammographies et echographies le jour de l'examen. C'est très important pour l'équipe d'imagerie mammaire."
             play_source = text_to_speech(
                 "file_source",
-                f"Très bien, merci beaucoup pour ces précisions, j'ai fini. {mammographie_text} Puis-je faire autre chose pour vous ?",
+                "Très bien, merci beaucoup pour ces précisions, j'ai fini. Puis-je faire autre chose pour vous ?",
                 calls[caller],
             )
-            addCommentaireRDV(rdv_info["id_examen"], caller)
             start_recognizing(
                 "/handleResponse", "end_conversation", play_source, caller
             )
@@ -2588,8 +2140,8 @@ async def module_informatif():
         )
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            transfer_call(
-                "Vous avez demandé a parler avec une secrétaire",
+            hang_up(
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -2651,8 +2203,8 @@ async def confirm_rdv():
 
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            transfer_call(
-                "Vous avez demandé a parler avec une secrétaire",
+            hang_up(
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -2681,8 +2233,8 @@ async def confirm_rdv():
                     "/handleResponse", "start_conversation", play_source, caller
                 )
             elif increment_error(caller, "type_exam"):
-                transfer_call(
-                    "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre.",
+                hang_up(
+                    "Malheureusement, il semblerait que nous n'arrivons pas à nous comprendre. Je vais vous rediriger vers une secrétaire afin de pouvoir accéder a vos requêtes.",
                     caller,
                 )
             else:
@@ -2693,9 +2245,6 @@ async def confirm_rdv():
                     "/rdv_exam_type", "rdv_exam_type", play_source, caller
                 )
         elif model_response == "positive":
-            # play_source = text_to_speech("file_source", "Pouvez-vous me lire le motif de l'examen présent sur votre ordonnance ?", calls[caller])
-            # start_recognizing("/get_motif", "get_motif", play_source, caller)
-
             # play_source = text_to_speech("file_source", "Pouvez-vous me lire le motif de l'examen présent sur votre ordonnance ?", calls[caller])
             # start_recognizing("/get_motif", "get_motif", play_source, caller)
 
@@ -2718,79 +2267,19 @@ async def confirm_rdv():
             calls[caller].rdv["all_creneaux"] = creneaux
 
             text = build_single_date_phrase(creneau=creneaux)
-            if text["success"] is False:
-                play_source = text_to_speech(
-                    "file_source",
-                    f"{text['message']}. Puis-je faire autre chose pour vous ?",
-                    calls[caller],
-                )
-                start_recognizing(
-                    "/handleResponse",
-                    "end_conversation",
-                    play_source,
-                    caller,
-                    background_noise="click",
-                )
-                return jsonify({"success": "success"})
-            else:
-                play_source = text_to_speech(
-                    "file_source", text["message"], calls[caller]
-                )
-                start_recognizing(
-                    "/confirm_creneau",
-                    "modification",
-                    play_source,
-                    caller,
-                    background_noise="click",
-                )
-                return jsonify({"success": "success"})
+            play_source = text_to_speech("file_source", text, calls[caller])
+            start_recognizing(
+                "/confirm_creneau",
+                "confirm_creneau",
+                play_source,
+                caller,
+                background_noise="click",
+            )
         else:
             play_source = text_to_speech(
-                "fixed_file_source", "repeat_exam_type", calls[caller]
+                "fixed_file_source", "misunderstand_exam_type", calls[caller]
             )
             start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source, caller)
-    elif (
-        type == "Microsoft.Communication.RecognizeCompleted"
-        and operation_context == "final_confirm_rdv"
-    ):
-        task_human_orientation = asyncio.create_task(
-            get_human_orientation_async(user_response=user_response)
-        )
-        task_model_response = asyncio.create_task(
-            get_positive_negative_async(user_response)
-        )
-        # speak("ok")
-
-        human_orientation = await task_human_orientation
-        if human_orientation is True:
-            transfer_call(
-                "Vous avez demandé a parler avec une secrétaire",
-                caller,
-            )
-            return jsonify({"success": "success"})
-        task_get_repeat = asyncio.create_task(
-            get_repeat_async(user_response=user_response)
-        )
-        get_repeat = await task_get_repeat
-        if get_repeat is True:
-            start_recognizing(
-                calls[caller].last_text_to_speech["endpoint"],
-                calls[caller].last_text_to_speech["operation_context"],
-                calls[caller].last_text_to_speech["play_source"],
-                caller,
-                "keyboard",
-            )
-            return jsonify({"success": "success"})
-        model_response = await task_model_response
-        if model_response == "négative":
-            transfer_call(
-                "Malheureusement, il semblerait que nous nous soyons mal compris",
-                caller,
-            )
-        elif model_response == "positive":
-            calls[caller].rdv["patient_rdv_confirm"] = "Yes"
-            await find_patient(caller)
-            return jsonify({"success": "success"})
 
     elif type == "Microsoft.Communication.RecognizeFailed":
         speak("Je ne vous ai pas entendu", caller)
@@ -2832,13 +2321,13 @@ async def rdv_exam_type():
         and operation_context == "rdv_exam_type"
     ):
         if rdv_info["exam_id"] is not None:
-            user_response = f"C'est pour un {rdv_info['exam_id']} {user_response}"
+            user_response = f"C'est pour un {rdv_info["exam_id"]} {user_response}"
         # user_response = request.json[0].get("data").get("speechResult").get("speech")
 
         # pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
         # if re.search(pattern, user_response, re.IGNORECASE):
-        #     transfer_call(
-        #         "Il semblerait que vous appeliez pour une urgence.",
+        #     hang_up(
+        #         "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
         #         caller,
         #     )
         task_human_orientation = asyncio.create_task(
@@ -2846,8 +2335,8 @@ async def rdv_exam_type():
         )
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            transfer_call(
-                "Vous avez demandé a parler avec une secrétaire",
+            hang_up(
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -2875,18 +2364,12 @@ async def rdv_exam_type():
         urgence = await task_urgence
         print("3")
         if urgence == "True":
-            transfer_call(
-                "Il semblerait que vous appeliez pour une urgence.",
+            hang_up(
+                "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
                 caller,
             )
             return jsonify({"success": "success"})
         print("#######", user_response, exam_type)
-        if exam_type["multiple_exam"] == True:
-            transfer_call(
-                "Il semblerait que vous appeliez pour prendre rendez-vous pour plusieurs actes, je vais devoir vous mettre en relation avec un interlocuteur humain.",
-                caller,
-            )
-            return jsonify({"success": "success"})
         if (
             exam_type["type_examen"] is not None
             and exam_type["code_examen_id"] is not None
@@ -2898,15 +2381,12 @@ async def rdv_exam_type():
             )
             if not is_performed:
                 hang_up(
-                    f"Vous avez demandé {'un' if exam_type['type_examen_id'] == 'CT' else 'une'} {exam_type['code_examen']}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
+                    f"Vous avez demandé {"un" if exam_type["type_examen_id"] == "CT" else "une"} {exam_type["code_examen"]}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
                     caller,
                 )
             else:
                 rdv_info["exam_id"] = actual_exam_id
                 rdv_info["sous_type_id"] = actual_sous_type_id
-                rdv_info["code_examen"] = (
-                    f"{'un' if exam_type['type_examen'] == 'CT' else 'une'} {exam_type['code_examen']}"
-                )
                 play_source = text_to_speech(
                     "file_source",
                     f"Vous m'avez dit {exam_type['code_examen']}, c'est ça ?",
@@ -2917,12 +2397,12 @@ async def rdv_exam_type():
         elif (
             exam_type["type_examen"] is not None and exam_type["code_examen_id"] is None
         ):
-            if rdv_info["exam_id"] is not None or str(exam_type.get('type_exam_id', '')).lower() == 'autre':
+            if rdv_info["exam_id"] is not None:
                 speak("Désolé, je n'ai pas compris", caller)
             rdv_info["exam_id"] = exam_type["type_examen"]
             play_source = text_to_speech(
                 "file_source",
-                f"Vous m'avez dit {'un' if exam_type['type_examen_id'] == 'CT' else 'une'} {exam_type['type_examen']}. Pouvez-vous, s'il vous plaît, préciser la zone anatomique concernée?",
+                f"Vous m'avez dit {"un" if exam_type["type_examen_id"] == "CT" else "une"} {exam_type["type_examen"]}. Pouvez-vous, s'il vous plaît, préciser la zone anatomique concernée?",
                 calls[caller],
             )
             start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source, caller)
@@ -2998,8 +2478,8 @@ async def get_creneaux_choice():
         )
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            transfer_call(
-                "Vous avez demandé a parler avec une secrétaire",
+            hang_up(
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -3050,17 +2530,9 @@ async def get_creneaux_choice():
                     break
 
             if matched_creneau is not None:
-                # --- gestion du "premier" ---
-                jour = "premier" if current_dt.day == 1 else num2words(str(current_dt.day), lang='fr')
-                mois = french_months[current_dt.month]
+                # Création de la phrase
 
-                # gestion de l'heure
-                if current_dt.minute == 0:
-                    heure = f"{num2words(current_dt.hour, lang='fr')} heures"
-                else:
-                    heure = f"{num2words(current_dt.hour, lang='fr')} heures {num2words(current_dt.minute, lang='fr')}"
-
-                phrase = f"{jour} {mois} à {heure}"
+                phrase = f"{dt.day} {french_months[dt.month]} à {dt.hour} heures {dt.minute:02d}"
 
                 rdv_info["creneauDate"] = phrase
                 rdv_info["chosen_creneau"] = matched_creneau
@@ -3128,17 +2600,10 @@ async def get_creneaux_choice():
                     break
 
             if matched_creneau is not None:
-                # --- gestion du "premier" ---
-                jour = "premier" if current_dt.day == 1 else num2words(str(current_dt.day), lang='fr')
-                mois = french_months[current_dt.month]
+                # Création de la phrase
 
-                # gestion de l'heure
-                if current_dt.minute == 0:
-                    heure = f"{num2words(current_dt.hour, lang='fr')} heures"
-                else:
-                    heure = f"{num2words(current_dt.hour, lang='fr')} heures {num2words(current_dt.minute, lang='fr')}"
+                phrase = f"{dt.day} {french_months[dt.month]} à {dt.hour} heures {dt.minute:02d}"
 
-                phrase = f"{jour} {mois} à {heure}"
                 rdv_info["creneauDate"] = phrase
                 rdv_info["chosen_creneau"] = matched_creneau
 
@@ -3152,15 +2617,13 @@ async def get_creneaux_choice():
                         "/get_birthdate", "get_birthdate", play_source, caller
                     )
 
+                elif call_info["intent"] == "modification de rendez-vous":
+                    speak(
+                        f"Très bien, votre rendez-vous sera déplacé au {phrase}",
+                        caller,
+                    )
                     editRDV(caller)
-                    play_source = text_to_speech(
-                        "file_source",
-                        "Très bien, votre rendez-vous a bien été déplacé au {phrase}. Puis-je faire autre chose pour vous ?",
-                        calls[caller],
-                    )
-                    start_recognizing(
-                        "/handleResponse", "end_conversation", play_source, caller
-                    )
+
             else:
                 text = build_multiple_dates_phrase(creneaux=rdv_info["all_creneaux"])
                 play_source = text_to_speech(
@@ -3188,7 +2651,7 @@ async def get_creneaux_choice():
 
             play_source = text_to_speech(
                 "file_source",
-                f"Je n'ai pas compris le rendez-vous que vous souhaitez annuler. {rdv_info['annulation_phrase']}",
+                f"Je n'ai pas compris le rendez-vous que vous souhaitez annuler. {rdv_info["annulation_phrase"]}",
                 calls[caller],
             )
             start_recognizing("/get_creneaux_choice", "annulation", play_source, caller)
@@ -3204,25 +2667,14 @@ async def get_creneaux_choice():
                 if current_dt == dt:
                     matched_creneau = item
                     break
-
             if matched_creneau is not None:
                 rdv_info["cancel_creneau"] = matched_creneau
-
-                # --- gestion du "premier" ---
-                jour = "premier" if current_dt.day == 1 else str(current_dt.day)
-                mois = french_months[current_dt.month]
-
-                # --- gestion de l'heure ---
-                if current_dt.minute == 0:
-                    heure = f"{current_dt.hour} heures"
-                else:
-                    heure = f"{current_dt.hour} heures {current_dt.minute}"
-
-                phrase = f"{jour} {mois} à {heure}"
+                date_str = matched_creneau["datePrevue"][:10]
+                time_str = matched_creneau["heurePrevue"]
 
                 play_source = text_to_speech(
                     "file_source",
-                    f"Vous confirmez que vous voulez annuler votre rendez-vous du {phrase}",
+                    f"Vous confirmez que vous voulez annuler votre rendez-vous du {date_str} à {time_str}",
                     calls[caller],
                 )
                 start_recognizing(
@@ -3235,7 +2687,7 @@ async def get_creneaux_choice():
             else:
                 play_source = text_to_speech(
                     "file_source",
-                    f"Je n'ai pas compris le rendez-vous que vous souhaitez annuler. {rdv_info['annulation_phrase']}",
+                    f"Je n'ai pas compris le rendez-vous que vous souhaitez annuler. {rdv_info["annulation_phrase"]}",
                     calls[caller],
                 )
                 start_recognizing(
@@ -3299,8 +2751,8 @@ async def handleResponse():
 
         # pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
         # if re.search(pattern, user_response, re.IGNORECASE):
-        #     transfer_call(
-        #         "Il semblerait que vous appeliez pour une urgence.",
+        #     hang_up(
+        #         "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
         #         caller,
         #     )
         #     return jsonify({"success": "success"})
@@ -3308,8 +2760,8 @@ async def handleResponse():
         task_intent = asyncio.create_task(get_intent_async(user_response=user_response))
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            transfer_call(
-                "Vous avez demandé a parler avec une secrétaire",
+            hang_up(
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -3351,12 +2803,15 @@ async def handleResponse():
                     "/module_informatif", "module_informatif", play_source, caller
                 )
                 return jsonify({"success": "success"})
+            continue_conversation("more", caller)
+            return jsonify({"success": "success"})
         elif intent == "prise de rendez-vous":
 
             task_type = asyncio.create_task(
                 get_exam_type_async(user_response=user_response)
             )
             call_info["intent"] = intent.lower()
+            # speak("ok")
             exam_type = await task_type
             task_urgence = asyncio.create_task(
                 get_urgence_async(user_response, exam_type["type_examen_id"])
@@ -3366,18 +2821,11 @@ async def handleResponse():
             print("1")
             print("urgence is True:", urgence is True)
             if urgence == "True":
-                transfer_call(
-                    "Il semblerait que vous appeliez pour une urgence.",
+                hang_up(
+                    "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
                     caller,
                 )
                 return jsonify({"success": "success"})
-            if exam_type["multiple_exam"] == True:
-                transfer_call(
-                    "Il semblerait que vous appeliez pour prendre rendez-vous pour plusieurs actes, je vais devoir vous mettre en relation avec un interlocuteur humain.",
-                    caller,
-                )
-                return jsonify({"success": "success"})
-
             if exam_type["type_examen_id"] is None:
                 play_source = text_to_speech(
                     "file_source",
@@ -3398,18 +2846,15 @@ async def handleResponse():
                     )
                     if not is_performed:
                         hang_up(
-                            f"Vous avez demandé {'un' if exam_type['type_examen_id'] == 'CT' else 'une'} {exam_type['code_examen']}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
+                            f"Vous avez demandé {"un" if exam_type["type_examen_id"] == "CT" else "une"} {exam_type["code_examen"]}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
                             caller,
                         )
                     else:
                         rdv_info["exam_id"] = actual_exam_id
                         rdv_info["sous_type_id"] = actual_sous_type_id
-                        rdv_info["code_examen"] = (
-                            f"{'un' if exam_type['type_examen'] == 'CT' else 'une'} {exam_type['code_examen']}"
-                        )
                         play_source = text_to_speech(
                             "file_source",
-                            f"Vous m'avez dit vouloir prendre rendez-vous pour {'un' if exam_type['type_examen_id'] == 'CT' else 'une'} {exam_type['code_examen']}, c'est ça ?",
+                            f"Vous m'avez dit vouloir prendre rendez-vous pour {"un" if exam_type["type_examen_id"] == "CT" else "une"} {exam_type["code_examen"]}, c'est ça ?",
                             calls[caller],
                         )
                         start_recognizing(
@@ -3423,7 +2868,7 @@ async def handleResponse():
                     rdv_info["exam_id"] = exam_type["type_examen"]
                     play_source = text_to_speech(
                         "file_source",
-                        f"Vous souhaitez prendre rendez-vous pour {'un' if exam_type['type_examen_id'] == 'CT' else 'une'} {exam_type['type_examen']}. Pouvez-vous, s'il vous plaît, préciser la zone anatomique concernée?",
+                        f"Vous souhaitez prendre rendez-vous pour {"un" if exam_type["type_examen_id"] == "CT" else "une"} {exam_type["type_examen"]}. Pouvez-vous, s'il vous plaît, préciser la zone anatomique concernée?",
                         calls[caller],
                     )
                     start_recognizing(
@@ -3444,8 +2889,8 @@ async def handleResponse():
                 "Vous voulez déplacer un rendez-vous, c'est bien ça ?",
                 calls[caller],
             )
-        elif intent.lower() == "annulation de rendez-vous":
 
+        elif intent.lower() == "annulation de rendez-vous":
             call_info["intent"] = intent.lower()
             play_source = text_to_speech(
                 "file_source",
@@ -3461,24 +2906,19 @@ async def handleResponse():
                 calls[caller],
             )
 
-        elif intent.lower() == "autre" and calls[caller].errors["intent"] >= 1:
-            transfer_call(
-                "Je suis désolé, votre question n'entre pas dans mon champ de compétences",
-                caller,
+        elif intent.lower() == "autre":
+            play_source = text_to_speech(
+                "file_source",
+                "Je suis désolé, votre question n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.",
+                calls[caller],
             )
-            # play_source = text_to_speech(
-            #     "file_source",
-            #     "Je suis désolé, votre question n'entre pas dans mon champ de compétences, je vous passe un interlocuteur humain.",
-            #     calls[caller],
-            # )
-            # start_recognizing(
-            #     "/handleResponse", "start_conversation", play_source, caller
-            # )
+            start_recognizing(
+                "/handleResponse", "start_conversation", play_source, caller
+            )
 
         else:
-            calls[caller].errors["intent"] += 1
             play_source = text_to_speech(
-                "fixed_file_source", "misunderstand_intent3", calls[caller]
+                "fixed_file_source", "misunderstand_intent2", calls[caller]
             )
             start_recognizing(
                 "/handleResponse", "start_conversation", play_source, caller
@@ -3502,17 +2942,17 @@ async def handleResponse():
             get_urgence_async(user_response, calls[caller].rdv["exam_id"])
         )
         urgence = await task_urgence
-
+        print("2")
         if urgence == "True":
-            transfer_call(
-                "Il semblerait que vous appeliez pour une urgence.",
+            hang_up(
+                "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
                 caller,
             )
             return jsonify({"success": "success"})
         # pattern = r"\b(Urgence|Urgences|Urgent|Urgemment)\b"
         # if re.search(pattern, user_response, re.IGNORECASE):
-        #     transfer_call(
-        #         "Il semblerait que vous appeliez pour une urgence.",
+        #     hang_up(
+        #         "Il semblerait que vous appeliez pour une urgence. Je vous transfère vers une secrétaire.",
         #         caller,
         #     )
         task_human_orientation = asyncio.create_task(
@@ -3521,8 +2961,8 @@ async def handleResponse():
         task_intent = asyncio.create_task(get_intent_async(user_response=user_response))
         human_orientation = await task_human_orientation
         if human_orientation is True:
-            transfer_call(
-                "Vous avez demandé a parler avec une secrétaire",
+            hang_up(
+                "Vous avez demandé a parler avec une secrétaire, je vais transférer votre appel.",
                 caller,
             )
             return jsonify({"success": "success"})
@@ -3567,13 +3007,6 @@ async def handleResponse():
             call_info["intent"] = intent.lower()
             # speak("ok")
             exam_type = await task_type
-            if exam_type["multiple_exam"] == True:
-                transfer_call(
-                    "Il semblerait que vous appeliez pour prendre rendez-vous pour plusieurs actes, je vais devoir vous mettre en relation avec un interlocuteur humain.",
-                    caller,
-                )
-                return jsonify({"success": "success"})
-
             if exam_type["type_examen_id"] is None:
                 play_source = text_to_speech(
                     "file_source",
@@ -3594,18 +3027,15 @@ async def handleResponse():
                     )
                     if not is_performed:
                         hang_up(
-                            f"Vous avez demandé {'un' if exam_type['type_examen'] == 'CT' else 'une'} {exam_type['code_examen']}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
+                            f"Vous avez demandé {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["code_examen"]}, mais nous ne pratiquons malheureusement pas cet acte ici. Je vous conseille de vous renseigner auprès d'un autre cabinet de radiologie. Merci à vous et à bientôt !",
                             caller,
                         )
                     else:
                         rdv_info["exam_id"] = actual_exam_id
                         rdv_info["sous_type_id"] = actual_sous_type_id
-                        rdv_info["code_examen"] = (
-                            f"{'un' if exam_type['type_examen'] == 'CT' else 'une'} {exam_type['code_examen']}"
-                        )
                         play_source = text_to_speech(
                             "file_source",
-                            f"Vous m'avez dit vouloir prendre rendez-vous pour {'un' if exam_type['type_examen'] == 'CT' else 'une'} {exam_type['code_examen']}, c'est ça ?",
+                            f"Vous m'avez dit vouloir prendre rendez-vous pour {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["code_examen"]}, c'est ça ?",
                             calls[caller],
                         )
                         start_recognizing(
@@ -3619,7 +3049,7 @@ async def handleResponse():
                     rdv_info["exam_id"] = exam_type["type_examen"]
                     play_source = text_to_speech(
                         "file_source",
-                        f"Vous souhaitez prendre rendez-vous pour {'un' if exam_type['type_examen'] == 'CT' else 'une'} {exam_type['type_examen']}. Pouvez-vous, s'il vous plaît, préciser la zone anatomique concernée?",
+                        f"Vous souhaitez prendre rendez-vous pour {"un" if exam_type["type_examen"] == "CT" else "une"} {exam_type["type_examen"]}. Pouvez-vous, s'il vous plaît, préciser la zone anatomique concernée?",
                         calls[caller],
                     )
                     start_recognizing(
@@ -3672,7 +3102,6 @@ async def handleResponse():
                 start_recognizing(
                     "/handleResponse", "start_conversation", play_source, caller
                 )
-                return jsonify({"success": "success"})
             elif positive_negative == "négative":
                 hang_up("Très bien, merci pour votre appel !", caller)
             return jsonify({"succes": "success"})
@@ -3819,7 +3248,7 @@ async def get_examination(exam_type):
 
 
 async def get_firstname_async(user_response):
-    url = "https://lyrae-talk-functions.azurewebsites.net/api/get_nom_famille?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
+    url = "https://lyrae-talk-functions.azurewebsites.net/api/get_prenom?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
 
     headers = {"Content-Type": "application/json"}
 
@@ -3917,15 +3346,13 @@ async def get_creneaux_async(sous_type, exam_type, caller, date_start=None):
     headers = {"Content-Type": "application/json"}
 
     if exam_type == "ECHOGRAPHIE":
-        exam_type = get_client_exam_type(calls[caller].call["called"], "US")
+        exam_type = "EC"
     elif exam_type == "RADIO":
-        exam_type = get_client_exam_type(calls[caller].call["called"], "RX")
+        exam_type = "RX"
     elif exam_type == "SCANNER":
-        exam_type = get_client_exam_type(calls[caller].call["called"], "CT")
+        exam_type = "CT"
     elif exam_type == "Mammographie":
-        exam_type = get_client_exam_type(calls[caller].call["called"], "MG")
-    elif exam_type == "IRM":
-        exam_type = get_client_exam_type(calls[caller].call["called"], "MR")
+        exam_type = "MG"
 
     # Get current date and time
     now = datetime.now()
@@ -4080,22 +3507,22 @@ async def get_positive_negative_async(user_response):
         return "Erreur lors de la communication avec le modèle."
 
 
-# def get_positive_negative(user_response):
-#     url = "https://lyrae-talk-functions.azurewebsites.net/api/analyseur_reponse?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
-#     headers = {"Content-Type": "application/json"}
+def get_positive_negative(user_response):
+    url = "https://lyrae-talk-functions.azurewebsites.net/api/analyseur_reponse?code=z4qZo6X7c4gNDPlKhBoXs2IRV1Z1o4FM_FKRqcgpTJBNAzFu_W0gTA=="
+    headers = {"Content-Type": "application/json"}
 
-#     payload = {"action": "positive_negative_reponse", "text": user_response}
-#     try:
-#         response = requests.post(url, headers=headers, json=payload)
+    payload = {"action": "positive_negative_reponse", "text": user_response}
+    try:
+        response = requests.post(url, headers=headers, json=payload)
 
-#         response.raise_for_status()
-#         print("positive_negative", response.json())
-#         model_response = response.json().get("response")
-#         return model_response
-#     except requests.exceptions.RequestException as e:
-#         print(f"Erreur lors de l'appel au modèle : {e}")
-#         logging.info(f"error, {e}")
-#         return "Erreur lors de la communication avec le modèle."
+        response.raise_for_status()
+        print("positive_negative", response.json())
+        model_response = response.json().get("response")
+        return model_response
+    except requests.exceptions.RequestException as e:
+        print(f"Erreur lors de l'appel au modèle : {e}")
+        logging.info(f"error, {e}")
+        return "Erreur lors de la communication avec le modèle."
 
 
 async def is_question_async(text):
@@ -4129,43 +3556,37 @@ def build_single_date_phrase(creneau, index=0):
     else:
         slot = creneau[str(index + 1)]
         date_obj = datetime.fromisoformat(slot["date"]).date()
-        today = datetime.today().date()
-        tomorrow = today + timedelta(days=1)
-
-        day = "premier" if date_obj.day == 1 else str(date_obj.day)
+        day = date_obj.day
         month_name = french_months[date_obj.month]
-
-        if date_obj == today:
-            date_str = f"aujourd'hui le {day} {month_name}"
-        elif date_obj == tomorrow:
-            date_str = f"demain le {day} {month_name}"
-        else:
-            date_str = f"le {french_weekdays[date_obj.weekday()]} {day} {month_name}"
-
+        date_str = f"{day} {month_name}"
         heure = slot["heureDebut"]
-
-        time_obj = datetime.strptime(heure, "%H:%M")
-        hours = time_obj.hour
-        minutes = time_obj.minute
-
-        if minutes == 0:
-            heure = f"{hours} heures"
-        else:
-            heure = f"{hours} heures {minutes}"
-
         if index == 0:
-            final_sentence = f"Je peux vous proposer {date_str} à {heure}. Est-ce que cela vous convient ?"
+            time_obj = datetime.strptime(heure, "%H:%M")
+            hours = time_obj.hour
+            minutes = time_obj.minute
+
+            # Format as "8 heures" or "8 heures 15"
+            if minutes == 0:
+                heure = f"{hours} heures"
+            else:
+                heure = f"{hours} heures {minutes}"
+            final_sentence = f"Je peux vous proposer le {date_str} à {heure}. Est-ce que cela vous convient ?"
         else:
-            final_sentence = f"Est-ce que vous préférez {date_str} à {heure} ?"
+            time_obj = datetime.strptime(heure, "%H:%M")
+            hours = time_obj.hour
+            minutes = time_obj.minute
+
+            # Format as "8 heures" or "8 heures 15"
+            if minutes == 0:
+                heure = f"{hours} heures"
+            else:
+                heure = f"{hours} heures {minutes}"
+            final_sentence = f"Est-ce que vous préférez le {date_str} à {heure} ?"
 
     final_sentence = convert_numbers_to_words_french(final_sentence)
-    if (
-        final_sentence
-        == "Je suis désolé, aucun créneau n'est disponible pour le moment."
-    ):
-        return {"success": False, "message": final_sentence}
-    else:
-        return {"success": True, "message": final_sentence}
+    print("final_sentence", final_sentence)
+    return final_sentence
+
 
 def build_multiple_dates_phrase(creneaux, type=None):
     data = creneaux
@@ -4287,16 +3708,7 @@ def build_multiple_dates_phrase(creneaux, type=None):
             date_obj = datetime.fromisoformat(slot["datePrevue"]).date()
             day = date_obj.day
             month_name = french_months[date_obj.month]
-            today = datetime.today().date()
-            tomorrow = today + timedelta(days=1)
-            if date_obj == today:
-                date_str = f"aujourd'hui le {day} {month_name}"
-            elif date_obj == tomorrow:
-                date_str = f"demain le {day} {month_name}"
-            else:
-                date_str = (
-                    f"le {french_weekdays[date_obj.weekday()]} {day} {month_name}"
-                )
+            date_str = f"{day} {month_name}"
             heure = slot["heurePrevue"]
             time_obj = datetime.strptime(heure, "%H:%M")
             hours = time_obj.hour
@@ -4307,7 +3719,7 @@ def build_multiple_dates_phrase(creneaux, type=None):
                 heure = f"{hours} heures"
             else:
                 heure = f"{hours} heures {minutes}"
-            phrases.append(f"{ordinals[idx]} est {date_str} à {heure}")
+            phrases.append(f"le {ordinals[idx]} est le {date_str} à {heure}")
 
         # Assemble final sentence
         if nb_slots == 0:
@@ -4422,39 +3834,21 @@ async def handle_prise_rdv(caller):
         rdv_info["all_creneaux"] = creneaux
 
         text = build_single_date_phrase(creneau=creneaux)
-        if text["success"] is False:
-            play_source = text_to_speech(
-                "file_source",
-                f"{text['message']}. Puis-je faire autre chose pour vous ?",
-                calls[caller],
-            )
-            start_recognizing(
-                "/handleResponse",
-                "end_conversation",
-                play_source,
-                caller,
-                background_noise="click",
-            )
-            return jsonify({"success": "success"})
-        else:
-            play_source = text_to_speech("file_source", text["message"], calls[caller])
-            start_recognizing(
-                "/confirm_creneau",
-                "confirm_creneau",
-                play_source,
-                caller,
-                background_noise="click",
-            )
-            return jsonify({"success": "success"})
-
+        play_source = text_to_speech("file_source", text, calls[caller])
+        start_recognizing(
+            "/confirm_creneau",
+            "confirm_creneau",
+            play_source,
+            caller,
+            background_noise="click",
+        )
     else:
         play_source = text_to_speech(
             "file_source",
-            "Très bien, pour quel examen souhaitez-vous prendre rendez-vous ? Merci de préciser le type d'examen et la région anatomique, par exemple une échographie de la cheville",
+            "Très bien, quel examen voulez vous passer ?",
             calls[caller],
         )
         start_recognizing("/rdv_exam_type", "rdv_exam_type", play_source, caller)
-        return jsonify({"success": "success"})
 
 
 def handle_modification(caller):
@@ -4474,7 +3868,7 @@ def handle_annulation(caller):
 
 def start_conversation(caller):
 
-    if calls[caller].call["called"] in ["33801150214", "33801150143"]:
+    if calls[caller].call["called"] in ["33801150214", "33801150082", "33801150143"]:
         play_source = text_to_speech(
             "fixed_file_source", "intro_preprod", calls[caller]
         )
@@ -4493,25 +3887,6 @@ def speak(text, caller, speed=1.05):
     call_automation_client.get_call_connection(
         calls[caller].call["call_connection_id"]
     ).play_media_to_all(play_source=play_source)
-
-
-def get_patient_rdv_confirm(caller):
-
-    caller_info = calls[caller].caller
-    rdv_info = calls[caller].rdv
-
-    phrase_creneau = full_date_vers_litteral(
-        rdv_info["chosen_creneau"].get("date").split("T")[0]
-        + "T"
-        + rdv_info["chosen_creneau"].get("heureDebut")
-        + ":00"
-    )
-    play_source = text_to_speech(
-        "file_source",
-        f"Vous appelez pour un rendez-vous pour {caller_info['firstname']} {caller_info['lastname']} pour {rdv_info['code_examen']} au cabinet de radiologie Riva à Muzillac {phrase_creneau}. Est-ce que vous confirmez bien ces informations? Répondez moi par oui ou par non. Votre réponse sera enregistrée.",
-        calls[caller],
-    )
-    start_recognizing("/confirm_rdv", "final_confirm_rdv", play_source, caller)
 
 
 ########## XPLORE API ##########
@@ -4594,7 +3969,7 @@ def editRDV(caller):
         "firstName": caller_info["firstname"],
         "lastName": caller_info["lastname"],
         "birthDate": caller_info["birthdate"],
-        "email": caller_info["email"],
+        "email": caller_info["patient_email"],
         "newCreneau": rdv_info["chosen_creneau"],
     }
 
@@ -4635,78 +4010,10 @@ def deleteRDV(caller):
         return "Error occurred while creating RDV"
 
 
-def addPhoneToRDV(idExamen, phone, caller):
-    global calls
-
-    url = f"https://{API_URL}/api/addCommentaireRDV"
-
-    result = f"Téléphone: {phone}"
-
-    payload = {"idExamen": idExamen, "commentaire": result}
-
-    try:
-        response = requests.post(url, json=payload)
-        response.raise_for_status()  # Raises HTTPError for bad status
-        data = response.json()
-        calls[caller].rdv["phone_saved"] = True
-        print("Ajout de numéro de téléphone: ", data)
-        return data
-
-    except requests.RequestException as e:
-        print("Request failed:", e)
-        return "Error occurred while adding commentary"
-
-
-def addCommentaireRDV(idExamen, caller):
-    global calls
-    rdv_info = calls[caller].rdv
-
-    url = f"https://{API_URL}/api/addCommentaireRDV"
-
-    lines = []
-    for a, b in zip_longest(
-        rdv_info["interrogatoire"], rdv_info["reponses_interrogatoire"], fillvalue=""
-    ):
-        lines.append(a)
-        lines.append(b)
-        lines.append("")  # ligne vide pour espacer
-
-    result = "\n".join(lines)
-
-    payload = {"idExamen": idExamen, "commentaire": result}
-
-    try:
-        response = requests.post(url, json=payload)
-        response.raise_for_status()  # Raises HTTPError for bad status
-        data = response.json()
-        print("Ajout de commentaire: ", data)
-        return data
-
-    except requests.RequestException as e:
-        print("Request failed:", e)
-        return "Error occurred while adding commentary"
-
-def get_patient_xplore(datas):
-    url = f"https://{API_URL}/api/getPatient"
-    payload = datas
-
-    print("requesting")
-
-    try:
-        response = requests.post(url, json=payload)
-        response.raise_for_status()  # Raises HTTPError for bad status
-        data = response.json()
-        print("get_patient_xplore", data)
-        return data.get("data", "")[0]
-    except requests.RequestException as e:
-        print("Request failed:", e)
-        return "Error occurred while retrieving RDV"
-
 def get_sous_type_exam(type_examen):
-    # url = f"https://{SANDBOX_URL}/XaPriseRvGateway/Application/api/External/GetListeExamensFromTypeExamen"
-    url = f"https://{API_URL}/api/getSousTypesExamen"
+    url = "https://sandbox.xplore.fr:20443/XaPriseRvGateway/Application/api/External/GetListeExamensFromTypeExamen"
 
-    payload = {"examId": type_examen}
+    payload = {"id": type_examen}
 
     print("requesting")
 
@@ -4715,7 +4022,7 @@ def get_sous_type_exam(type_examen):
         response.raise_for_status()  # Raises HTTPError for bad status
         data = response.json()
         print(data)
-        return data
+        return data.get("data", "No Datas Found")
     except requests.RequestException as e:
         print("Request failed:", e)
         return "Error occurred while retrieving RDV"
@@ -4740,40 +4047,36 @@ async def find_patient(caller):
     rdv_info = calls[caller].rdv
     patient = None
     if calls[caller].patient is None:
-        print("______________ NO PATIENT")
-        tmp_patient = get_patient_xplore({"Nom": caller_info['lastname'], "Prenom": caller_info['firstname']})
-        if patient and patient["DateNaissance"] == caller_info['birthdate'] + 'T00:00:00':
-            patient = tmp_patient
-            calls[caller].caller["email"] = patient.get("email")
-            print("_____________ PATIENT", patient)
-            print("___________ PATIENT EMAIL", patient.get("email"))
+        patient = patientCollection.find_one(
+            {
+                "dateNaissance": {
+                    "$regex": f"^{caller_info["birthdate"] + 'T00:00:00'}$"
+                },
+                "nom": {
+                    "$regex": f"^{caller_info["lastname"]}$",
+                    "$options": "i",
+                },  # Case-insensitive
+                "prenom": {
+                    "$regex": f"^{strip_accents(caller_info["firstname"])}$",
+                    "$options": "i",  # Case-insensitive
+                },
+            }
+        )
     else:
-        tmp_patient = get_patient_xplore({"Nom": caller_info['lastname'], "Prenom": caller_info['firstname']})
-        if tmp_patient and tmp_patient["dateNaissance"] == caller_info['birthdate'] + 'T00:00:00':
-            patient = tmp_patient
-            calls[caller].caller["email"] = patient.get("email")
-            calls[caller].patient = patient
-        print("______________ GOING INTO ELSE")
-        print("________ CALLER INFO", caller_info)
-        print("________ PATIENT", patient)
-        print("PATIENT SAVED", calls[caller].patient)
+        patient = calls[caller].patient
+
     if patient:
         if call_info["intent"] == "prise de rendez-vous":
-            if rdv_info["patient_rdv_confirm"] != "Yes":
-                get_patient_rdv_confirm(caller)
-                return
             speak(
                 "Ne quittez pas le temps que je confirme votre rendez-vous.",
                 caller,
             )
             email = patient.get("email")
-            calls[caller].caller["email"] = email
             caller_info["email"] = email
             # if first_result.get("externalNumber") is None:
             rdv = createRDV(caller)
 
             if rdv.get("success") is True:
-                calls[caller].rdv["id_examen"] = rdv.get("data").get("numeroExamen")
 
                 rdvCollection.insert_one(
                     {
@@ -4793,7 +4096,7 @@ async def find_patient(caller):
                 )
 
                 speak(
-                    f"Parfait, vous avez donc rendez-vous {phrase_creneau} au nom de {caller_info['lastname']}. Le jour de l'examen, vous devrez amener votre Ordonnance, la Carte vitale et la carte de mutuelle, une Pièce d'identité et, si besoin, vos justificatif ALD, CMU, arrêt de travail.",
+                    f"Parfait, vous avez donc rendez-vous {phrase_creneau} au nom de {caller_info["lastname"]}.",
                     caller,
                 )
 
@@ -4801,8 +4104,8 @@ async def find_patient(caller):
                 return
             else:
                 if increment_error(caller, "rdv"):
-                    transfer_call(
-                        "Désolé, je n'ai pas pu valider votre rendez-vous.",
+                    hang_up(
+                        "Désolé, je n'ai pas pu valider votre rendez-vous. Je vais vous rediriger vers une secrétaire.",
                         caller,
                     )
                 else:
@@ -4828,31 +4131,16 @@ async def find_patient(caller):
                     rdv_info["current_creneau_proposition"] = 0
 
                     text = build_single_date_phrase(creneau=creneaux)
-                    if text["success"] is False:
-                        play_source = text_to_speech(
-                            "file_source",
-                            f"{text['message']}. Puis-je faire autre chose pour vous ?",
-                            background_noise="click",
-                        )
-                        return jsonify({"success": "success"})
-                    else:
-                        play_source = text_to_speech(
-                            "file_source", text["message"], calls[caller]
-                        )
-                        start_recognizing(
-                            "/confirm_creneau",
-                            "confirm_creneau",
-                            play_source,
-                            caller,
-                            background_noise="click",
-                        )
-                        return jsonify({"success": "success"})
+                    play_source = text_to_speech("file_source", text, calls[caller])
+                    start_recognizing(
+                        "/confirm_creneau", "confirm_creneau", play_source, caller
+                    )
 
         elif (
             call_info["intent"] == "modification de rendez-vous"
             or call_info["intent"] == "consultation de rendez-vous"
         ):
-            planned_rdv = getRDV(patient.get("idPatient") or patient.get("numeroDossier"))
+            planned_rdv = getRDV(patient.get("idPatient"))
             if patient.get("externalID", None) is not None:
                 planned_rdv_external = getRDV(patient.get("externalID"))
                 planned_rdv = planned_rdv + planned_rdv_external
@@ -4890,12 +4178,10 @@ async def find_patient(caller):
                     + "T"
                     + future_rdvs[0].get("heurePrevue")
                 )
-                jour = "premier" if dt.day == 1 else str(dt.day)
-
-                formatted_date = f"le {jour} {french_months[dt.month]} {dt.year}"
+                formatted_date = f"le {dt.day} {french_months[dt.month]} {dt.year}"
                 hours, minutes = future_rdvs[0].get("heurePrevue").split(":")
 
-                all_sous_type = get_sous_type_exam(future_rdvs[0].get("typeExamen")).get("data")
+                all_sous_type = get_sous_type_exam(future_rdvs[0].get("typeExamen"))
                 sous_type = next(
                     (
                         item
@@ -4925,39 +4211,21 @@ async def find_patient(caller):
                         creneau=rdv_info["all_creneaux"],
                         index=rdv_info["current_creneau_proposition"],
                     )
-                    if text["success"] is False:
-                        play_source = text_to_speech(
-                            "file_source",
-                            f"{text['message']}. Puis-je faire autre chose pour vous ?",
-                            calls[caller],
-                        )
-                        start_recognizing(
-                            "/handleResponse",
-                            "end_conversation",
-                            play_source,
-                            caller,
-                            background_noise="click",
-                        )
-                        return jsonify({"success": "success"})
-                    else:
-                        play_source = text_to_speech(
-                            "file_source", text["message"], calls[caller]
-                        )
-                        start_recognizing(
-                            "/confirm_creneau",
-                            "modification",
-                            play_source,
-                            caller,
-                            background_noise="click",
-                        )
-                        return jsonify({"success": "success"})
+                    play_source = text_to_speech("file_source", text, calls[caller])
+                    start_recognizing(
+                        "/confirm_creneau",
+                        "modification",
+                        play_source,
+                        caller,
+                        background_noise="click",
+                    )
                     # text = build_multiple_dates_phrase(creneaux=creneaux)
                     # play_source = text_to_speech("file_source", text)
                     # start_recognizing("/get_creneaux_choice", "modification", play_source)
                     return "ok"
                 play_source = text_to_speech(
                     "file_source",
-                    f"{text}. Puis-je faire autre chose pour vous ? Je peux prendre, annuler, consulter ou modifier un rendez vous, ou simplement répondre à vos questions.",
+                    f"{text}. Puis-je faire autre chose pour vous ?",
                     calls[caller],
                 )
                 start_recognizing(
@@ -4999,7 +4267,7 @@ async def find_patient(caller):
 
             await asyncio.sleep(1)
 
-            planned_rdv = getRDV(patient.get("idPatient") or patient.get("numeroDossier"))
+            planned_rdv = getRDV(patient.get("idPatient"))
             if patient.get("externalID", None) is not None:
                 planned_rdv_external = getRDV(patient.get("externalID"))
                 print("planned_rdv_external", planned_rdv_external)
@@ -5032,12 +4300,11 @@ async def find_patient(caller):
                     + "T"
                     + planned_rdv[0].get("heurePrevue")
                 )
-                jour = "premier" if dt.day == 1 else str(dt.day)
-                formatted_date = f"le {jour} {french_months[dt.month]} {dt.year}"
+                formatted_date = f"le {dt.day} {french_months[dt.month]} {dt.year}"
                 hours, minutes = planned_rdv[0].get("heurePrevue").split(":")
 
                 rdv_info["cancel_creneau"] = planned_rdv[0]
-                all_sous_type = get_sous_type_exam(planned_rdv[0].get("typeExamen")).get("data")
+                all_sous_type = get_sous_type_exam(planned_rdv[0].get("typeExamen"))
                 sous_type = next(
                     (
                         item
@@ -5079,16 +4346,12 @@ async def find_patient(caller):
                 )
     else:
         if call_info["intent"] == "prise de rendez-vous":
-            transfer_call(
-                "Désolé, je ne peux pas donner de rendez-vous à un patient qui n'est pas déjà connu du cabinet. Vous êtes un nouveau patient : Je vous propose de vous transférer à la secrétaire",
-                caller,
+            play_source = text_to_speech(
+                "fixed_file_source", "hang_up_not_known", calls[caller]
             )
-            # play_source = text_to_speech(
-            #     "fixed_file_source", "hang_up_not_known", calls[caller]
-            # )
-            # call_automation_client.get_call_connection(
-            #     calls[caller].call["call_connection_id"]
-            # ).play_media_to_all(play_source=play_source, operation_context="hang_up")
+            call_automation_client.get_call_connection(
+                calls[caller].call["call_connection_id"]
+            ).play_media_to_all(play_source=play_source, operation_context="hang_up")
         elif call_info["intent"] in [
             "consultation de rendez-vous",
             "modification de rendez-vous",
@@ -5101,12 +4364,6 @@ async def find_patient(caller):
             start_recognizing(
                 "/transfer_to_secretary", "transfer_unknown", play_source, caller
             )
-
-
-
-@app.route("/ping", methods=["GET"])
-async def ping():
-    return jsonify({"pong"})
 
 
 if __name__ == "__main__":
