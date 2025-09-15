@@ -45,7 +45,7 @@ SPEECH_REGION = "eastus"
 #     "mongodb+srv://neuracorp:amaCtNnLIHMJ4NGZ@riva.yiylf96.mongodb.net/neuracorp"
 # )
 MONGO_URL = "mongodb+srv://lageistedavid:eaZOnmgtcNN1oGxU@cluster0.pjma4cx.mongodb.net/neuracorp"
-APP_URL = "talkpreprodapi.azurewebsites.net"
+APP_URL = "lyrae-demo.azurewebsites.net"
 API_URL = "sparkso-universite.com:8080"
 
 
