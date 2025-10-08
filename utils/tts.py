@@ -35,7 +35,7 @@ def text_to_speech_stream(text: str, language="fr", speed=1.05) -> IO[bytes]:
         voice_id=voices[language],
         output_format="mp3_22050_32",
         text=text,
-        model_id="eleven_turbo_v2_5",
+        model_id="eleven_multilingual_v2",
         voice_settings=VoiceSettings(
             stability=0.80,
             similarity_boost=0.75,
